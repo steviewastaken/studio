@@ -1,6 +1,8 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
+import Header from '@/components/dunlivrer/header';
+import Footer from '@/components/dunlivrer/footer';
 
 export const metadata: Metadata = {
   title: 'Dunlivrer',
@@ -21,7 +23,13 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        {children}
+        <div className="flex flex-col min-h-screen bg-transparent text-foreground">
+          <Header />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </div>
         <Toaster />
       </body>
     </html>
