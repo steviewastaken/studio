@@ -6,7 +6,7 @@ import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion } from 'framer-motion';
@@ -206,6 +206,13 @@ export default function DunlivrerPage() {
                         <div>
                             <h3 className="font-semibold text-lg text-white">Automated Smart Contracts</h3>
                             <p className="text-muted-foreground">Payment releases and compliance checks are automated upon verified delivery, reducing overhead.</p>
+                        </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="flex items-start gap-4">
+                        <div className="p-3 bg-primary/20 rounded-lg text-primary"><ListChecks className="w-6 h-6"/></div>
+                        <div>
+                            <h3 className="font-semibold text-lg text-white">Real-Time Audits</h3>
+                            <p className="text-muted-foreground">Stakeholders can independently verify the delivery trail at any time, ensuring complete accountability.</p>
                         </div>
                     </motion.div>
                 </motion.div>
