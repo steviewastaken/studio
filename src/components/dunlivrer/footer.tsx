@@ -5,10 +5,10 @@ import { Truck } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Footer() {
-  const [year, setYear] = useState<number | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setYear(new Date().getFullYear());
+    setIsClient(true);
   }, []);
 
   return (
@@ -50,7 +50,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-white/5 py-4">
-        <p className="text-center text-sm text-muted-foreground">© {year} Dunlivrer. All rights reserved.</p>
+        <p className="text-center text-sm text-muted-foreground">© {isClient ? new Date().getFullYear() : ''} Dunlivrer. All rights reserved.</p>
       </div>
     </footer>
   );
