@@ -49,7 +49,7 @@ const prompt = ai.definePrompt({
 2.  Factor in the \`deliveryType\`: 'express' should be fastest, 'night' may vary.
 3.  The final output MUST be ONLY a valid JSON object conforming to the specified schema, with no extra text or explanations.
 
-**Required JSON Output Format:**
+**Example JSON Output Format:**
 {
   "estimatedTime": "45",
   "confidence": 0.85
