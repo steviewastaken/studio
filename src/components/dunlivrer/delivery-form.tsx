@@ -20,7 +20,9 @@ import { ScrollArea } from '../ui/scroll-area';
 import type { EstimateETAInput } from '@/ai/flows/estimate-eta';
 import type { FindDriverOutput } from '@/ai/flows/find-driver';
 import { locations } from '@/lib/locations';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 const formSchema = z.object({
   pickupAddress: z.string({ required_error: "Please select a pickup location."}).min(1, "Please select a pickup location."),
@@ -44,6 +46,9 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
   const [isFindingDriver, setIsFindingDriver] = useState(false);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
+  const [scheduledTime, setScheduledTime] = useState('');
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -138,9 +143,22 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
   };
 
   const handleScheduleForLater = () => {
+    setIsScheduling(true);
+  };
+  
+  const handleConfirmFinalSchedule = () => {
+    if (!scheduledDate || !scheduledTime) {
+      toast({
+        variant: 'destructive',
+        title: 'Incomplete Information',
+        description: 'Please select both a date and a time slot.',
+      });
+      return;
+    }
+    setIsScheduling(false);
     toast({
-        title: "Coming Soon!",
-        description: "The ability to schedule deliveries for a future time is in development.",
+      title: 'Delivery Scheduled!',
+      description: `Your delivery is scheduled for ${format(scheduledDate, 'PPP')} between ${scheduledTime}.`,
     });
   };
   
@@ -195,6 +213,11 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
     setValue(fieldName, address, { shouldValidate: true, shouldDirty: true });
     togglePopover(popoverId);
   }
+  
+  const timeSlots = Array.from({ length: 10 }, (_, i) => {
+    const hour = i + 9;
+    return `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
+  });
 
   return (
     <>
@@ -432,6 +455,41 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
                   </div>
               )}
           </div>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle className="font-headline text-2xl">Schedule Your Delivery</DialogTitle>
+                <DialogDescription>
+                    Select a date and a time slot for your pickup.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <Calendar
+                    mode="single"
+                    selected={scheduledDate}
+                    onSelect={setScheduledDate}
+                    disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                    className="rounded-md border"
+                />
+                <Select onValueChange={setScheduledTime} value={scheduledTime}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a time slot" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {timeSlots.map(slot => (
+                            <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <DialogFooter>
+                <Button onClick={handleConfirmFinalSchedule} size="lg" className="w-full">
+                    Confirm Schedule
+                </Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
