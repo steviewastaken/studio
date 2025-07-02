@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
@@ -95,15 +95,15 @@ export default function DunlivrerPage() {
   const [etaResult, setEtaResult] = useState<EtaResult>(null);
   const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
 
-  const handleNewDelivery = (details: DeliveryDetails, eta: NonNullable<EtaResult>) => {
+  const handleNewDelivery = useCallback((details: DeliveryDetails, eta: NonNullable<EtaResult>) => {
     setDeliveryDetails(details);
     setEtaResult(eta);
     // Potentially redirect to tracking page or show a success modal
-  };
+  }, []);
   
-  const handleAddressChange = (addresses: { pickup: string | null; destinations: string[] }) => {
+  const handleAddressChange = useCallback((addresses: { pickup: string | null; destinations: string[] }) => {
     setPreviewAddresses(addresses);
-  };
+  }, []);
 
   return (
     <div className="w-full">
