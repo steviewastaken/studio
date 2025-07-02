@@ -6,7 +6,7 @@ import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion } from 'framer-motion';
@@ -160,6 +160,56 @@ export default function DunlivrerPage() {
                  </motion.div>
               ))}
             </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Blockchain Section */}
+      <motion.section 
+        className="py-24"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={sectionVariants}
+      >
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-2 gap-16 items-center">
+            <div className="lg:col-span-1 order-last lg:order-first">
+                <motion.div whileHover={{ y: -5, scale: 1.02, transition: { duration: 0.2 } }}>
+                    <div className="relative aspect-[4/3] rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg p-4">
+                        <Image src="https://placehold.co/600x450.png" fill alt="Blockchain illustration" className="rounded-lg object-cover" data-ai-hint="blockchain technology" />
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-lg"></div>
+                         <div className="absolute bottom-4 left-4 text-white">
+                            <h3 className="font-bold text-xl font-headline">Secure & Transparent</h3>
+                            <p className="text-sm opacity-80">Every transaction on an immutable ledger.</p>
+                         </div>
+                    </div>
+                </motion.div>
+            </div>
+            <div className="lg:col-span-1">
+                <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">Built on Trust</h2>
+                <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">Blockchain-Verified Logistics</p>
+                <p className="mt-4 text-lg text-muted-foreground">
+                    To provide ultimate transparency and security, every step of the delivery process can be recorded on a secure, immutable blockchain ledger. This builds unparalleled trust for high-value shipments and sensitive enterprise logistics.
+                </p>
+                <motion.div 
+                    className="mt-8 space-y-6"
+                    variants={staggeredContainer}
+                >
+                    <motion.div variants={itemVariants} className="flex items-start gap-4">
+                        <div className="p-3 bg-primary/20 rounded-lg text-primary"><ShieldCheck className="w-6 h-6"/></div>
+                        <div>
+                            <h3 className="font-semibold text-lg text-white">Immutable Record</h3>
+                            <p className="text-muted-foreground">Every pickup, handoff, and delivery signature is permanently and verifiably recorded, eliminating disputes.</p>
+                        </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="flex items-start gap-4">
+                        <div className="p-3 bg-primary/20 rounded-lg text-primary"><FileText className="w-6 h-6"/></div>
+                        <div>
+                            <h3 className="font-semibold text-lg text-white">Automated Smart Contracts</h3>
+                            <p className="text-muted-foreground">Payment releases and compliance checks are automated upon verified delivery, reducing overhead.</p>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            </div>
         </div>
       </motion.section>
 
