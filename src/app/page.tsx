@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot } from 'lucide-react';
 import Image from 'next/image';
+import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 
 export type EtaResult = {
   estimatedTime: string;
@@ -153,6 +154,7 @@ export default function DunlivrerPage() {
             </div>
         </div>
       </section>
+      <FloatingSupportButton />
     </div>
   );
 }

@@ -82,7 +82,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
   };
 
   return (
-    <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg flex flex-col h-[400px]">
+    <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg flex flex-col h-[65vh] min-h-[400px] max-h-[550px]">
       <CardHeader>
         <CardTitle className="font-headline text-3xl flex items-center gap-3"><Bot className="text-primary"/> AI Support</CardTitle>
         <CardDescription>{deliveryDetails ? "Ask questions about your active delivery." : "Ask general questions about our service."}</CardDescription>
