@@ -40,27 +40,18 @@ const prompt = ai.definePrompt({
   name: 'estimateETAPrompt',
   input: {schema: EstimateETAInputSchema},
   output: {schema: EstimateETAOutputSchema},
-  prompt: `You are a JSON API. Your response must be a valid JSON object and nothing else.
+  prompt: `You are a machine that only returns JSON. Do not write any text, explanation, or markdown. Your entire response MUST be a single, valid JSON object that conforms to the required schema.
 
-Your task is to estimate delivery time based on the provided details.
+Estimate a delivery time in minutes based on these details:
+Pickup: {{{pickupAddress}}}
+Destinations:
+{{#each destinationAddresses}}
+- {{{this}}}
+{{/each}}
+Package Size: {{{packageSize}}}
+Service: {{{deliveryType}}}
 
-**Delivery Details:**
-*   Pickup: {{{pickupAddress}}}
-*   Destinations: {{#each destinationAddresses}}{{{this}}}{{/each}}
-*   Package Size: {{{packageSize}}}
-*   Service: {{{deliveryType}}}
-
-You must return a JSON object with two fields:
-1.  \`estimatedTime\`: A string containing ONLY the total estimated minutes as a number (e.g., "45").
-2.  \`confidence\`: A number between 0.0 and 1.0 representing your confidence.
-
-The final output MUST be ONLY a valid JSON object. Do not add any text, explanations, or markdown.
-
-Example of a valid response:
-{
-  "estimatedTime": "35",
-  "confidence": 0.9
-}`,
+Return a JSON object with "estimatedTime" (a string of only digits) and "confidence" (a number between 0.0 and 1.0).`,
 });
 
 const estimateETAFlow = ai.defineFlow(
