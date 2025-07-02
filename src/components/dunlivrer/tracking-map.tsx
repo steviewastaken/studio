@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import type { DeliveryDetails } from "./types";
 import type { EtaResult } from "@/app/page";
 import Image from "next/image";
-import { MapPin, Package, Clock, CheckCircle2, ArrowRight, Truck } from "lucide-react";
+import { MapPin, Package, Clock, CheckCircle2, ArrowRight, Truck, Home } from "lucide-react";
 
 type TrackingMapProps = {
   deliveryDetails: DeliveryDetails | null;
@@ -66,7 +66,7 @@ export default function TrackingMap({ deliveryDetails, etaResult }: TrackingMapP
                 </div>
                 <StatusStep icon={<Package className="w-6 h-6" />} label="Scheduled" isCompleted={true} isCurrent={false} />
                 <StatusStep icon={<Truck className="w-6 h-6" />} label="In Transit" isCompleted={false} isCurrent={true} />
-                <StatusStep icon={<HomeIcon className="w-6 h-6" />} label="Delivered" isCompleted={false} isCurrent={false} />
+                <StatusStep icon={<Home className="w-6 h-6" />} label="Delivered" isCompleted={false} isCurrent={false} />
               </div>
               <Separator className="my-6" />
               <div className="flex justify-between items-center text-foreground">
@@ -84,25 +84,4 @@ export default function TrackingMap({ deliveryDetails, etaResult }: TrackingMapP
       </CardContent>
     </Card>
   );
-}
-
-
-function HomeIcon(props: React.SVGProps<SVGSVGElement>) {
-    return (
-        <svg
-        {...props}
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        >
-        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-    )
 }
