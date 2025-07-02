@@ -103,10 +103,6 @@ type MapComponentProps = {
 
 export default function MapComponent({ pickupAddress, destinationAddresses }: MapComponentProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  
-  if (typeof window !== 'undefined') {
-    console.log("Google Maps API Key Loaded:", apiKey ? "Yes" : "No. Make sure NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is in your .env file and restart the development server.");
-  }
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey || "",
