@@ -35,7 +35,9 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
             { id: 1, role: "ai", content: `Hello! I can help with questions about your delivery from ${deliveryDetails.pickupAddress}. How can I assist?` }
         ]);
     } else {
-        setMessages([]);
+        setMessages([
+            { id: 1, role: "ai", content: "Hello! I am the Dunlivrer support assistant. How can I help you today?" }
+        ]);
     }
   }, [deliveryDetails]);
 
@@ -50,14 +52,16 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !deliveryDetails) return;
+    if (!input.trim()) return;
 
     setIsLoading(true);
     const userMessage: Message = { id: Date.now(), role: "user", content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
 
-    const deliveryDetailsString = `From: ${deliveryDetails.pickupAddress}, To: ${deliveryDetails.destinationAddress}, Size: ${deliveryDetails.packageSize}`;
+    const deliveryDetailsString = deliveryDetails
+      ? `From: ${deliveryDetails.pickupAddress}, To: ${deliveryDetails.destinationAddress}, Size: ${deliveryDetails.packageSize}`
+      : undefined;
     
     const result = await handleSupportQuestion({ question: input, deliveryDetails: deliveryDetailsString });
     
@@ -77,22 +81,17 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
     setIsLoading(false);
   };
 
-  const isDisabled = !deliveryDetails;
+  const isDisabled = isLoading;
 
   return (
     <Card className="w-full shadow-lg rounded-xl flex flex-col h-[500px]">
       <CardHeader>
         <CardTitle className="font-headline text-2xl flex items-center gap-2"><Bot /> AI Support</CardTitle>
-        <CardDescription>Ask questions about your active delivery.</CardDescription>
+        <CardDescription>{deliveryDetails ? "Ask questions about your active delivery." : "Ask general questions about our service."}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
         <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
           <div className="space-y-4">
-            {isDisabled && (
-                <div className="flex items-center justify-center h-full text-center text-muted-foreground p-4">
-                    <p>Schedule a delivery to activate the support chat.</p>
-                </div>
-            )}
             {messages.map((message) => (
               <div key={message.id} className={cn("flex items-end gap-2", message.role === "user" ? "justify-end" : "justify-start")}>
                 {message.role === "ai" && (
@@ -126,11 +125,11 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isDisabled ? "No active delivery" : "Ask a question..."}
+            placeholder="Ask a question..."
             className="flex-1"
-            disabled={isLoading || isDisabled}
+            disabled={isDisabled}
           />
-          <Button type="submit" size="icon" disabled={isLoading || isDisabled}>
+          <Button type="submit" size="icon" disabled={isDisabled}>
             <Send className="h-4 w-4" />
           </Button>
         </form>
