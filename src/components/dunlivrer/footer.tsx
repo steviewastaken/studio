@@ -1,7 +1,16 @@
+"use client";
+
 import Link from 'next/link';
 import { Truck } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Footer() {
+  const [year, setYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
+
   return (
     <footer className="w-full bg-background/20 border-t border-white/5 mt-16">
       <div className="max-w-7xl mx-auto py-12 px-4 md:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -14,7 +23,7 @@ export default function Footer() {
                 Dunlivrer
               </h1>
             </div>
-          <p className="text-muted-foreground text-sm">Instant Delivery, Intelligently Done.</p>
+          <p className="text-sm text-muted-foreground">Instant Delivery, Intelligently Done.</p>
         </div>
         <div>
           <h3 className="font-semibold font-headline text-white">Company</h3>
@@ -41,7 +50,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-white/5 py-4">
-        <p className="text-center text-sm text-muted-foreground">© {new Date().getFullYear()} Dunlivrer. All rights reserved.</p>
+        <p className="text-center text-sm text-muted-foreground">© {year} Dunlivrer. All rights reserved.</p>
       </div>
     </footer>
   );
