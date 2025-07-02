@@ -20,8 +20,15 @@ const EstimateETAInputSchema = z.object({
 export type EstimateETAInput = z.infer<typeof EstimateETAInputSchema>;
 
 const EstimateETAOutputSchema = z.object({
-  estimatedTime: z.string().describe('The estimated time of arrival (ETA) in minutes.'),
-  confidence: z.number().describe('A confidence score (0-1) indicating the reliability of the ETA estimate.'),
+  estimatedTime: z
+    .string()
+    .regex(/^\d+$/, { message: 'Estimated time must be a string containing only digits.' })
+    .describe('The estimated time of arrival (ETA) in minutes, as a string containing only numbers (e.g., "45").'),
+  confidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .describe('A confidence score (0-1) indicating the reliability of the ETA estimate.'),
 });
 export type EstimateETAOutput = z.infer<typeof EstimateETAOutputSchema>;
 
@@ -33,25 +40,26 @@ const prompt = ai.definePrompt({
   name: 'estimateETAPrompt',
   input: {schema: EstimateETAInputSchema},
   output: {schema: EstimateETAOutputSchema},
-  prompt: `You are a JSON API that provides delivery time estimates. Your response MUST be a valid JSON object and nothing else.
+  prompt: `You are a JSON API. Your response must be a valid JSON object and nothing else.
 
-Based on the delivery details, provide a plausible estimated time of arrival (ETA) in minutes and a confidence score between 0.0 and 1.0.
+Your task is to estimate delivery time based on the provided details.
 
 **Delivery Details:**
-*   **Pickup:** {{{pickupAddress}}}
-*   **Destinations:**
-    {{#each destinationAddresses}}
-    *   {{{this}}}
-    {{/each}}
-*   **Package Size:** {{{packageSize}}}
-*   **Service Level:** {{{deliveryType}}}
+*   Pickup: {{{pickupAddress}}}
+*   Destinations: {{#each destinationAddresses}}{{{this}}}{{/each}}
+*   Package Size: {{{packageSize}}}
+*   Service: {{{deliveryType}}}
 
-The final output MUST be ONLY a valid JSON object conforming to the specified schema, with no extra text or explanations.
+You must return a JSON object with two fields:
+1.  \`estimatedTime\`: A string containing ONLY the total estimated minutes as a number (e.g., "45").
+2.  \`confidence\`: A number between 0.0 and 1.0 representing your confidence.
 
-**Example JSON Output:**
+The final output MUST be ONLY a valid JSON object. Do not add any text, explanations, or markdown.
+
+Example of a valid response:
 {
-  "estimatedTime": "45",
-  "confidence": 0.85
+  "estimatedTime": "35",
+  "confidence": 0.9
 }`,
 });
 
