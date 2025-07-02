@@ -101,8 +101,10 @@ type MapComponentProps = {
 };
 
 export default function MapComponent({ pickupAddress, destinationAddresses }: MapComponentProps) {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: apiKey || "",
     libraries: ['places'],
   });
 
@@ -112,6 +114,8 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
   const validDestinations = useMemo(() => destinationAddresses.filter(d => d && locationMap.has(d)), [destinationAddresses]);
 
   useEffect(() => {
+    if (!isLoaded) return;
+
     if (!pickupAddress || validDestinations.length === 0) {
       setDirections(null);
       if (pickupAddress && locationMap.has(pickupAddress)) {
@@ -140,7 +144,6 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
       {
         origin: origin,
         destination: destination,
-        waypoints: waypoints,
         travelMode: google.maps.TravelMode.DRIVING,
         optimizeWaypoints: true,
       },
@@ -152,10 +155,25 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
         }
       }
     );
-  }, [pickupAddress, validDestinations]);
+  }, [pickupAddress, validDestinations, isLoaded]);
+
+  if (!apiKey) {
+    return (
+        <div className="p-4 text-center text-sm text-destructive-foreground bg-destructive/80 h-full flex flex-col justify-center items-center">
+            <p className="font-bold text-lg">Google Maps API Key Missing</p>
+            <p className="mt-2">Please add your Google Maps API key to the <code className="bg-white/20 px-1 rounded">.env</code> file to enable map functionality.</p>
+        </div>
+    );
+  }
 
   if (loadError) {
-    return <div className="p-4 text-center text-sm text-destructive">Error loading maps. Please check your API key.</div>;
+    return (
+        <div className="p-4 text-center text-sm text-destructive-foreground bg-destructive/80 h-full flex flex-col justify-center items-center">
+            <p className="font-bold text-lg">Map Loading Error</p>
+            <p className="mt-2">This is likely due to an incorrect API key or configuration issue in your Google Cloud project.</p>
+            <p className="mt-1">Please ensure the Maps JavaScript API is enabled and billing is configured.</p>
+        </div>
+    );
   }
 
   if (!isLoaded) {
