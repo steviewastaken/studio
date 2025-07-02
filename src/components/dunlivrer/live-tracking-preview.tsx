@@ -1,8 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Image from "next/image";
 import { MapPin, ArrowRight } from "lucide-react";
+import MapComponent from "./map-component";
 
 type LiveTrackingPreviewProps = {
   pickupAddress: string | null;
@@ -19,10 +19,12 @@ export default function LiveTrackingPreview({ pickupAddress, destinationAddresse
       </CardHeader>
       <CardContent>
         <div className="relative mt-4 aspect-[16/10] bg-muted/50 rounded-lg overflow-hidden border border-white/10">
-          <Image src="https://placehold.co/800x500.png" alt="Map of delivery route" fill data-ai-hint="dark city map" className="object-cover opacity-50 transition-opacity" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-          {hasAddresses ? (
-              <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10">
+          <MapComponent 
+            pickupAddress={pickupAddress}
+            destinationAddresses={destinationAddresses}
+          />
+          {hasAddresses && (
+              <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10 pointer-events-none">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2 truncate">
                         <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -30,21 +32,13 @@ export default function LiveTrackingPreview({ pickupAddress, destinationAddresse
                     </div>
                     <ArrowRight className="w-5 h-5 text-muted-foreground mx-2 shrink-0" />
                     <div className="flex flex-col items-end gap-1 truncate text-right">
-                        {destinationAddresses.map((dest, i) => (
+                        {destinationAddresses.filter(d => d).map((dest, i) => (
                             <div key={i} className="flex items-center gap-2">
                                 <span className="font-medium truncate">{dest}</span>
                                 <MapPin className="w-4 h-4 text-accent shrink-0" />
                             </div>
                         ))}
                     </div>
-                </div>
-            </div>
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center p-8 bg-black/30 backdrop-blur-sm rounded-lg">
-                    <MapPin className="mx-auto w-12 h-12 text-primary/50" />
-                    <p className="font-semibold mt-4 text-lg">Route Preview</p>
-                    <p className="text-sm text-muted-foreground">Select pickup & destination to see the route.</p>
                 </div>
             </div>
           )}

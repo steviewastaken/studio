@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { DeliveryDetails } from "./types";
 import type { EtaResult } from "@/app/page";
-import Image from "next/image";
-import { MapPin, Package, Clock, CheckCircle2, ArrowRight, Truck, Home } from "lucide-react";
+import { MapPin, Package, Clock, CheckCircle2, Truck, Home, ArrowRight } from "lucide-react";
+import MapComponent from "./map-component";
 
 type TrackingMapProps = {
   deliveryDetails: DeliveryDetails | null;
@@ -23,6 +23,9 @@ function StatusStep({ icon, label, isCompleted, isCurrent }: { icon: React.React
 }
 
 export default function TrackingMap({ deliveryDetails, etaResult }: TrackingMapProps) {
+  const pickup = deliveryDetails?.pickupAddress ?? null;
+  const destinations = deliveryDetails?.destinationAddresses ?? [];
+  
   return (
     <Card className="w-full h-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
       <CardHeader>
@@ -30,10 +33,12 @@ export default function TrackingMap({ deliveryDetails, etaResult }: TrackingMapP
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
         <div className="relative aspect-[16/10] bg-muted/50 rounded-lg overflow-hidden border border-white/10">
-          <Image src="https://placehold.co/800x500.png" alt="Map of delivery route" fill data-ai-hint="dark city map" className="object-cover opacity-50 group-hover:opacity-75 transition-opacity" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+          <MapComponent 
+            pickupAddress={pickup}
+            destinationAddresses={destinations}
+          />
           {deliveryDetails ? (
-             <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10">
+             <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10 pointer-events-none">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2 truncate">
                         <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -55,7 +60,7 @@ export default function TrackingMap({ deliveryDetails, etaResult }: TrackingMapP
                 <div className="text-center p-8 bg-black/30 backdrop-blur-sm rounded-lg">
                     <MapPin className="mx-auto w-12 h-12 text-primary/50" />
                     <p className="font-semibold mt-4 text-lg">No Active Delivery</p>
-                    <p className="text-sm text-muted-foreground">Schedule a new delivery to see it here.</p>
+                    <p className="text-sm text-muted-foreground">Enter a tracking ID to see its route.</p>
                 </div>
             </div>
           )}
