@@ -45,7 +45,12 @@ const prompt = ai.definePrompt({
   Package Size: {{{packageSize}}}
   Delivery Type: {{{deliveryType}}}
 
-  Provide your estimate in minutes and include a confidence score (0-1) for how reliable you believe your estimate is. The output must be parsable as a JSON object.`,
+  Provide your estimate in minutes and include a confidence score (0-1) for how reliable you believe your estimate is.
+  The output MUST be a valid JSON object. For example:
+  {
+    "estimatedTime": "35",
+    "confidence": 0.9
+  }`,
 });
 
 const estimateETAFlow = ai.defineFlow(
@@ -56,6 +61,9 @@ const estimateETAFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('The AI model failed to return a valid estimate.');
+    }
+    return output;
   }
 );

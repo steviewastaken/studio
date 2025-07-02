@@ -62,7 +62,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
   const { watch, setValue } = form;
 
   useEffect(() => {
-    const subscription = watch((value, { name }) => {
+    const subscription = watch((value) => {
         const { pickupAddress, destinationAddresses } = value as z.infer<typeof formSchema>;
         const destinations = destinationAddresses?.map(d => d.value).filter(Boolean) || [];
         onAddressChange({
@@ -186,7 +186,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
                           >
                             <div className="flex items-center gap-2 truncate">
                                <MapPin className="w-4 h-4 shrink-0" />
-                               <span className="truncate">{field.value || "Select pickup location..."}</span>
+                               <span className="truncate">{locations.find(l => l.address === field.value)?.name || "Select pickup location..."}</span>
                             </div>
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
