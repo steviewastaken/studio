@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -7,17 +8,19 @@ import * as z from 'zod';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, DollarSign, Loader2, Send, BookMarked, Percent, Package2 } from 'lucide-react';
+import { Clock, DollarSign, Loader2, Send, Percent, Package2, ChevronsUpDown, Check, MapPin } from 'lucide-react';
 import { handleETASubmission } from '@/lib/actions';
 import type { DeliveryDetails } from './types';
 import type { EtaResult } from '@/app/page';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
 
 const formSchema = z.object({
-  pickupAddress: z.string().min(5, "Please enter a valid address."),
-  destinationAddress: z.string().min(5, "Please enter a valid address."),
+  pickupAddress: z.string({ required_error: "Please select a pickup location."}).min(1, "Please select a pickup location."),
+  destinationAddress: z.string({ required_error: "Please select a destination."}).min(1, "Please select a destination."),
   packageSize: z.enum(['small', 'medium', 'large']),
 });
 
@@ -27,6 +30,9 @@ const addresses = [
   { name: 'Airport <> Hotel', pickup: 'Anytown International Airport', destination: 'Grand Hotel Anytown' },
 ];
 
+const allAddresses = addresses.flatMap(a => [a.pickup, a.destination]);
+const locations = [...new Set(allAddresses)];
+
 const packageCosts = { small: 5, medium: 10, large: 15 };
 
 type DeliveryFormProps = {
@@ -35,6 +41,8 @@ type DeliveryFormProps = {
 
 export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
   const [etaResult, setEtaResult] = useState<EtaResult>(null);
+  const [pickupOpen, setPickupOpen] = useState(false);
+  const [destinationOpen, setDestinationOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -66,14 +74,6 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
       });
     }
   }
-
-  const handleAddressSelect = (value: string) => {
-    const selected = addresses.find(a => a.name === value);
-    if (selected) {
-      form.setValue('pickupAddress', selected.pickup);
-      form.setValue('destinationAddress', selected.destination);
-    }
-  };
   
   const selectedPackageSize = form.watch('packageSize');
   const cost = packageCosts[selectedPackageSize] + (etaResult ? parseFloat(etaResult.estimatedTime) * 0.25 : 0);
@@ -87,29 +87,58 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
             <CardDescription>Get an instant price and ETA with our AI-powered engine.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-4">
-               <Select onValueChange={handleAddressSelect}>
-                <SelectTrigger className="h-12">
-                  <div className="flex items-center gap-2">
-                    <BookMarked className="w-4 h-4 text-muted-foreground" />
-                    <SelectValue placeholder="Load from Address Book" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {addresses.map(addr => (
-                    <SelectItem key={addr.name} value={addr.name}>{addr.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormField
+            <FormField
                 control={form.control}
                 name="pickupAddress"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Pickup Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 123 Main St" {...field} className="h-12" />
-                    </FormControl>
+                    <Popover open={pickupOpen} onOpenChange={setPickupOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={pickupOpen}
+                            className={cn(
+                              "w-full justify-between h-12 text-sm",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                               <MapPin className="w-4 h-4 shrink-0" />
+                               {field.value || "Select pickup location..."}
+                            </div>
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                          <ScrollArea className="h-64">
+                            {locations.map((location) => (
+                               <Button
+                                    variant="ghost"
+                                    key={location}
+                                    onClick={() => {
+                                        form.setValue("pickupAddress", location)
+                                        setPickupOpen(false)
+                                    }}
+                                    className="w-full justify-start h-auto py-2 text-left"
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4 shrink-0",
+                                            location === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                    />
+                                    <span className="whitespace-normal break-words">{location}</span>
+                                </Button>
+                            ))}
+                          </ScrollArea>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -118,11 +147,54 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
                 control={form.control}
                 name="destinationAddress"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Destination Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 456 Oak Ave" {...field} className="h-12" />
-                    </FormControl>
+                    <Popover open={destinationOpen} onOpenChange={setDestinationOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                           <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={destinationOpen}
+                            className={cn(
+                              "w-full justify-between h-12 text-sm",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                               <MapPin className="w-4 h-4 shrink-0 text-accent" />
+                               {field.value || "Select destination location..."}
+                            </div>
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                          <ScrollArea className="h-64">
+                            {locations.map((location) => (
+                               <Button
+                                    variant="ghost"
+                                    key={location}
+                                    onClick={() => {
+                                        form.setValue("destinationAddress", location)
+                                        setDestinationOpen(false)
+                                    }}
+                                    className="w-full justify-start h-auto py-2 text-left"
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4 shrink-0",
+                                            location === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                    />
+                                    <span className="whitespace-normal break-words">{location}</span>
+                                </Button>
+                            ))}
+                          </ScrollArea>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -148,7 +220,6 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
                   </FormItem>
                 )}
               />
-            </div>
           </CardContent>
           <CardFooter className="flex flex-col items-stretch gap-4">
             <Button type="submit" disabled={isSubmitting} size="lg" className="w-full transition-all duration-300 ease-in-out shadow-lg shadow-primary/20 hover:shadow-primary/40">
