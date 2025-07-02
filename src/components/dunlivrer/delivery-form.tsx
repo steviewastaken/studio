@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, ChevronsUpDown, Check, MapPin, Trash2, PlusCircle, Truck, CheckCircle2 } from 'lucide-react';
-import { handleFindDriver } from '@/lib/actions';
+import { Clock, Loader2, Send, Package2, ChevronsUpDown, Check, MapPin, Trash2, PlusCircle, Truck, CheckCircle2, DollarSign, Milestone, Timer } from 'lucide-react';
+import { handleFindDriver, handleGetQuote } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import type { FindDriverOutput } from '@/ai/flows/find-driver';
+import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import { locations } from '@/lib/locations';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
@@ -41,6 +42,8 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   const [isReviewed, setIsReviewed] = useState(false);
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
   const [isFindingDriver, setIsFindingDriver] = useState(false);
+  const [isGettingQuote, setIsGettingQuote] = useState(false);
+  const [quote, setQuote] = useState<GetQuoteOutput | null>(null);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
@@ -62,9 +65,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     name: "destinationAddresses"
   });
 
-  const { isSubmitting } = form.formState;
-
-  const { watch, setValue, trigger } = form;
+  const { watch, setValue } = form;
 
   const handleAddressChangeCallback = useCallback((value: z.infer<typeof formSchema>) => {
     const { pickupAddress, destinationAddresses } = value;
@@ -76,23 +77,45 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   }, [onAddressChange]);
 
   useEffect(() => {
-    const subscription = watch(handleAddressChangeCallback);
+    const subscription = watch((value) => {
+        handleAddressChangeCallback(value as z.infer<typeof formSchema>);
+        setIsReviewed(false);
+        setQuote(null);
+    });
     return () => subscription.unsubscribe();
   }, [watch, handleAddressChangeCallback]);
 
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    const isValid = await trigger();
-    if (isValid) {
-      setIsReviewed(true);
-      toast({
-        title: "Details Confirmed",
-        description: "Please proceed by dispatching now or scheduling for later.",
-      });
+  async function onGetQuote(values: z.infer<typeof formSchema>) {
+    setIsGettingQuote(true);
+    setQuote(null);
+
+    const result = await handleGetQuote({
+        pickupAddress: values.pickupAddress,
+        destinationAddresses: values.destinationAddresses.map(d => d.value),
+        packageSize: values.packageSize,
+        deliveryType: values.deliveryType,
+    });
+    
+    if (result.success && result.data) {
+        setQuote(result.data);
+        setIsReviewed(true);
+        toast({
+            title: "Quote Generated!",
+            description: "Review your quote below and proceed to dispatch.",
+        });
+    } else {
+        toast({
+            variant: 'destructive',
+            title: "Quotation Failed",
+            description: result.error,
+        });
     }
+
+    setIsGettingQuote(false);
   }
 
-  const handleConfirmSchedule = async () => {
+  const handleConfirmDispatch = async () => {
     const pickupAddress = form.getValues('pickupAddress');
     if (!pickupAddress) {
         toast({
@@ -134,6 +157,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     setIsScheduling(false);
     setDriverDetails(null); // Reset driver details
     setIsReviewed(false); // Reset form state
+    setQuote(null);
     form.reset();
     toast({
       title: 'Delivery Scheduled!',
@@ -147,7 +171,6 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
 
   const setLocation = (fieldName: "pickupAddress" | `destinationAddresses.${number}.value`, address: string, popoverId: string) => {
     setValue(fieldName, address, { shouldValidate: true, shouldDirty: true });
-    setIsReviewed(false); // Reset review state on change
     togglePopover(popoverId);
   }
   
@@ -155,17 +178,12 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     const hour = i + 9;
     return `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
   });
-  
-  const handleFormValueChange = (value: any) => {
-    setIsReviewed(false);
-    return value;
-  }
 
   return (
     <>
       <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onGetQuote)}>
             <CardHeader>
               <CardTitle className="font-headline text-3xl flex items-center gap-3"><Package2 className="text-primary"/>Book a Delivery</CardTitle>
               <CardDescription>Fill in your delivery details. Add multiple destinations for a smart route.</CardDescription>
@@ -261,7 +279,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                                   </PopoverContent>
                                   </Popover>
                                   {fields.length > 1 && (
-                                      <Button variant="ghost" size="icon" onClick={() => { remove(index); setIsReviewed(false); }} className="shrink-0">
+                                      <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0">
                                           <Trash2 className="w-4 h-4 text-destructive"/>
                                       </Button>
                                   )}
@@ -271,7 +289,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                       );
                   })}
                   <FormMessage>{form.formState.errors.destinationAddresses?.root?.message}</FormMessage>
-                  <Button type="button" variant="outline" size="sm" onClick={() => { append({ value: "" }); setIsReviewed(false); }}>
+                  <Button type="button" variant="outline" size="sm" onClick={() => append({ value: "" })}>
                       <PlusCircle className="mr-2"/> Add another destination
                   </Button>
                 </div>
@@ -283,7 +301,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                       render={({ field }) => (
                       <FormItem>
                           <FormLabel>Package Size</FormLabel>
-                          <Select onValueChange={(value) => { field.onChange(value); setIsReviewed(false); }} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                               <SelectTrigger className="h-12">
                               <SelectValue placeholder="Select a size" />
@@ -304,7 +322,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                       render={({ field }) => (
                       <FormItem>
                           <FormLabel>Delivery Type</FormLabel>
-                          <Select onValueChange={(value) => { field.onChange(value); setIsReviewed(false); }} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                               <SelectTrigger className="h-12">
                                   <SelectValue placeholder="Select delivery type" />
@@ -323,20 +341,37 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
 
             </CardContent>
             <CardFooter className="flex flex-col items-stretch gap-4">
-              <Button type="submit" disabled={isSubmitting || isReviewed} size="lg" className="w-full transition-all duration-300 ease-in-out shadow-lg shadow-primary/20 hover:shadow-primary/40">
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                {isReviewed ? 'Details Confirmed' : 'Confirm Details'}
+              <Button type="submit" disabled={isGettingQuote || isReviewed} size="lg" className="w-full transition-all duration-300 ease-in-out shadow-lg shadow-primary/20 hover:shadow-primary/40">
+                {isGettingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                {isReviewed ? 'Quote Received' : 'Get Quote'}
               </Button>
-              {isReviewed && (
+              {isReviewed && quote && (
                 <div className="w-full pt-4 mt-4 border-t border-white/10 border-dashed animate-in fade-in-0 slide-in-from-bottom-5">
-                    <div className="flex flex-col gap-4">
-                        <p className="text-sm text-center text-muted-foreground">Ready to go? Confirm now for immediate dispatch or schedule for a later time.</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                            <div className="p-4 bg-muted rounded-lg">
+                                <DollarSign className="mx-auto text-primary h-6 w-6 mb-2"/>
+                                <p className="text-xs text-muted-foreground">Price</p>
+                                <p className="font-bold text-lg">${quote.price.toFixed(2)}</p>
+                            </div>
+                             <div className="p-4 bg-muted rounded-lg">
+                                <Milestone className="mx-auto text-primary h-6 w-6 mb-2"/>
+                                <p className="text-xs text-muted-foreground">Distance</p>
+                                <p className="font-bold text-lg">{quote.distance}</p>
+                            </div>
+                             <div className="p-4 bg-muted rounded-lg">
+                                <Timer className="mx-auto text-primary h-6 w-6 mb-2"/>
+                                <p className="text-xs text-muted-foreground">ETA</p>
+                                <p className="font-bold text-lg">{quote.eta}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                             <Button type="button" variant="outline" size="lg" onClick={handleScheduleForLater}>
                                 <Clock className="mr-2 h-4 w-4" />
                                 Schedule for Later
                             </Button>
-                            <Button type="button" onClick={handleConfirmSchedule} size="lg">
+                            <Button type="button" onClick={handleConfirmDispatch} size="lg">
                                 {isFindingDriver ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
                                 {isFindingDriver ? 'Finding Driver...' : 'Dispatch Now'}
                             </Button>

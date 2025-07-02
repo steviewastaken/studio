@@ -8,6 +8,10 @@ import {
   findDriver as findDriverFlow,
   type FindDriverInput,
 } from '@/ai/flows/find-driver';
+import {
+  getQuote as getQuoteFlow,
+  type GetQuoteInput,
+} from '@/ai/flows/get-quote';
 
 export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   try {
@@ -26,5 +30,15 @@ export async function handleFindDriver(data: FindDriverInput) {
   } catch (error) {
     console.error(error);
     return { success: false, error: 'Failed to find a driver. Please try again later.' };
+  }
+}
+
+export async function handleGetQuote(data: GetQuoteInput) {
+  try {
+    const result = await getQuoteFlow(data);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: 'Failed to generate a quote. Please try again.' };
   }
 }
