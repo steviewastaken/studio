@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, DollarSign, Loader2, Send, Percent, Package2, ChevronsUpDown, Check, MapPin, Trash2, PlusCircle, Zap, Moon } from 'lucide-react';
+import { Clock, Euro, Loader2, Send, Percent, Package2, ChevronsUpDown, Check, MapPin, Trash2, PlusCircle, Zap, Moon } from 'lucide-react';
 import { handleETASubmission } from '@/lib/actions';
 import type { DeliveryDetails } from './types';
 import type { EtaResult } from '@/app/page';
@@ -31,10 +31,10 @@ const formSchema = z.object({
 });
 
 const addresses = [
-  { name: 'Home <> Office', pickup: '123 Main St, Anytown, USA', destination: '456 Business Ave, Anytown, USA' },
-  { name: 'Warehouse <> Downtown', pickup: '789 Industrial Rd, Anytown, USA', destination: '101 City Center, Anytown, USA' },
-  { name: 'Airport <> Hotel', pickup: 'Anytown International Airport', destination: 'Grand Hotel Anytown' },
-  { name: 'Suburb Plaza <> North District', pickup: '55 Suburb Plaza, Anytown, USA', destination: '88 North Point, Anytown, USA' },
+  { name: 'Louvre <> Champs-Élysées', pickup: '1 Rue de la Légion d\'Honneur, 75007 Paris', destination: '99 Av. des Champs-Élysées, 75008 Paris' },
+  { name: 'Gare du Nord <> La Défense', pickup: '18 Rue de Dunkerque, 75010 Paris', destination: '1 Parvis de la Défense, 92800 Puteaux' },
+  { name: 'CDG Airport <> Le Marais', pickup: 'Charles de Gaulle Airport, 95700 Roissy-en-France', destination: 'Place des Vosges, 75004 Paris' },
+  { name: 'Opéra Garnier <> Montmartre', pickup: 'Place de l\'Opéra, 75009 Paris', destination: 'Place du Tertre, 75018 Paris' },
 ];
 
 const allAddresses = addresses.flatMap(a => [a.pickup, a.destination]);
@@ -349,8 +349,8 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
               <Card className="bg-muted/50 dark:bg-muted/20 border-dashed">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="flex items-center gap-2 text-muted-foreground"><DollarSign className="w-4 h-4" /> Estimated Cost</span>
-                    <span className="font-bold text-lg text-primary">${cost.toFixed(2)}</span>
+                    <span className="flex items-center gap-2 text-muted-foreground"><Euro className="w-4 h-4" /> Estimated Cost</span>
+                    <span className="font-bold text-lg text-primary">€{cost.toFixed(2)}</span>
                   </div>
                    <div className="flex justify-between items-center text-sm">
                     <span className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4" /> Estimated Total Time</span>
