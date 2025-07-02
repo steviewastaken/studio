@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, DollarSign, Loader2, Send, Percent, Package2, ChevronsUpDown, Check, MapPin, Trash2, PlusCircle } from 'lucide-react';
+import { Clock, DollarSign, Loader2, Send, Percent, Package2, ChevronsUpDown, Check, MapPin, Trash2, PlusCircle, Zap, Moon } from 'lucide-react';
 import { handleETASubmission } from '@/lib/actions';
 import type { DeliveryDetails } from './types';
 import type { EtaResult } from '@/app/page';
@@ -27,6 +27,7 @@ const formSchema = z.object({
     })
   ).min(1, "Please add at least one destination."),
   packageSize: z.enum(['small', 'medium', 'large']),
+  deliveryType: z.enum(['standard', 'express', 'night']),
 });
 
 const addresses = [
@@ -38,8 +39,6 @@ const addresses = [
 
 const allAddresses = addresses.flatMap(a => [a.pickup, a.destination]);
 const locations = [...new Set(allAddresses)];
-
-const packageCosts = { small: 5, medium: 10, large: 15 };
 
 type DeliveryFormProps = {
   onNewDelivery: (details: DeliveryDetails, eta: NonNullable<EtaResult>) => void;
@@ -56,6 +55,7 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
       pickupAddress: "",
       destinationAddresses: [{ value: "" }],
       packageSize: "medium",
+      deliveryType: "standard",
     },
   });
 
@@ -72,6 +72,7 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
       pickupAddress: values.pickupAddress,
       destinationAddresses: values.destinationAddresses.map(d => d.value),
       packageSize: values.packageSize,
+      deliveryType: values.deliveryType,
     };
 
     const result = await handleETASubmission(etaInput);
@@ -80,12 +81,13 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
       const deliveryDetails: DeliveryDetails = {
         pickupAddress: values.pickupAddress,
         destinationAddresses: values.destinationAddresses.map(d => d.value),
-        packageSize: values.packageSize
+        packageSize: values.packageSize,
+        deliveryType: values.deliveryType
       };
       onNewDelivery(deliveryDetails, result.data);
       toast({
-        title: "Delivery Scheduled!",
-        description: "Your ETA is ready and you can now track your package.",
+        title: "Quote Ready!",
+        description: "Your delivery has been quoted. Review the details below.",
       });
     } else {
       toast({
@@ -96,8 +98,67 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
     }
   }
   
-  const selectedPackageSize = form.watch('packageSize');
-  const cost = packageCosts[selectedPackageSize] + (etaResult ? parseFloat(etaResult.estimatedTime) * 0.25 : 0) * fields.length;
+  const calculateCost = (values: z.infer<typeof formSchema>, eta: EtaResult): number => {
+    if (!eta) return 0;
+
+    let totalCost = 0;
+
+    // 1. Base Fare (hardcoded for MVP, e.g., Tier 1 city)
+    const baseFare = 5.00;
+    totalCost += baseFare;
+
+    // 2. Distance Cost (using ETA as a proxy for distance)
+    // Assuming average city speed of 24km/h (0.4 km/min) to convert time to distance
+    const estimatedDistance = parseFloat(eta.estimatedTime) * 0.4;
+    const extraDistance = Math.max(0, estimatedDistance - 2); // Distance beyond base 2km
+
+    if (extraDistance > 0) {
+        if (estimatedDistance <= 5) {
+            totalCost += extraDistance * 1.00;
+        } else if (estimatedDistance <= 10) {
+            const slab1Dist = 3; // 2km to 5km
+            const slab2Dist = estimatedDistance - 5;
+            totalCost += (slab1Dist * 1.00) + (slab2Dist * 0.80);
+        } else if (estimatedDistance <= 20) {
+            const slab1Dist = 3;
+            const slab2Dist = 5;
+            const slab3Dist = estimatedDistance - 10;
+            totalCost += (slab1Dist * 1.00) + (slab2Dist * 0.80) + (slab3Dist * 0.70);
+        } else {
+            const slab1Dist = 3;
+            const slab2Dist = 5;
+            const slab3Dist = 10;
+            const slab4Dist = estimatedDistance - 20;
+            totalCost += (slab1Dist * 1.00) + (slab2Dist * 0.80) + (slab3Dist * 0.70) + (slab4Dist * 0.60);
+        }
+    }
+
+    // 3. Weight Surcharge (mapping package size to weight tiers)
+    const { packageSize } = values;
+    if (packageSize === 'medium') { // Corresponds to 3-5kg tier
+        totalCost += 1.00;
+    } else if (packageSize === 'large') { // Corresponds to 5-10kg tier
+        totalCost += 2.00;
+    }
+
+    // 4. Speed & Time Surcharges
+    const { deliveryType } = values;
+    if (deliveryType === 'express') {
+        totalCost += 3.00;
+    } else if (deliveryType === 'night') {
+        totalCost += 2.50;
+    }
+
+    // 5. Bonus: Multi-Drop Discount
+    if (values.destinationAddresses.length > 1) {
+        totalCost *= 0.90; // Apply 10% discount
+    }
+    
+    return totalCost;
+  };
+  
+  const formValues = form.watch();
+  const cost = calculateCost(formValues, etaResult);
 
   return (
     <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
@@ -232,33 +293,57 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
                     <PlusCircle className="mr-2"/> Add another destination
                 </Button>
               </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="packageSize"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Package Size</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Select a size" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="small">Small (Up to 3kg)</SelectItem>
+                            <SelectItem value="medium">Medium (3-5kg)</SelectItem>
+                            <SelectItem value="large">Large (5-10kg)</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="deliveryType"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Delivery Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger className="h-12">
+                                <SelectValue placeholder="Select delivery type" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="standard">Standard</SelectItem>
+                            <SelectItem value="express">Express (&lt;1 hr)</SelectItem>
+                            <SelectItem value="night">Night Delivery</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    </FormItem>
+                    )}
+                />
+              </div>
 
-              <FormField
-                control={form.control}
-                name="packageSize"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Package Size</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="h-12">
-                          <SelectValue placeholder="Select a size" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="small">Small (Up to 1kg)</SelectItem>
-                        <SelectItem value="medium">Medium (1-5kg)</SelectItem>
-                        <SelectItem value="large">Large (5-10kg)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
           </CardContent>
           <CardFooter className="flex flex-col items-stretch gap-4">
             <Button type="submit" disabled={isSubmitting} size="lg" className="w-full transition-all duration-300 ease-in-out shadow-lg shadow-primary/20 hover:shadow-primary/40">
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-              Estimate & Schedule
+              Get Quote & Schedule
             </Button>
             {etaResult && (
               <Card className="bg-muted/50 dark:bg-muted/20 border-dashed">

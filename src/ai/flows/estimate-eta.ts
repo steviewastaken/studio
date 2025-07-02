@@ -15,6 +15,7 @@ const EstimateETAInputSchema = z.object({
   pickupAddress: z.string().describe('The pickup address for the delivery.'),
   destinationAddresses: z.array(z.string()).describe('A list of destination addresses for the delivery.'),
   packageSize: z.enum(['small', 'medium', 'large']).describe('The size of the package being delivered.'),
+  deliveryType: z.enum(['standard', 'express', 'night']).describe('The type of delivery service requested (e.g., standard, express). This will affect the urgency.'),
 });
 export type EstimateETAInput = z.infer<typeof EstimateETAInputSchema>;
 
@@ -32,7 +33,9 @@ const prompt = ai.definePrompt({
   name: 'estimateETAPrompt',
   input: {schema: EstimateETAInputSchema},
   output: {schema: EstimateETAOutputSchema},
-  prompt: `You are a delivery time estimator. You take into account the pickup address, a list of destination addresses, and package size to estimate the total delivery time in minutes for a multi-drop route. You should optimize the order of the destinations to create the most efficient route.
+  prompt: `You are a delivery time estimator. You take into account the pickup address, a list of destination addresses, package size, and delivery type to estimate the total delivery time in minutes for a multi-drop route. You should optimize the order of the destinations to create the most efficient route.
+
+  An 'express' delivery must be prioritized and should have a shorter ETA than a 'standard' or 'night' delivery. A 'night' delivery may take longer due to reduced traffic but also fewer available drivers.
 
   Pickup Address: {{{pickupAddress}}}
   Destination Addresses:
@@ -40,6 +43,7 @@ const prompt = ai.definePrompt({
   - {{{this}}}
   {{/each}}
   Package Size: {{{packageSize}}}
+  Delivery Type: {{{deliveryType}}}
 
   Provide your estimate in minutes and include a confidence score (0-1) for how reliable you believe your estimate is. The output must be parsable as a JSON object.`,
 });
