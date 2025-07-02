@@ -53,23 +53,18 @@ Base the price on the following:
 - Calculate a realistic total travel time in minutes.
 
 Pickup: {{{pickupAddress}}}
-Destinations: {{#each destinationAddresses}}- {{{this}}}{{/each}}
+Destinations:
+{{#each destinationAddresses}}
+- {{{this}}}
+{{/each}}
 Package Size: {{{packageSize}}}
 Delivery Type: {{{deliveryType}}}
 
-Provide the response ONLY in the specified JSON format.
+Provide the response ONLY in the specified JSON format. Do not add any extra text or explanations.
 
-Example Input:
+Example of a valid response for a 4.2 km express delivery of a medium package:
 {
-  "pickupAddress": "Eiffel Tower, Paris, France",
-  "destinationAddresses": ["Louvre Museum, Paris, France"],
-  "packageSize": "medium",
-  "deliveryType": "express"
-}
-
-Example Output:
-{
-  "price": 24.50,
+  "price": 21.45,
   "distance": "4.2 km",
   "eta": "15 minutes"
 }
