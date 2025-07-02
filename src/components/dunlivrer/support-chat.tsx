@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { handleSupportQuestion } from "@/lib/actions";
@@ -36,7 +36,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
         ]);
     } else {
         setMessages([
-            { id: 1, role: "ai", content: "Hello! I am the Dunlivrer support assistant. How can I help you today?" }
+            { id: 1, role: "ai", content: "Hello! I'm the Dunlivrer AI assistant. Feel free to ask me any general questions about our services." }
         ]);
     }
   }, [deliveryDetails]);
@@ -52,7 +52,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
     setIsLoading(true);
     const userMessage: Message = { id: Date.now(), role: "user", content: input };
@@ -81,56 +81,54 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
     setIsLoading(false);
   };
 
-  const isDisabled = isLoading;
-
   return (
-    <Card className="w-full shadow-lg rounded-xl flex flex-col h-[500px]">
+    <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg flex flex-col h-[400px]">
       <CardHeader>
-        <CardTitle className="font-headline text-2xl flex items-center gap-2"><Bot /> AI Support</CardTitle>
+        <CardTitle className="font-headline text-3xl flex items-center gap-3"><Bot className="text-primary"/> AI Support</CardTitle>
         <CardDescription>{deliveryDetails ? "Ask questions about your active delivery." : "Ask general questions about our service."}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
         <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map((message) => (
-              <div key={message.id} className={cn("flex items-end gap-2", message.role === "user" ? "justify-end" : "justify-start")}>
+              <div key={message.id} className={cn("flex items-start gap-3", message.role === "user" ? "justify-end" : "justify-start")}>
                 {message.role === "ai" && (
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground"><Bot className="w-5 h-5" /></AvatarFallback>
+                  <Avatar className="w-8 h-8 border border-primary/50">
+                    <AvatarFallback className="bg-primary/20 text-primary"><Bot className="w-5 h-5" /></AvatarFallback>
                   </Avatar>
                 )}
-                <div className={cn("rounded-lg px-3 py-2 max-w-[80%] break-words", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted")}>
-                  <p className="text-sm">{message.content}</p>
+                <div className={cn("rounded-xl px-4 py-2 max-w-[80%] break-words text-sm", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted")}>
+                  <p>{message.content}</p>
                 </div>
                 {message.role === "user" && (
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-accent text-accent-foreground"><User className="w-5 h-5" /></AvatarFallback>
+                   <Avatar className="w-8 h-8 border border-accent/50">
+                    <AvatarFallback className="bg-accent/20 text-accent"><User className="w-5 h-5" /></AvatarFallback>
                   </Avatar>
                 )}
               </div>
             ))}
             {isLoading && (
-                 <div className="flex items-end gap-2 justify-start">
-                    <Avatar className="w-8 h-8">
-                        <AvatarFallback className="bg-primary text-primary-foreground"><Bot className="w-5 h-5" /></AvatarFallback>
+                 <div className="flex items-start gap-3 justify-start">
+                    <Avatar className="w-8 h-8 border border-primary/50">
+                        <AvatarFallback className="bg-primary/20 text-primary"><Bot className="w-5 h-5" /></AvatarFallback>
                     </Avatar>
-                    <div className="rounded-lg px-3 py-2 bg-muted">
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground"/>
+                    <div className="rounded-xl px-4 py-3 bg-muted">
+                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground"/>
                     </div>
                 </div>
             )}
           </div>
         </ScrollArea>
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 pt-2 border-t">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 pt-4 border-t border-white/10">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question..."
-            className="flex-1"
-            disabled={isDisabled}
+            placeholder="Ask anything..."
+            className="flex-1 h-12 bg-transparent"
+            disabled={isLoading}
           />
-          <Button type="submit" size="icon" disabled={isDisabled}>
-            <Send className="h-4 w-4" />
+          <Button type="submit" size="icon" className="h-12 w-12 shrink-0" disabled={isLoading}>
+            <Send className="h-5 w-5" />
           </Button>
         </form>
       </CardContent>

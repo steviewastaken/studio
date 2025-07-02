@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, DollarSign, Loader2, Send, BookMarked, Percent } from 'lucide-react';
+import { Clock, DollarSign, Loader2, Send, BookMarked, Percent, Package2 } from 'lucide-react';
 import { handleETASubmission } from '@/lib/actions';
 import type { DeliveryDetails } from './types';
 import type { EtaResult } from '@/app/page';
@@ -55,8 +55,8 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
       setEtaResult(result.data);
       onNewDelivery(values, result.data);
       toast({
-        title: "ETA Estimated!",
-        description: "Your new delivery has been scheduled.",
+        title: "Delivery Scheduled!",
+        description: "Your ETA is ready and you can now track your package.",
       });
     } else {
       toast({
@@ -79,17 +79,17 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
   const cost = packageCosts[selectedPackageSize] + (etaResult ? parseFloat(etaResult.estimatedTime) * 0.25 : 0);
 
   return (
-    <Card className="w-full shadow-lg rounded-xl">
+    <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardHeader>
-            <CardTitle className="font-headline text-2xl">New Delivery</CardTitle>
-            <CardDescription>Enter details to get an ETA and cost estimate.</CardDescription>
+            <CardTitle className="font-headline text-3xl flex items-center gap-3"><Package2 className="text-primary"/>Book a Delivery</CardTitle>
+            <CardDescription>Get an instant price and ETA with our AI-powered engine.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
                <Select onValueChange={handleAddressSelect}>
-                <SelectTrigger>
+                <SelectTrigger className="h-12">
                   <div className="flex items-center gap-2">
                     <BookMarked className="w-4 h-4 text-muted-foreground" />
                     <SelectValue placeholder="Load from Address Book" />
@@ -108,7 +108,7 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
                   <FormItem>
                     <FormLabel>Pickup Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 123 Main St" {...field} />
+                      <Input placeholder="e.g., 123 Main St" {...field} className="h-12" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -121,7 +121,7 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
                   <FormItem>
                     <FormLabel>Destination Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 456 Oak Ave" {...field} />
+                      <Input placeholder="e.g., 456 Oak Ave" {...field} className="h-12" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -135,14 +135,14 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
                     <FormLabel>Package Size</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-12">
                           <SelectValue placeholder="Select a size" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="small">Small</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="large">Large</SelectItem>
+                        <SelectItem value="small">Small (Up to 1kg)</SelectItem>
+                        <SelectItem value="medium">Medium (1-5kg)</SelectItem>
+                        <SelectItem value="large">Large (5-10kg)</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -151,7 +151,7 @@ export default function DeliveryForm({ onNewDelivery }: DeliveryFormProps) {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col items-stretch gap-4">
-            <Button type="submit" disabled={isSubmitting} className="w-full transition-all duration-300 ease-in-out">
+            <Button type="submit" disabled={isSubmitting} size="lg" className="w-full transition-all duration-300 ease-in-out shadow-lg shadow-primary/20 hover:shadow-primary/40">
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Estimate & Schedule
             </Button>
