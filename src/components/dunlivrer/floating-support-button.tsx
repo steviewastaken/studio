@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Bot } from "lucide-react";
 import SupportChat from './support-chat';
 
@@ -50,6 +51,10 @@ export default function FloatingSupportButton() {
       </DialogTrigger>
       {/* The DialogContent is styled to be transparent so the SupportChat component's Card styling is used */}
       <DialogContent className="p-0 bg-transparent border-none shadow-none w-full max-w-md">
+        <DialogHeader className="sr-only">
+            <DialogTitle>AI Support</DialogTitle>
+            <DialogDescription>Ask general questions about our service.</DialogDescription>
+        </DialogHeader>
         <SupportChat deliveryDetails={null} />
       </DialogContent>
     </Dialog>

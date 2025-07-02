@@ -11,7 +11,7 @@ import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion } from 'framer-motion';
 import LiveTrackingPreview from '@/components/dunlivrer/live-tracking-preview';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SupportChat from '@/components/dunlivrer/support-chat';
 
 export type EtaResult = {
@@ -278,16 +278,25 @@ export default function DunlivrerPage() {
               <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
                   <div className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
                     <Dialog>
-                        <h3 className="font-headline text-2xl font-bold text-white flex items-center gap-3">
-                        <Bot className="text-primary"/> Track & Support
-                        </h3>
-                        <p className="mt-2 text-muted-foreground">Already have a delivery in progress? Chat with our AI assistant for real-time updates and support.</p>
+                        <div className="flex items-center gap-3">
+                            <Bot className="text-primary h-8 w-8"/>
+                            <div>
+                                <h3 className="font-headline text-2xl font-bold text-white">Track &amp; Support</h3>
+                                <p className="mt-1 text-muted-foreground">Already have a delivery in progress? Chat with our AI assistant for real-time updates and support.</p>
+                            </div>
+                        </div>
                         <DialogTrigger asChild>
                           <Button className="mt-6" size="lg">
                               Track & Chat
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="p-0 bg-transparent border-none shadow-none w-full max-w-md">
+                            <DialogHeader className="sr-only">
+                              <DialogTitle>Track & Support</DialogTitle>
+                              <DialogDescription>
+                                Already have a delivery in progress? Chat with our AI assistant for real-time updates and support.
+                              </DialogDescription>
+                            </DialogHeader>
                             <SupportChat deliveryDetails={null} />
                         </DialogContent>
                     </Dialog>
