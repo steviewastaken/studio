@@ -2,13 +2,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { DeliveryDetails } from "./types";
-import type { EtaResult } from "@/app/page";
 import { MapPin, Package, Clock, CheckCircle2, Truck, Home, ArrowRight } from "lucide-react";
 import MapComponent from "./map-component";
+import type { FindDriverOutput } from "@/ai/flows/find-driver";
 
 type TrackingMapProps = {
   deliveryDetails: DeliveryDetails | null;
-  etaResult: EtaResult;
+  driverDetails: FindDriverOutput | null;
 };
 
 function StatusStep({ icon, label, isCompleted, isCurrent }: { icon: React.ReactNode, label: string, isCompleted: boolean, isCurrent: boolean }) {
@@ -22,7 +22,7 @@ function StatusStep({ icon, label, isCompleted, isCurrent }: { icon: React.React
   );
 }
 
-export default function TrackingMap({ deliveryDetails, etaResult }: TrackingMapProps) {
+export default function TrackingMap({ deliveryDetails, driverDetails }: TrackingMapProps) {
   const pickup = deliveryDetails?.pickupAddress ?? null;
   const destinations = deliveryDetails?.destinationAddresses ?? [];
   
@@ -84,7 +84,7 @@ export default function TrackingMap({ deliveryDetails, etaResult }: TrackingMapP
                       <span>Estimated Arrival:</span>
                   </div>
                   <span className="font-bold text-xl text-primary">
-                    {etaResult ? `${etaResult.estimatedTime} min` : 'Calculating...'}
+                    {driverDetails ? `${driverDetails.driverEta} min` : 'Calculating...'}
                   </span>
               </div>
             </CardContent>

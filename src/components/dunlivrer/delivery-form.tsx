@@ -9,15 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Euro, Loader2, Send, Percent, Package2, ChevronsUpDown, Check, MapPin, Trash2, PlusCircle, Truck, CheckCircle2 } from 'lucide-react';
-import { handleETASubmission, handleFindDriver } from '@/lib/actions';
-import type { DeliveryDetails } from './types';
-import type { EtaResult } from '@/app/page';
+import { Clock, Loader2, Send, Package2, ChevronsUpDown, Check, MapPin, Trash2, PlusCircle, Truck, CheckCircle2 } from 'lucide-react';
+import { handleFindDriver } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
-import type { EstimateETAInput } from '@/ai/flows/estimate-eta';
 import type { FindDriverOutput } from '@/ai/flows/find-driver';
 import { locations } from '@/lib/locations';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -37,12 +34,11 @@ const formSchema = z.object({
 
 
 type DeliveryFormProps = {
-  onNewDelivery: (details: DeliveryDetails, eta: NonNullable<EtaResult>) => void;
   onAddressChange: (addresses: { pickup: string | null; destinations: string[] }) => void;
 };
 
-export default function DeliveryForm({ onNewDelivery, onAddressChange }: DeliveryFormProps) {
-  const [etaResult, setEtaResult] = useState<EtaResult>(null);
+export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
+  const [isReviewed, setIsReviewed] = useState(false);
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
   const [isFindingDriver, setIsFindingDriver] = useState(false);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
@@ -68,7 +64,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
 
   const { isSubmitting } = form.formState;
 
-  const { watch, setValue } = form;
+  const { watch, setValue, trigger } = form;
 
   const handleAddressChangeCallback = useCallback((value: z.infer<typeof formSchema>) => {
     const { pickupAddress, destinationAddresses } = value;
@@ -86,33 +82,12 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setEtaResult(null);
-    const etaInput: EstimateETAInput = {
-      pickupAddress: values.pickupAddress,
-      destinationAddresses: values.destinationAddresses.map(d => d.value),
-      packageSize: values.packageSize,
-      deliveryType: values.deliveryType,
-    };
-
-    const result = await handleETASubmission(etaInput);
-    if (result.success && result.data) {
-      setEtaResult(result.data);
-      const deliveryDetails: DeliveryDetails = {
-        pickupAddress: values.pickupAddress,
-        destinationAddresses: values.destinationAddresses.map(d => d.value),
-        packageSize: values.packageSize,
-        deliveryType: values.deliveryType
-      };
-      onNewDelivery(deliveryDetails, result.data);
+    const isValid = await trigger();
+    if (isValid) {
+      setIsReviewed(true);
       toast({
-        title: "Quote Ready!",
-        description: "Review the details below and confirm to schedule.",
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: "Estimation Failed",
-        description: result.error,
+        title: "Details Confirmed",
+        description: "Please proceed by dispatching now or scheduling for later.",
       });
     }
   }
@@ -140,6 +115,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
             description: driverResult.error,
         });
     }
+    setIsFindingDriver(false);
   };
 
   const handleScheduleForLater = () => {
@@ -156,61 +132,22 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
       return;
     }
     setIsScheduling(false);
+    setDriverDetails(null); // Reset driver details
+    setIsReviewed(false); // Reset form state
+    form.reset();
     toast({
       title: 'Delivery Scheduled!',
       description: `Your delivery is scheduled for ${format(scheduledDate, 'PPP')} between ${scheduledTime}.`,
     });
   };
   
-  const calculateCost = (values: z.infer<typeof formSchema>, eta: EtaResult): number => {
-    if (!eta) return 0;
-
-    let totalCost = 0;
-    const baseFare = 5.00;
-    totalCost += baseFare;
-    const estimatedDistance = parseFloat(eta.estimatedTime) * 0.4;
-    const extraDistance = Math.max(0, estimatedDistance - 2);
-
-    if (extraDistance > 0) {
-        if (estimatedDistance <= 5) {
-            totalCost += extraDistance * 1.00;
-        } else if (estimatedDistance <= 10) {
-            totalCost += (3 * 1.00) + ((estimatedDistance - 5) * 0.80);
-        } else if (estimatedDistance <= 20) {
-            totalCost += (3 * 1.00) + (5 * 0.80) + ((estimatedDistance - 10) * 0.70);
-        } else {
-            totalCost += (3 * 1.00) + (5 * 0.80) + (10 * 0.70) + ((estimatedDistance - 20) * 0.60);
-        }
-    }
-
-    if (values.packageSize === 'medium') {
-        totalCost += 1.00;
-    } else if (values.packageSize === 'large') {
-        totalCost += 2.00;
-    }
-
-    if (values.deliveryType === 'express') {
-        totalCost += 3.00;
-    } else if (values.deliveryType === 'night') {
-        totalCost += 2.50;
-    }
-
-    if (values.destinationAddresses.length > 1) {
-        totalCost *= 0.90;
-    }
-    
-    return totalCost;
-  };
-  
-  const formValues = form.watch();
-  const cost = calculateCost(formValues, etaResult);
-
   const togglePopover = (id: string) => {
     setOpenPopovers(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const setLocation = (fieldName: "pickupAddress" | `destinationAddresses.${number}.value`, address: string, popoverId: string) => {
     setValue(fieldName, address, { shouldValidate: true, shouldDirty: true });
+    setIsReviewed(false); // Reset review state on change
     togglePopover(popoverId);
   }
   
@@ -218,6 +155,11 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
     const hour = i + 9;
     return `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
   });
+  
+  const handleFormValueChange = (value: any) => {
+    setIsReviewed(false);
+    return value;
+  }
 
   return (
     <>
@@ -226,7 +168,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardHeader>
               <CardTitle className="font-headline text-3xl flex items-center gap-3"><Package2 className="text-primary"/>Book a Delivery</CardTitle>
-              <CardDescription>Get an instant price and ETA with our AI-powered engine. Add multiple destinations for a smart route.</CardDescription>
+              <CardDescription>Fill in your delivery details. Add multiple destinations for a smart route.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField
@@ -319,7 +261,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
                                   </PopoverContent>
                                   </Popover>
                                   {fields.length > 1 && (
-                                      <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0">
+                                      <Button variant="ghost" size="icon" onClick={() => { remove(index); setIsReviewed(false); }} className="shrink-0">
                                           <Trash2 className="w-4 h-4 text-destructive"/>
                                       </Button>
                                   )}
@@ -329,7 +271,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
                       );
                   })}
                   <FormMessage>{form.formState.errors.destinationAddresses?.root?.message}</FormMessage>
-                  <Button type="button" variant="outline" size="sm" onClick={() => append({ value: "" })}>
+                  <Button type="button" variant="outline" size="sm" onClick={() => { append({ value: "" }); setIsReviewed(false); }}>
                       <PlusCircle className="mr-2"/> Add another destination
                   </Button>
                 </div>
@@ -341,7 +283,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
                       render={({ field }) => (
                       <FormItem>
                           <FormLabel>Package Size</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={(value) => { field.onChange(value); setIsReviewed(false); }} defaultValue={field.value}>
                           <FormControl>
                               <SelectTrigger className="h-12">
                               <SelectValue placeholder="Select a size" />
@@ -362,7 +304,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
                       render={({ field }) => (
                       <FormItem>
                           <FormLabel>Delivery Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={(value) => { field.onChange(value); setIsReviewed(false); }} defaultValue={field.value}>
                           <FormControl>
                               <SelectTrigger className="h-12">
                                   <SelectValue placeholder="Select delivery type" />
@@ -381,39 +323,22 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
 
             </CardContent>
             <CardFooter className="flex flex-col items-stretch gap-4">
-              <Button type="submit" disabled={isSubmitting} size="lg" className="w-full transition-all duration-300 ease-in-out shadow-lg shadow-primary/20 hover:shadow-primary/40">
+              <Button type="submit" disabled={isSubmitting || isReviewed} size="lg" className="w-full transition-all duration-300 ease-in-out shadow-lg shadow-primary/20 hover:shadow-primary/40">
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                {etaResult ? 'Recalculate Quote' : 'Get Quote'}
+                {isReviewed ? 'Details Confirmed' : 'Confirm Details'}
               </Button>
-              {etaResult && (
-                <div className="w-full pt-4 mt-4 border-t border-white/10 border-dashed">
-                    <Card className="bg-muted/50 dark:bg-muted/20 border-dashed">
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="flex items-center gap-2 text-muted-foreground"><Euro className="w-4 h-4" /> Estimated Cost</span>
-                          <span className="font-bold text-lg text-primary">€{cost.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4" /> Estimated Total Time</span>
-                          <span className="font-bold">{etaResult.estimatedTime} minutes</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="flex items-center gap-2 text-muted-foreground"><Percent className="w-4 h-4" /> Confidence</span>
-                          <span className="font-bold">{(etaResult.confidence * 100).toFixed(0)}%</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <div className="mt-6 flex flex-col gap-4">
-                        <p className="text-sm text-center text-muted-foreground">Happy with the price? Confirm now for immediate dispatch or schedule for a later time.</p>
+              {isReviewed && (
+                <div className="w-full pt-4 mt-4 border-t border-white/10 border-dashed animate-in fade-in-0 slide-in-from-bottom-5">
+                    <div className="flex flex-col gap-4">
+                        <p className="text-sm text-center text-muted-foreground">Ready to go? Confirm now for immediate dispatch or schedule for a later time.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Button type="button" variant="outline" size="lg" onClick={handleScheduleForLater}>
                                 <Clock className="mr-2 h-4 w-4" />
                                 Schedule for Later
                             </Button>
                             <Button type="button" onClick={handleConfirmSchedule} size="lg">
-                                <Truck className="mr-2 h-4 w-4" />
-                                Dispatch Now
+                                {isFindingDriver ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
+                                {isFindingDriver ? 'Finding Driver...' : 'Dispatch Now'}
                             </Button>
                         </div>
                     </div>
@@ -424,37 +349,33 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
         </Form>
       </Card>
 
-      <Dialog open={isFindingDriver} onOpenChange={setIsFindingDriver}>
+      <Dialog open={!!driverDetails} onOpenChange={(open) => !open && setDriverDetails(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-headline text-2xl">
-              {driverDetails ? <CheckCircle2 className="text-green-500"/> : <Loader2 className="animate-spin" />}
-              {driverDetails ? 'DunGuy Assigned!' : 'Looking for a DunGuy nearby...'}
+              <CheckCircle2 className="text-green-500"/>
+              DunGuy Assigned!
             </DialogTitle>
             <DialogDescription>
-              {driverDetails ? `Your delivery has been assigned. Get ready for pickup!` : `We're searching our network for the nearest available driver to pick up your item.`}
+              Your delivery has been assigned. Get ready for pickup!
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 text-center">
-              {!driverDetails ? (
-                  <div className="flex flex-col items-center gap-4 text-muted-foreground">
-                      <Truck className="w-16 h-16 animate-pulse"/>
-                      <p>Scanning for drivers...</p>
+              <div className="flex flex-col items-center gap-4 text-foreground">
+                  <div className="p-4 bg-primary/20 rounded-full">
+                      <Truck className="w-16 h-16 text-primary"/>
                   </div>
-              ) : (
-                  <div className="flex flex-col items-center gap-4 text-foreground">
-                      <div className="p-4 bg-primary/20 rounded-full">
-                          <Truck className="w-16 h-16 text-primary"/>
-                      </div>
-                      <p className="text-lg">
-                          <span className="font-bold text-primary">{driverDetails.driverName}</span> is on the way!
-                      </p>
-                      <div className="text-sm text-muted-foreground">
-                          Estimated arrival for pickup: <span className="font-bold text-foreground">{driverDetails.driverEta} minutes</span>.
-                      </div>
+                  <p className="text-lg">
+                      <span className="font-bold text-primary">{driverDetails?.driverName}</span> is on the way!
+                  </p>
+                  <div className="text-sm text-muted-foreground">
+                      Estimated arrival for pickup: <span className="font-bold text-foreground">{driverDetails?.driverEta} minutes</span>.
                   </div>
-              )}
+              </div>
           </div>
+          <DialogFooter>
+            <Button onClick={() => { setDriverDetails(null); setIsReviewed(false); form.reset(); }}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       

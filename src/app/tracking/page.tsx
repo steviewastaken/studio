@@ -9,23 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-export type EtaResult = {
-  estimatedTime: string;
-  confidence: number;
-} | null;
+import type { FindDriverOutput } from '@/ai/flows/find-driver';
+import { handleFindDriver } from '@/lib/actions';
 
 // Mock data until we have a backend
 const mockDelivery: DeliveryDetails = {
     pickupAddress: '123 Main St, Anytown, USA',
     destinationAddresses: ['456 Business Ave, Anytown, USA', '101 City Center, Anytown, USA'],
-    packageSize: 'medium'
+    packageSize: 'medium',
+    deliveryType: 'standard'
 };
 
-const mockEta: NonNullable<EtaResult> = {
-    estimatedTime: '45',
-    confidence: 0.88
-};
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -48,20 +42,26 @@ const itemVariants = {
 
 export default function TrackingPage() {
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
-  const [etaResult, setEtaResult] = useState<EtaResult>(null);
+  const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
   const [trackingId, setTrackingId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!trackingId) return;
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-        setDeliveryDetails(mockDelivery);
-        setEtaResult(mockEta);
-        setIsLoading(false);
-    }, 1000);
+    
+    // Simulate API call to get delivery details
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setDeliveryDetails(mockDelivery);
+
+    // Find a driver for the mock delivery
+    const driverResult = await handleFindDriver({ pickupAddress: mockDelivery.pickupAddress });
+    if (driverResult.success && driverResult.data) {
+        setDriverDetails(driverResult.data);
+    }
+
+    setIsLoading(false);
   };
 
   return (
@@ -85,7 +85,7 @@ export default function TrackingPage() {
             variants={sectionVariants}
         >
             <motion.div className="lg:col-span-3 flex flex-col gap-8" variants={itemVariants}>
-                <TrackingMap deliveryDetails={deliveryDetails} etaResult={etaResult} />
+                <TrackingMap deliveryDetails={deliveryDetails} driverDetails={driverDetails} />
             </motion.div>
             <motion.div className="lg:col-span-2 flex flex-col gap-8" variants={itemVariants}>
                  <Card className="bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">

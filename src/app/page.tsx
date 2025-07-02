@@ -14,11 +14,6 @@ import LiveTrackingPreview from '@/components/dunlivrer/live-tracking-preview';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SupportChat from '@/components/dunlivrer/support-chat';
 
-export type EtaResult = {
-  estimatedTime: string;
-  confidence: number;
-} | null;
-
 const investorFeatures = [
   {
     icon: <BrainCircuit className="w-8 h-8 text-primary" />,
@@ -93,16 +88,8 @@ const staggeredContainer = {
 };
 
 export default function DunlivrerPage() {
-  const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
-  const [etaResult, setEtaResult] = useState<EtaResult>(null);
   const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
 
-  const handleNewDelivery = useCallback((details: DeliveryDetails, eta: NonNullable<EtaResult>) => {
-    setDeliveryDetails(details);
-    setEtaResult(eta);
-    // Potentially redirect to tracking page or show a success modal
-  }, []);
-  
   const handleAddressChange = useCallback((addresses: { pickup: string | null; destinations: string[] }) => {
     setPreviewAddresses(addresses);
   }, []);
@@ -269,11 +256,11 @@ export default function DunlivrerPage() {
               <div className="space-y-4">
                 <h2 className="text-3xl md:text-4xl font-bold font-headline text-white">Ready to Ship?</h2>
                 <p className="mt-4 text-lg text-muted-foreground">
-                  Experience the difference. Get an instant, AI-powered ETA and quote for your delivery. Fast, transparent, and reliable.
+                  Experience the difference. Enter your delivery details to get started. Fast, transparent, and reliable.
                 </p>
               </div>
               <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
-                <DeliveryForm onNewDelivery={handleNewDelivery} onAddressChange={handleAddressChange} />
+                <DeliveryForm onAddressChange={handleAddressChange} />
               </motion.div>
               <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
                   <div className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
