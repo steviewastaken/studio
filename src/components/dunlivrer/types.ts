@@ -1,5 +1,5 @@
 export interface DeliveryDetails {
   pickupAddress: string;
-  destinationAddress: string;
+  destinationAddresses: string[];
   packageSize: 'small' | 'medium' | 'large';
 }

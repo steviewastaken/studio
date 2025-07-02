@@ -13,7 +13,7 @@ import {z} from 'genkit';
 
 const EstimateETAInputSchema = z.object({
   pickupAddress: z.string().describe('The pickup address for the delivery.'),
-  destinationAddress: z.string().describe('The destination address for the delivery.'),
+  destinationAddresses: z.array(z.string()).describe('A list of destination addresses for the delivery.'),
   packageSize: z.enum(['small', 'medium', 'large']).describe('The size of the package being delivered.'),
 });
 export type EstimateETAInput = z.infer<typeof EstimateETAInputSchema>;
@@ -32,10 +32,13 @@ const prompt = ai.definePrompt({
   name: 'estimateETAPrompt',
   input: {schema: EstimateETAInputSchema},
   output: {schema: EstimateETAOutputSchema},
-  prompt: `You are a delivery time estimator. You take into account the pickup address, destination address, and package size to estimate the delivery time in minutes.
+  prompt: `You are a delivery time estimator. You take into account the pickup address, a list of destination addresses, and package size to estimate the total delivery time in minutes for a multi-drop route. You should optimize the order of the destinations to create the most efficient route.
 
   Pickup Address: {{{pickupAddress}}}
-  Destination Address: {{{destinationAddress}}}
+  Destination Addresses:
+  {{#each destinationAddresses}}
+  - {{{this}}}
+  {{/each}}
   Package Size: {{{packageSize}}}
 
   Provide your estimate in minutes and include a confidence score (0-1) for how reliable you believe your estimate is. The output must be parsable as a JSON object.`,

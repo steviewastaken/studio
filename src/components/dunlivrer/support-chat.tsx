@@ -60,7 +60,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
     setInput("");
 
     const deliveryDetailsString = deliveryDetails
-      ? `From: ${deliveryDetails.pickupAddress}, To: ${deliveryDetails.destinationAddress}, Size: ${deliveryDetails.packageSize}`
+      ? `From: ${deliveryDetails.pickupAddress}, To: ${deliveryDetails.destinationAddresses.join('; ')}, Size: ${deliveryDetails.packageSize}`
       : undefined;
     
     const result = await handleSupportQuestion({ question: input, deliveryDetails: deliveryDetailsString });

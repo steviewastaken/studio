@@ -18,13 +18,13 @@ export type EtaResult = {
 // Mock data until we have a backend
 const mockDelivery: DeliveryDetails = {
     pickupAddress: '123 Main St, Anytown, USA',
-    destinationAddress: '456 Business Ave, Anytown, USA',
+    destinationAddresses: ['456 Business Ave, Anytown, USA', '101 City Center, Anytown, USA'],
     packageSize: 'medium'
 };
 
 const mockEta: NonNullable<EtaResult> = {
-    estimatedTime: '24',
-    confidence: 0.92
+    estimatedTime: '45',
+    confidence: 0.88
 };
 
 const sectionVariants = {

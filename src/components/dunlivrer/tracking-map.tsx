@@ -34,15 +34,19 @@ export default function TrackingMap({ deliveryDetails, etaResult }: TrackingMapP
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
           {deliveryDetails ? (
              <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10">
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2 truncate">
-                        <MapPin className="w-4 h-4 text-primary shrink-0" />
+                        <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                         <span className="font-medium truncate">{deliveryDetails.pickupAddress}</span>
                     </div>
                     <ArrowRight className="w-5 h-5 text-muted-foreground mx-2 shrink-0" />
-                    <div className="flex items-center gap-2 truncate text-right">
-                        <MapPin className="w-4 h-4 text-accent shrink-0" />
-                        <span className="font-medium truncate">{deliveryDetails.destinationAddress}</span>
+                    <div className="flex flex-col items-end gap-1 truncate text-right">
+                        {deliveryDetails.destinationAddresses.map((dest, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                                <span className="font-medium truncate">{dest}</span>
+                                <MapPin className="w-4 h-4 text-accent shrink-0" />
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
