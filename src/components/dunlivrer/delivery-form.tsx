@@ -61,7 +61,7 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
     name: "destinationAddresses"
   });
 
-  const { isSubmitting, isSubmitted } = form.formState;
+  const { isSubmitting } = form.formState;
 
   const { watch, setValue } = form;
 
@@ -101,24 +101,8 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
       onNewDelivery(deliveryDetails, result.data);
       toast({
         title: "Quote Ready!",
-        description: "Your delivery has been quoted. Review the details below.",
+        description: "Review the details below and confirm to schedule.",
       });
-
-      // Trigger driver search
-      setIsFindingDriver(true);
-      setDriverDetails(null);
-      const driverResult = await handleFindDriver({ pickupAddress: values.pickupAddress });
-      if (driverResult.success && driverResult.data) {
-        setDriverDetails(driverResult.data);
-      } else {
-        toast({
-          variant: 'destructive',
-          title: "Driver Search Failed",
-          description: driverResult.error,
-        });
-        // Let user close the dialog manually if driver not found
-      }
-
     } else {
       toast({
         variant: 'destructive',
@@ -127,6 +111,38 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
       });
     }
   }
+
+  const handleConfirmSchedule = async () => {
+    const pickupAddress = form.getValues('pickupAddress');
+    if (!pickupAddress) {
+        toast({
+            variant: 'destructive',
+            title: "Missing Pickup Address",
+            description: 'Please select a pickup address before scheduling.',
+        });
+        return;
+    }
+
+    setIsFindingDriver(true);
+    setDriverDetails(null);
+    const driverResult = await handleFindDriver({ pickupAddress });
+    if (driverResult.success && driverResult.data) {
+        setDriverDetails(driverResult.data);
+    } else {
+        toast({
+            variant: 'destructive',
+            title: "Driver Search Failed",
+            description: driverResult.error,
+        });
+    }
+  };
+
+  const handleScheduleForLater = () => {
+    toast({
+        title: "Coming Soon!",
+        description: "The ability to schedule deliveries for a future time is in development.",
+    });
+  };
   
   const calculateCost = (values: z.infer<typeof formSchema>, eta: EtaResult): number => {
     if (!eta) return 0;
@@ -344,25 +360,41 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
             <CardFooter className="flex flex-col items-stretch gap-4">
               <Button type="submit" disabled={isSubmitting} size="lg" className="w-full transition-all duration-300 ease-in-out shadow-lg shadow-primary/20 hover:shadow-primary/40">
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                {isSubmitted ? 'Reschedule with New Quote' : 'Get Quote & Schedule'}
+                {etaResult ? 'Recalculate Quote' : 'Get Quote'}
               </Button>
               {etaResult && (
-                <Card className="bg-muted/50 dark:bg-muted/20 border-dashed">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-2 text-muted-foreground"><Euro className="w-4 h-4" /> Estimated Cost</span>
-                      <span className="font-bold text-lg text-primary">€{cost.toFixed(2)}</span>
+                <div className="w-full pt-4 mt-4 border-t border-white/10 border-dashed">
+                    <Card className="bg-muted/50 dark:bg-muted/20 border-dashed">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="flex items-center gap-2 text-muted-foreground"><Euro className="w-4 h-4" /> Estimated Cost</span>
+                          <span className="font-bold text-lg text-primary">€{cost.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4" /> Estimated Total Time</span>
+                          <span className="font-bold">{etaResult.estimatedTime} minutes</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="flex items-center gap-2 text-muted-foreground"><Percent className="w-4 h-4" /> Confidence</span>
+                          <span className="font-bold">{(etaResult.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <div className="mt-6 flex flex-col gap-4">
+                        <p className="text-sm text-center text-muted-foreground">Happy with the price? Confirm now for immediate dispatch or schedule for a later time.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Button type="button" variant="outline" size="lg" onClick={handleScheduleForLater}>
+                                <Clock className="mr-2 h-4 w-4" />
+                                Schedule for Later
+                            </Button>
+                            <Button type="button" onClick={handleConfirmSchedule} size="lg">
+                                <Truck className="mr-2 h-4 w-4" />
+                                Dispatch Now
+                            </Button>
+                        </div>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4" /> Estimated Total Time</span>
-                      <span className="font-bold">{etaResult.estimatedTime} minutes</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-2 text-muted-foreground"><Percent className="w-4 h-4" /> Confidence</span>
-                      <span className="font-bold">{(etaResult.confidence * 100).toFixed(0)}%</span>
-                    </div>
-                  </CardContent>
-                </Card>
+                </div>
               )}
             </CardFooter>
           </form>
