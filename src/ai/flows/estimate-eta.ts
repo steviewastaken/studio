@@ -33,7 +33,9 @@ const prompt = ai.definePrompt({
   name: 'estimateETAPrompt',
   input: {schema: EstimateETAInputSchema},
   output: {schema: EstimateETAOutputSchema},
-  prompt: `Analyze the following delivery details and provide an estimated delivery time in minutes and a confidence score.
+  prompt: `You are a JSON API that provides delivery time estimates. Your response MUST be a valid JSON object and nothing else.
+
+Based on the delivery details, provide a plausible estimated time of arrival (ETA) in minutes and a confidence score between 0.0 and 1.0.
 
 **Delivery Details:**
 *   **Pickup:** {{{pickupAddress}}}
@@ -44,12 +46,9 @@ const prompt = ai.definePrompt({
 *   **Package Size:** {{{packageSize}}}
 *   **Service Level:** {{{deliveryType}}}
 
-**Instructions:**
-1.  Calculate the most efficient route for the given destinations.
-2.  Factor in the \`deliveryType\`: 'express' should be fastest, 'night' may vary.
-3.  The final output MUST be ONLY a valid JSON object conforming to the specified schema, with no extra text or explanations.
+The final output MUST be ONLY a valid JSON object conforming to the specified schema, with no extra text or explanations.
 
-**Example JSON Output Format:**
+**Example JSON Output:**
 {
   "estimatedTime": "45",
   "confidence": 0.85
