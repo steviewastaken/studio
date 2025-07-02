@@ -33,24 +33,27 @@ const prompt = ai.definePrompt({
   name: 'estimateETAPrompt',
   input: {schema: EstimateETAInputSchema},
   output: {schema: EstimateETAOutputSchema},
-  prompt: `You are a delivery time estimator. You take into account the pickup address, a list of destination addresses, package size, and delivery type to estimate the total delivery time in minutes for a multi-drop route. You should optimize the order of the destinations to create the most efficient route.
+  prompt: `Analyze the following delivery details and provide an estimated delivery time in minutes and a confidence score.
 
-  An 'express' delivery must be prioritized and should have a shorter ETA than a 'standard' or 'night' delivery. A 'night' delivery may take longer due to reduced traffic but also fewer available drivers.
+**Delivery Details:**
+*   **Pickup:** {{{pickupAddress}}}
+*   **Destinations:**
+    {{#each destinationAddresses}}
+    *   {{{this}}}
+    {{/each}}
+*   **Package Size:** {{{packageSize}}}
+*   **Service Level:** {{{deliveryType}}}
 
-  Pickup Address: {{{pickupAddress}}}
-  Destination Addresses:
-  {{#each destinationAddresses}}
-  - {{{this}}}
-  {{/each}}
-  Package Size: {{{packageSize}}}
-  Delivery Type: {{{deliveryType}}}
+**Instructions:**
+1.  Calculate the most efficient route for the given destinations.
+2.  Factor in the \`deliveryType\`: 'express' should be fastest, 'night' may vary.
+3.  The final output MUST be ONLY a valid JSON object conforming to the specified schema, with no extra text or explanations.
 
-  Provide your estimate in minutes and include a confidence score (0-1) for how reliable you believe your estimate is.
-  The output MUST be a valid JSON object. For example:
-  {
-    "estimatedTime": "35",
-    "confidence": 0.9
-  }`,
+**Required JSON Output Format:**
+{
+  "estimatedTime": "45",
+  "confidence": 0.85
+}`,
 });
 
 const estimateETAFlow = ai.defineFlow(
