@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -172,7 +173,7 @@ export default function DunlivrerPage() {
         variants={sectionVariants}
       >
         <div className="absolute inset-0 -z-10">
-            <Image src="https://placehold.co/1920x1080.png" layout="fill" objectFit="cover" alt="Abstract background" className="opacity-10" data-ai-hint="abstract network" />
+            <Image src="https://placehold.co/1920x1080.png" fill alt="Abstract background" className="opacity-10 object-cover" data-ai-hint="abstract network" />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background"></div>
         </div>
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-2 gap-16 items-center">

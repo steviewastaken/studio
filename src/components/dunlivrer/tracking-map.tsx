@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { DeliveryDetails } from "./types";
@@ -29,7 +30,7 @@ export default function TrackingMap({ deliveryDetails, etaResult }: TrackingMapP
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
         <div className="relative aspect-[16/10] bg-muted/50 rounded-lg overflow-hidden border border-white/10">
-          <Image src="https://placehold.co/800x500.png" alt="Map of delivery route" layout="fill" objectFit="cover" data-ai-hint="dark city map" className="opacity-50 group-hover:opacity-75 transition-opacity" />
+          <Image src="https://placehold.co/800x500.png" alt="Map of delivery route" fill data-ai-hint="dark city map" className="object-cover opacity-50 group-hover:opacity-75 transition-opacity" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
           {deliveryDetails ? (
              <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10">
