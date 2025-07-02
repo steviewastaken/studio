@@ -8,6 +8,10 @@ import {
   estimateETA as estimateETAFlow,
   type EstimateETAInput,
 } from '@/ai/flows/estimate-eta';
+import {
+  findDriver as findDriverFlow,
+  type FindDriverInput,
+} from '@/ai/flows/find-driver';
 
 export async function handleETASubmission(data: EstimateETAInput) {
   try {
@@ -26,5 +30,15 @@ export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   } catch (error) {
     console.error(error);
     return { success: false, error: 'I am sorry, I am unable to answer that question at the moment.' };
+  }
+}
+
+export async function handleFindDriver(data: FindDriverInput) {
+  try {
+    const result = await findDriverFlow(data);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: 'Failed to find a driver. Please try again later.' };
   }
 }
