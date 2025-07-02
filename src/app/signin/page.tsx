@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/auth-context';
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -19,6 +20,7 @@ const formSchema = z.object({
 export default function SignInPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { login } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -30,9 +32,14 @@ export default function SignInPage() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
     // Dummy authentication
+    const name = values.email.split('@')[0];
+    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+    
+    login(capitalizedName);
+
     toast({
       title: "Signed In!",
-      description: "Welcome back!",
+      description: `Welcome back, ${capitalizedName}!`,
     });
     router.push('/');
   }
