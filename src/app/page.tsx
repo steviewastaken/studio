@@ -10,6 +10,7 @@ import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileT
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion } from 'framer-motion';
+import LiveTrackingPreview from '@/components/dunlivrer/live-tracking-preview';
 
 export type EtaResult = {
   estimatedTime: string;
@@ -92,11 +93,16 @@ const staggeredContainer = {
 export default function DunlivrerPage() {
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
   const [etaResult, setEtaResult] = useState<EtaResult>(null);
+  const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
 
   const handleNewDelivery = (details: DeliveryDetails, eta: NonNullable<EtaResult>) => {
     setDeliveryDetails(details);
     setEtaResult(eta);
     // Potentially redirect to tracking page or show a success modal
+  };
+  
+  const handleAddressChange = (addresses: { pickup: string | null; destinations: string[] }) => {
+    setPreviewAddresses(addresses);
   };
 
   return (
@@ -256,27 +262,35 @@ export default function DunlivrerPage() {
             <Image src="https://placehold.co/1920x1080.png" fill alt="Abstract background" className="opacity-10 object-cover" data-ai-hint="abstract network" />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background"></div>
         </div>
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-2 gap-16 items-center">
-            <div className="lg:col-span-1">
-              <h2 className="text-3xl md:text-4xl font-bold font-headline text-white">Ready to Ship?</h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Experience the difference. Get an instant, AI-powered ETA and quote for your delivery. Fast, transparent, and reliable.
-              </p>
-              <motion.div className="mt-8" whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
-                <DeliveryForm onNewDelivery={handleNewDelivery} />
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-5 gap-16 items-start">
+            <div className="lg:col-span-3 flex flex-col gap-8">
+              <div className="space-y-4">
+                <h2 className="text-3xl md:text-4xl font-bold font-headline text-white">Ready to Ship?</h2>
+                <p className="mt-4 text-lg text-muted-foreground">
+                  Experience the difference. Get an instant, AI-powered ETA and quote for your delivery. Fast, transparent, and reliable.
+                </p>
+              </div>
+              <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
+                <DeliveryForm onNewDelivery={handleNewDelivery} onAddressChange={handleAddressChange} />
+              </motion.div>
+              <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
+                  <div className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
+                      <h3 className="font-headline text-2xl font-bold text-white flex items-center gap-3">
+                      <Bot className="text-primary"/> Track & Support
+                      </h3>
+                      <p className="mt-2 text-muted-foreground">Already have a delivery in progress? Head over to our tracking page for real-time updates and AI-powered support.</p>
+                      <Button asChild className="mt-6" size="lg">
+                          <Link href="/tracking">Track & Chat</Link>
+                      </Button>
+                  </div>
               </motion.div>
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-2">
                 <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
-                    <div className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
-                        <h3 className="font-headline text-2xl font-bold text-white flex items-center gap-3">
-                        <Bot className="text-primary"/> Track & Support
-                        </h3>
-                        <p className="mt-2 text-muted-foreground">Already have a delivery in progress? Head over to our tracking page for real-time updates and AI-powered support.</p>
-                        <Button asChild className="mt-6" size="lg">
-                            <Link href="/tracking">Track & Chat</Link>
-                        </Button>
-                    </div>
+                    <LiveTrackingPreview 
+                        pickupAddress={previewAddresses.pickup} 
+                        destinationAddresses={previewAddresses.destinations} 
+                    />
                 </motion.div>
             </div>
         </div>
