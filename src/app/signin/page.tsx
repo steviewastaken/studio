@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -17,6 +18,7 @@ const formSchema = z.object({
 
 export default function SignInPage() {
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -32,6 +34,7 @@ export default function SignInPage() {
       title: "Signed In!",
       description: "Welcome back!",
     });
+    router.push('/');
   }
 
   return (
