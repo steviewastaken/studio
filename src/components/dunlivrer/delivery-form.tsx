@@ -67,18 +67,20 @@ export default function DeliveryForm({ onNewDelivery, onAddressChange }: Deliver
 
   const { isSubmitting } = form.formState;
 
-  const watchedPickup = form.watch("pickupAddress");
-  const watchedDestinations = form.watch("destinationAddresses");
+  const { watch } = form;
 
   useEffect(() => {
-    if (onAddressChange) {
-      const destinations = watchedDestinations?.map(d => d.value).filter(Boolean) || [];
-      onAddressChange({
-        pickup: watchedPickup || null,
-        destinations: destinations,
-      });
-    }
-  }, [watchedPickup, watchedDestinations, onAddressChange]);
+    const subscription = watch((value) => {
+        const { pickupAddress, destinationAddresses } = value as z.infer<typeof formSchema>;
+        const destinations = destinationAddresses?.map(d => d.value).filter(Boolean) || [];
+        onAddressChange({
+            pickup: pickupAddress || null,
+            destinations: destinations,
+        });
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, onAddressChange]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setEtaResult(null);
