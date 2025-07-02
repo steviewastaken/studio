@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
+import { motion } from 'framer-motion';
 
 export type EtaResult = {
   estimatedTime: string;
@@ -51,7 +52,41 @@ const services = [
     title: 'API for Developers',
     description: 'Integrate Dunlivrer\'s logistics power directly into your app or e-commerce platform.',
   }
-]
+];
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  },
+};
+
+const staggeredContainer = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+    },
+  },
+};
 
 export default function DunlivrerPage() {
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
@@ -66,28 +101,39 @@ export default function DunlivrerPage() {
   return (
     <div className="w-full">
       {/* Hero Section */}
-      <section className="relative text-center pt-32 pb-16 w-full max-w-7xl mx-auto px-4 md:px-8">
+      <motion.section 
+        className="relative text-center pt-32 pb-16 w-full max-w-7xl mx-auto px-4 md:px-8"
+        initial="hidden"
+        animate="visible"
+        variants={staggeredContainer}
+      >
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
-          <h1 className="text-5xl md:text-7xl font-bold font-headline bg-clip-text text-transparent bg-gradient-to-br from-white to-gray-400 pb-4">
+          <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold font-headline bg-clip-text text-transparent bg-gradient-to-br from-white to-gray-400 pb-4">
             The Future of Logistics,
             <br />
             Delivered Today.
-          </h1>
-          <p className="max-w-3xl mx-auto text-lg text-muted-foreground">
+          </motion.h1>
+          <motion.p variants={itemVariants} className="max-w-3xl mx-auto text-lg text-muted-foreground">
             Dunlivrer is an AI-first technology company revolutionizing the delivery industry. We provide unparalleled speed, reliability, and efficiency for both consumers and businesses.
-          </p>
-          <div className="mt-8 flex justify-center gap-4">
+          </motion.p>
+          <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
                 <Link href="#get-started">Schedule a Delivery</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link href="/contact">Contact Sales</Link>
               </Button>
-          </div>
-      </section>
+          </motion.div>
+      </motion.section>
 
       {/* Investor-Focused "Why Us" Section */}
-      <section className="py-16 bg-background/20">
+      <motion.section 
+        className="py-16 bg-background/20"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={sectionVariants}
+      >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8">
             <div className="text-center">
               <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">The Dunlivrer Advantage</h2>
@@ -96,20 +142,35 @@ export default function DunlivrerPage() {
                 We're not just moving packages; we're building the intelligent, automated backbone of modern commerce.
               </p>
             </div>
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div 
+              className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8"
+              variants={staggeredContainer}
+            >
               {investorFeatures.map((feature) => (
-                 <div key={feature.title} className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg flex flex-col items-start gap-4">
+                 <motion.div 
+                    key={feature.title}
+                    variants={itemVariants}
+                    whileHover={{ y: -5, scale: 1.02, transition: { duration: 0.2 } }}
+                    className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg flex flex-col items-start gap-4 h-full"
+                  >
                   {feature.icon}
                   <h3 className="text-xl font-bold font-headline text-white">{feature.title}</h3>
                   <p className="text-muted-foreground">{feature.description}</p>
-                 </div>
+                 </motion.div>
               ))}
-            </div>
+            </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Delivery Form Section */}
-      <section id="get-started" className="py-24 relative overflow-hidden">
+      <motion.section 
+        id="get-started" 
+        className="py-24 relative overflow-hidden"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={sectionVariants}
+      >
         <div className="absolute inset-0 -z-10">
             <Image src="https://placehold.co/1920x1080.png" layout="fill" objectFit="cover" alt="Abstract background" className="opacity-10" data-ai-hint="abstract network" />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background"></div>
@@ -120,40 +181,56 @@ export default function DunlivrerPage() {
               <p className="mt-4 text-lg text-muted-foreground">
                 Experience the difference. Get an instant, AI-powered ETA and quote for your delivery. Fast, transparent, and reliable.
               </p>
-              <div className="mt-8">
+              <motion.div className="mt-8" whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
                 <DeliveryForm onNewDelivery={handleNewDelivery} />
-              </div>
+              </motion.div>
             </div>
             <div className="lg:col-span-1">
-                <div className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
-                    <h3 className="font-headline text-2xl font-bold text-white flex items-center gap-3">
-                      <Bot className="text-primary"/> Track & Support
-                    </h3>
-                    <p className="mt-2 text-muted-foreground">Already have a delivery in progress? Head over to our tracking page for real-time updates and AI-powered support.</p>
-                    <Button asChild className="mt-6" size="lg">
-                        <Link href="/tracking">Track & Chat</Link>
-                    </Button>
-                </div>
+                <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
+                    <div className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
+                        <h3 className="font-headline text-2xl font-bold text-white flex items-center gap-3">
+                        <Bot className="text-primary"/> Track & Support
+                        </h3>
+                        <p className="mt-2 text-muted-foreground">Already have a delivery in progress? Head over to our tracking page for real-time updates and AI-powered support.</p>
+                        <Button asChild className="mt-6" size="lg">
+                            <Link href="/tracking">Track & Chat</Link>
+                        </Button>
+                    </div>
+                </motion.div>
             </div>
         </div>
-      </section>
+      </motion.section>
 
        {/* Services Section */}
-      <section className="py-16">
+      <motion.section 
+        className="py-16"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={sectionVariants}
+      >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
             <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">Our Solutions</h2>
             <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">Logistics for Everyone</p>
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+            <motion.div 
+              className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
+              variants={staggeredContainer}
+            >
               {services.map((service) => (
-                 <div key={service.title} className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-lg flex flex-col items-start gap-4">
+                 <motion.div 
+                    key={service.title} 
+                    variants={itemVariants}
+                    whileHover={{ y: -5, scale: 1.02, transition: { duration: 0.2 } }}
+                    className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-lg flex flex-col items-start gap-4 h-full"
+                  >
                   {service.icon}
                   <h3 className="text-xl font-bold font-headline text-white">{service.title}</h3>
                   <p className="text-muted-foreground">{service.description}</p>
-                 </div>
+                 </motion.div>
               ))}
-            </div>
+            </motion.div>
         </div>
-      </section>
+      </motion.section>
       <FloatingSupportButton />
     </div>
   );

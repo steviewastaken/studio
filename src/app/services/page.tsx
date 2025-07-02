@@ -3,6 +3,7 @@
 import { Ship, Briefcase, Zap, Bot, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 
 const serviceList = [
   {
@@ -31,20 +32,70 @@ const serviceList = [
   }
 ];
 
+const sectionVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  },
+};
+
+const staggeredContainer = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+    },
+  },
+};
+
 export default function ServicesPage() {
   return (
     <div className="w-full pt-24 md:pt-32">
-        <section className="text-center w-full max-w-7xl mx-auto px-4 md:px-8">
+        <motion.section 
+            className="text-center w-full max-w-7xl mx-auto px-4 md:px-8"
+            initial="hidden"
+            animate="visible"
+            variants={sectionVariants}
+        >
             <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">Our Services</h1>
             <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
                 We offer a comprehensive suite of logistics solutions powered by cutting-edge AI, tailored to meet the needs of individuals and businesses of all sizes.
             </p>
-        </section>
+        </motion.section>
 
-        <section className="py-16">
+        <motion.section 
+            className="py-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.1 }}
+            variants={staggeredContainer}
+        >
             <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                 {serviceList.map((service) => (
-                    <div key={service.title} className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-lg flex flex-col items-start gap-4">
+                    <motion.div 
+                        key={service.title} 
+                        variants={itemVariants}
+                        whileHover={{ y: -5, scale: 1.02, transition: { duration: 0.2 } }}
+                        className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-lg flex flex-col items-start gap-4 h-full"
+                    >
                         {service.icon}
                         <h2 className="text-2xl font-bold font-headline text-white">{service.title}</h2>
                         <p className="text-muted-foreground flex-grow">{service.description}</p>
@@ -56,12 +107,18 @@ export default function ServicesPage() {
                                 </li>
                             ))}
                         </ul>
-                    </div>
+                    </motion.div>
                 ))}
             </div>
-        </section>
+        </motion.section>
 
-        <section className="py-16 bg-background/20">
+        <motion.section 
+            className="py-16 bg-background/20"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={sectionVariants}
+        >
             <div className="w-full max-w-5xl mx-auto px-4 md:px-8 text-center">
                  <h2 className="text-3xl font-bold font-headline text-white">Ready to transform your logistics?</h2>
                  <p className="mt-4 text-lg text-muted-foreground">
@@ -76,7 +133,7 @@ export default function ServicesPage() {
                     </Button>
                  </div>
             </div>
-        </section>
+        </motion.section>
     </div>
   );
 }

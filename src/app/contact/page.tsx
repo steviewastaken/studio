@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, MapPin } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -17,6 +18,53 @@ const formSchema = z.object({
   subject: z.string().min(5, "Subject must be at least 5 characters."),
   message: z.string().min(10, "Message must be at least 10 characters."),
 });
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { 
+    opacity: 1, 
+    x: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  },
+};
+
+const formVariant = {
+  hidden: { opacity: 0, x: 20 },
+  visible: { 
+    opacity: 1, 
+    x: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  },
+};
+
+const staggeredContainer = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.2
+    },
+  },
+};
 
 export default function ContactPage() {
   const { toast } = useToast();
@@ -40,42 +88,53 @@ export default function ContactPage() {
 
   return (
     <div className="w-full pt-24 md:pt-32">
-        <section className="text-center w-full max-w-7xl mx-auto px-4 md:px-8">
+        <motion.section 
+            className="text-center w-full max-w-7xl mx-auto px-4 md:px-8"
+            initial="hidden"
+            animate="visible"
+            variants={sectionVariants}
+        >
             <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">Contact Us</h1>
             <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
                 Have a question, a proposal, or just want to say hello? We'd love to hear from you.
             </p>
-        </section>
+        </motion.section>
 
-        <section className="py-16">
+        <motion.section 
+            className="py-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.1 }}
+            variants={staggeredContainer}
+        >
             <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid grid-cols-1 lg:grid-cols-3 gap-12">
                 <div className="lg:col-span-1 space-y-8">
-                    <div className="flex items-start gap-4">
+                    <motion.div variants={itemVariants} className="flex items-start gap-4" whileHover={{ x: 5, transition: { duration: 0.2 } }}>
                         <div className="p-3 bg-primary/20 rounded-lg text-primary"><Mail className="w-6 h-6"/></div>
                         <div>
                             <h3 className="font-semibold text-lg text-white">Email Us</h3>
                             <p className="text-muted-foreground">For sales, support, and general inquiries.</p>
                             <a href="mailto:contact@dunlivrer.com" className="text-primary hover:underline">contact@dunlivrer.com</a>
                         </div>
-                    </div>
-                     <div className="flex items-start gap-4">
+                    </motion.div>
+                     <motion.div variants={itemVariants} className="flex items-start gap-4" whileHover={{ x: 5, transition: { duration: 0.2 } }}>
                         <div className="p-3 bg-primary/20 rounded-lg text-primary"><Phone className="w-6 h-6"/></div>
                         <div>
                             <h3 className="font-semibold text-lg text-white">Call Us</h3>
                             <p className="text-muted-foreground">Mon-Fri, 9am - 5pm.</p>
                             <a href="tel:+1234567890" className="text-primary hover:underline">+1 (234) 567-890</a>
                         </div>
-                    </div>
-                     <div className="flex items-start gap-4">
+                    </motion.div>
+                     <motion.div variants={itemVariants} className="flex items-start gap-4" whileHover={{ x: 5, transition: { duration: 0.2 } }}>
                         <div className="p-3 bg-primary/20 rounded-lg text-primary"><MapPin className="w-6 h-6"/></div>
                         <div>
                             <h3 className="font-semibold text-lg text-white">Our Office</h3>
                             <p className="text-muted-foreground">101 City Center, Anytown, USA</p>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
 
-                <div className="lg:col-span-2">
+                <motion.div className="lg:col-span-2" variants={formVariant}>
                     <Card className="bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
                         <CardHeader>
                             <CardTitle className="font-headline text-3xl">Send a Message</CardTitle>
@@ -102,9 +161,9 @@ export default function ContactPage() {
                             </Form>
                         </CardContent>
                     </Card>
-                </div>
+                </motion.div>
             </div>
-        </section>
+        </motion.section>
     </div>
   );
 }

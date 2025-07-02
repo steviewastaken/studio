@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export type EtaResult = {
   estimatedTime: string;
@@ -25,6 +26,25 @@ const mockEta: NonNullable<EtaResult> = {
     estimatedTime: '24',
     confidence: 0.92
 };
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut",
+      staggerChildren: 0.2
+    } 
+  },
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' }}
+}
+
 
 export default function TrackingPage() {
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
@@ -46,18 +66,28 @@ export default function TrackingPage() {
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
-        <div className="text-center">
+        <motion.div 
+            className="text-center"
+            initial="hidden"
+            animate="visible"
+            variants={sectionVariants}
+        >
             <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">Order Tracking &amp; AI Support</h1>
             <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
                 Enter your tracking ID for real-time status, or ask our AI assistant for help.
             </p>
-        </div>
+        </motion.div>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-5 items-start">
-            <div className="lg:col-span-3 flex flex-col gap-8">
+        <motion.div 
+            className="mt-12 grid gap-8 lg:grid-cols-5 items-start"
+            initial="hidden"
+            animate="visible"
+            variants={sectionVariants}
+        >
+            <motion.div className="lg:col-span-3 flex flex-col gap-8" variants={itemVariants}>
                 <TrackingMap deliveryDetails={deliveryDetails} etaResult={etaResult} />
-            </div>
-            <div className="lg:col-span-2 flex flex-col gap-8">
+            </motion.div>
+            <motion.div className="lg:col-span-2 flex flex-col gap-8" variants={itemVariants}>
                  <Card className="bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
                     <CardHeader>
                         <CardTitle>Track your package</CardTitle>
@@ -79,8 +109,8 @@ export default function TrackingPage() {
                     </CardContent>
                 </Card>
                 <SupportChat deliveryDetails={deliveryDetails} />
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     </div>
   );
 }
