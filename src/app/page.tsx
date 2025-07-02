@@ -5,7 +5,7 @@ import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot } from 'lucide-react';
 import Image from 'next/image';
 
 export type EtaResult = {
@@ -125,10 +125,12 @@ export default function DunlivrerPage() {
             </div>
             <div className="lg:col-span-1">
                 <div className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
-                    <h3 className="font-headline text-2xl font-bold text-white">Track Your Order</h3>
-                    <p className="mt-2 text-muted-foreground">Already have a delivery in progress? Head over to our tracking page for real-time updates.</p>
+                    <h3 className="font-headline text-2xl font-bold text-white flex items-center gap-3">
+                      <Bot className="text-primary"/> Track & Support
+                    </h3>
+                    <p className="mt-2 text-muted-foreground">Already have a delivery in progress? Head over to our tracking page for real-time updates and AI-powered support.</p>
                     <Button asChild className="mt-6" size="lg">
-                        <Link href="/tracking">Track an Order</Link>
+                        <Link href="/tracking">Track & Chat</Link>
                     </Button>
                 </div>
             </div>
