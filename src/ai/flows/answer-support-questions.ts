@@ -19,8 +19,9 @@ export type AnswerSupportQuestionInput = z.infer<
   typeof AnswerSupportQuestionInputSchema
 >;
 
-// The output is now a simple string for reliability.
-const AnswerSupportQuestionOutputSchema = z.string().describe('The answer to the question.');
+const AnswerSupportQuestionOutputSchema = z.object({
+  answer: z.string().describe('The answer to the question.'),
+});
 export type AnswerSupportQuestionOutput = z.infer<
   typeof AnswerSupportQuestionOutputSchema
 >;
@@ -35,9 +36,9 @@ const prompt = ai.definePrompt({
   name: 'answerSupportQuestionPrompt',
   input: {schema: AnswerSupportQuestionInputSchema},
   output: {schema: AnswerSupportQuestionOutputSchema},
-  // The prompt is simplified to ask for a direct, conversational answer, removing the complex JSON requirement.
   prompt: `You are a friendly and helpful support chatbot for a delivery service called Dunlivrer.
-Your task is to answer the user's question directly and conversationally based on the context provided.
+Your task is to answer the user's question conversationally based on the context provided.
+You must provide your answer in the 'answer' field of the JSON output.
 
 CONTEXT:
 {{#if deliveryDetails}}
@@ -53,7 +54,7 @@ CONTEXT:
 USER'S QUESTION:
 "{{{question}}}"
 
-Now, provide a helpful and direct answer to the user's question. Do not include any extra formatting or JSON.`,
+Now, provide a helpful and direct answer to the user's question in the required JSON format.`,
 });
 
 const answerSupportQuestionFlow = ai.defineFlow(
@@ -67,7 +68,6 @@ const answerSupportQuestionFlow = ai.defineFlow(
     if (!output) {
         throw new Error('The AI model failed to provide a valid answer.');
     }
-    // The output is now a simple string.
     return output;
   }
 );

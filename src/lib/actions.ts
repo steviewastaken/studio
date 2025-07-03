@@ -16,8 +16,8 @@ import {
 export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   try {
     const result = await answerSupportQuestionFlow(data);
-    // We wrap the raw string result in the object format the UI expects.
-    return { success: true, data: { answer: result } };
+    // The flow now returns the { answer: "..." } object directly.
+    return { success: true, data: result };
   } catch (error: any) {
     console.error("handleSupportQuestion Error:", error.message);
     // Pass the specific error message to the client for better feedback.
