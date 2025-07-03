@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from 'next/link';
-import { Menu, LogOut } from 'lucide-react';
+import { Menu, LogOut, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/context/auth-context';
@@ -23,6 +24,43 @@ const navLinks = [
   { href: '/tracking', label: 'Order Tracking' },
   { href: '/contact', label: 'Contact Us' },
 ];
+
+const languages = [
+    { code: 'en', name: 'English', native: 'English' },
+    { code: 'es', name: 'Spanish', native: 'Español' },
+    { code: 'fr', name: 'French', native: 'Français' },
+    { code: 'de', name: 'German', native: 'Deutsch' },
+    { code: 'zh', name: 'Mandarin', native: '中文' },
+    { code: 'ja', name: 'Japanese', native: '日本語' },
+    { code: 'ar', name: 'Arabic', native: 'العربية' },
+    { code: 'pt', name: 'Portuguese', native: 'Português' },
+    { code: 'ru', name: 'Russian', native: 'Русский' },
+    { code: 'hi', name: 'Hindi', native: 'हिन्दी' },
+    { code: 'it', name: 'Italian', native: 'Italiano' },
+];
+
+function LanguageSwitcher() {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Globe className="h-5 w-5" />
+                    <span className="sr-only">Change language</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Select Language</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {languages.map((lang) => (
+                    <DropdownMenuItem key={lang.code}>
+                        <span className="w-2/3 truncate">{lang.name}</span>
+                        <span className="w-1/3 text-right text-muted-foreground">{lang.native}</span>
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -72,7 +110,8 @@ export default function Header() {
             </Link>
           ))}
         </nav>
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2">
+          <LanguageSwitcher />
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
