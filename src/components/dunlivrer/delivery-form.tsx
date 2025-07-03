@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle2, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion } from 'lucide-react';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion, CheckCircle2 } from 'lucide-react';
 import { handleFindDriver, handleGetQuote, handleDetectFraud } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { FindDriverOutput, FindDriverInput } from '@/ai/flows/find-driver';
@@ -49,6 +49,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   const [isCheckingFraud, setIsCheckingFraud] = useState(false);
   const [fraudResult, setFraudResult] = useState<DetectFraudOutput | null>(null);
   const [showFraudDialog, setShowFraudDialog] = useState(false);
+  const [validatedFields, setValidatedFields] = useState(new Set<string>());
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -78,13 +79,21 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   }, [onAddressChange]);
 
   useEffect(() => {
-    const subscription = watch((value) => {
+    const subscription = watch((value, { name }) => {
         handleAddressChangeCallback(value as z.infer<typeof formSchema>);
         setIsReviewed(false);
         setQuote(null);
+        // If a field is changed manually, we can assume it's no longer validated
+        if (name && validatedFields.has(name)) {
+            setValidatedFields(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(name);
+                return newSet;
+            });
+        }
     });
     return () => subscription.unsubscribe();
-  }, [watch, handleAddressChangeCallback]);
+  }, [watch, handleAddressChangeCallback, validatedFields]);
 
 
   async function onGetQuote(values: z.infer<typeof formSchema>) {
@@ -131,6 +140,14 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     }
     setIsFindingDriver(false);
   };
+
+  const resetFormState = () => {
+    setDriverDetails(null);
+    setIsReviewed(false);
+    setQuote(null);
+    setValidatedFields(new Set());
+    form.reset();
+  }
 
   const handleConfirmDispatch = async () => {
     const values = form.getValues();
@@ -196,10 +213,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
       return;
     }
     setIsScheduling(false);
-    setDriverDetails(null); // Reset driver details
-    setIsReviewed(false); // Reset form state
-    setQuote(null);
-    form.reset();
+    resetFormState();
     toast({
       title: 'Delivery Scheduled!',
       description: `Your delivery is scheduled for ${format(scheduledDate, 'PPP')} between ${scheduledTime}.`,
@@ -236,47 +250,65 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                             onPlaceChanged={(place) => {
                                 if (place.formatted_address) {
                                     setValue("pickupAddress", place.formatted_address, { shouldValidate: true, shouldDirty: true });
+                                    setValidatedFields(prev => new Set(prev).add('pickupAddress'));
                                 }
                             }}
                             className="h-12"
                           />
                         </FormControl>
                       <FormMessage />
+                      {validatedFields.has('pickupAddress') && (
+                        <div className="flex items-center gap-1.5 text-xs text-green-500 mt-1 animate-in fade-in-0">
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            <span>Address Verified</span>
+                        </div>
+                      )}
                     </FormItem>
                   )}
                 />
                 
                 <div className="space-y-4">
                   <FormLabel>Destination Addresses</FormLabel>
-                  {fields.map((field, index) => (
-                    <FormField
-                      key={field.id}
-                      control={form.control}
-                      name={`destinationAddresses.${index}.value`}
-                      render={({ field: renderField }) => (
-                        <FormItem className="flex items-center gap-2">
-                          <FormControl>
-                            <AddressAutocomplete
-                                {...renderField}
-                                placeholder={`Destination #${index + 1}`}
-                                onPlaceChanged={(place) => {
-                                    if (place.formatted_address) {
-                                        setValue(`destinationAddresses.${index}.value`, place.formatted_address, { shouldValidate: true, shouldDirty: true });
-                                    }
-                                }}
-                                className="h-12"
+                  {fields.map((field, index) => {
+                    const fieldName = `destinationAddresses.${index}.value`;
+                    return (
+                        <div key={field.id} className="space-y-2">
+                            <FormField
+                            control={form.control}
+                            name={fieldName}
+                            render={({ field: renderField }) => (
+                                <FormItem className="flex items-center gap-2">
+                                <FormControl>
+                                    <AddressAutocomplete
+                                        {...renderField}
+                                        placeholder={`Destination #${index + 1}`}
+                                        onPlaceChanged={(place) => {
+                                            if (place.formatted_address) {
+                                                setValue(fieldName, place.formatted_address, { shouldValidate: true, shouldDirty: true });
+                                                setValidatedFields(prev => new Set(prev).add(fieldName));
+                                            }
+                                        }}
+                                        className="h-12"
+                                    />
+                                </FormControl>
+                                {fields.length > 1 && (
+                                    <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0">
+                                        <Trash2 className="w-4 h-4 text-destructive"/>
+                                    </Button>
+                                )}
+                                </FormItem>
+                            )}
                             />
-                          </FormControl>
-                          {fields.length > 1 && (
-                            <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0">
-                                <Trash2 className="w-4 h-4 text-destructive"/>
-                            </Button>
-                          )}
-                        </FormItem>
-                      )}
-                    />
-                  ))}
-                  <FormMessage>{form.formState.errors.destinationAddresses?.root?.message}</FormMessage>
+                            <FormMessage>{form.formState.errors.destinationAddresses?.[index]?.value?.message}</FormMessage>
+                            {validatedFields.has(fieldName) && (
+                                <div className="flex items-center gap-1.5 text-xs text-green-500 animate-in fade-in-0 pl-1">
+                                    <CheckCircle className="h-3.5 w-3.5" />
+                                    <span>Address Verified</span>
+                                </div>
+                            )}
+                        </div>
+                    )
+                  })}
                   <Button type="button" variant="outline" size="sm" onClick={() => append({ value: "" })}>
                       <PlusCircle className="mr-2"/> Add another destination
                   </Button>
@@ -399,7 +431,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
               </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => { setDriverDetails(null); setIsReviewed(false); form.reset(); }}>Close</Button>
+            <Button onClick={() => resetFormState()}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
