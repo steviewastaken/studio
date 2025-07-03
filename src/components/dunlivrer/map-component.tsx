@@ -109,15 +109,21 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
   const { isLoaded, loadError } = useGoogleMaps();
 
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [center, setCenter] = useState({ lat: 48.8566, lng: 2.3522 }); // Default to Paris
 
   const validDestinations = useMemo(() => destinationAddresses.filter(d => d), [destinationAddresses]);
 
   useEffect(() => {
-    if (!isLoaded || !pickupAddress || validDestinations.length === 0) {
-      setDirections(null);
-      // We can't center on a single point without geocoding, so we'll just keep the default.
-      // The map will recenter once a route is calculated.
+    if (!isLoaded) {
+      return;
+    }
+    
+    // Reset state for new calculations
+    setDirections(null);
+    setError(null);
+
+    if (!pickupAddress || validDestinations.length === 0) {
       return;
     }
 
@@ -126,7 +132,6 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
     const destination = validDestinations[validDestinations.length - 1];
 
     if (!origin || !destination) {
-      setDirections(null);
       return;
     }
 
@@ -142,8 +147,15 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
       (result, status) => {
         if (status === google.maps.DirectionsStatus.OK && result) {
           setDirections(result);
+          setError(null);
         } else {
           console.error(`Error fetching directions: ${status}`);
+          setDirections(null);
+          if (status === 'NOT_FOUND') {
+            setError("Could not find a route for the addresses provided. Please check for typos and ensure they are valid locations.");
+          } else {
+            setError(`Map error: ${status}. Please try again.`);
+          }
         }
       }
     );
@@ -186,15 +198,27 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
   }
 
   return (
-    <GoogleMap
-      mapContainerStyle={containerStyle}
-      center={center}
-      zoom={12}
-      options={mapOptions}
-    >
-      {directions && (
-        <DirectionsRenderer directions={directions} options={{ suppressMarkers: false, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
-      )}
-    </GoogleMap>
+    <div className="relative w-full h-full">
+        <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={center}
+        zoom={12}
+        options={mapOptions}
+        >
+        {directions && !error && (
+            <DirectionsRenderer directions={directions} options={{ suppressMarkers: false, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
+        )}
+        </GoogleMap>
+        {error && (
+            <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <Alert variant="destructive">
+                    <AlertTitle>Routing Error</AlertTitle>
+                    <AlertDescription>
+                        {error}
+                    </AlertDescription>
+                </Alert>
+            </div>
+        )}
+    </div>
   );
 }
