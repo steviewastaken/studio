@@ -352,7 +352,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                             <div className="p-4 bg-muted rounded-lg">
                                 <DollarSign className="mx-auto text-primary h-6 w-6 mb-2"/>
                                 <p className="text-xs text-muted-foreground">Price</p>
-                                <p className="font-bold text-lg">${quote.price.toFixed(2)}</p>
+                                <p className="font-bold text-lg">€{quote.price.toFixed(2)}</p>
                             </div>
                              <div className="p-4 bg-muted rounded-lg">
                                 <Milestone className="mx-auto text-primary h-6 w-6 mb-2"/>

@@ -27,7 +27,7 @@ const GetQuoteInputSchema = z.object({
 export type GetQuoteInput = z.infer<typeof GetQuoteInputSchema>;
 
 const GetQuoteOutputSchema = z.object({
-  price: z.number().describe('The total cost of the delivery in USD, rounded to 2 decimal places.'),
+  price: z.number().describe('The total cost of the delivery in Euros, rounded to 2 decimal places.'),
   distance: z.string().describe('The total travel distance for the delivery, in kilometers (e.g., "15.2 km").'),
   eta: z.string().describe('The estimated time of arrival in minutes (e.g., "25 minutes").'),
 });
@@ -98,16 +98,48 @@ const getQuoteFlow = ai.defineFlow(
     // Use duration from API for ETA, add buffer
     const etaInMinutes = Math.round(totalDurationSeconds / 60) + 10; // 10 min buffer for pickup/dropoff
 
-    // Reliable price calculation
-    const BASE_FARE = 5;
-    const PER_KM_RATE = 1.5;
+    // --- New France-Based Pricing Logic ---
 
-    const sizeCostMap = {small: 0, medium: 3, large: 7};
-    const typeMultiplierMap = {standard: 1, express: 1.5, night: 2};
+    // 1. Base Fare (assuming Paris for MVP)
+    const BASE_FARE = 5.00; // up to 2 km, <= 3 kg
+    const BASE_DISTANCE_KM = 2;
 
-    const distanceCost = distanceInKm * PER_KM_RATE;
-    const sizeCost = sizeCostMap[input.packageSize];
-    let totalCost = (BASE_FARE + distanceCost + sizeCost) * typeMultiplierMap[input.deliveryType];
+    // 2. Variable Distance Cost (Marginal Rates)
+    let distanceCost = 0;
+    let remainingDistance = distanceInKm > BASE_DISTANCE_KM ? distanceInKm - BASE_DISTANCE_KM : 0;
+
+    // Slab 1: 2-5 km (i.e., first 3km of remaining distance)
+    if (remainingDistance > 0) {
+        const distInSlab = Math.min(remainingDistance, 3);
+        distanceCost += distInSlab * 1.00;
+        remainingDistance -= distInSlab;
+    }
+    // Slab 2: 5-10 km (i.e., next 5km of remaining distance)
+    if (remainingDistance > 0) {
+        const distInSlab = Math.min(remainingDistance, 5);
+        distanceCost += distInSlab * 0.80;
+        remainingDistance -= distInSlab;
+    }
+    // Slab 3: 10-20 km (i.e., next 10km of remaining distance)
+    if (remainingDistance > 0) {
+        const distInSlab = Math.min(remainingDistance, 10);
+        distanceCost += distInSlab * 0.70;
+        remainingDistance -= distInSlab;
+    }
+    // Slab 4: 20+ km
+    if (remainingDistance > 0) {
+        distanceCost += remainingDistance * 0.60;
+    }
+
+    // 3. Weight Surcharge
+    const weightSurchargeMap = { small: 0, medium: 1.00, large: 2.00 }; // small <= 3kg, medium 3-5kg, large 5-10kg
+    const weightSurcharge = weightSurchargeMap[input.packageSize];
+
+    // 4. Speed & Time-Based Surcharges
+    const speedSurchargeMap = { standard: 0, express: 3.00, night: 2.50 };
+    const speedSurcharge = speedSurchargeMap[input.deliveryType];
+    
+    let totalCost = BASE_FARE + distanceCost + weightSurcharge + speedSurcharge;
 
     // Round to 2 decimal places.
     const finalPrice = Math.round(totalCost * 100) / 100;
