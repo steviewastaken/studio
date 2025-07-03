@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import Header from '@/components/dunlivrer/header';
 import Footer from '@/components/dunlivrer/footer';
 import { AuthProvider } from '@/context/auth-context';
+import { GoogleMapsProvider } from '@/context/google-maps-context';
 
 export const metadata: Metadata = {
   title: 'Dunlivrer',
@@ -25,14 +26,16 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
-          <div className="flex flex-col min-h-screen bg-transparent text-foreground">
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </div>
-          <Toaster />
+          <GoogleMapsProvider>
+            <div className="flex flex-col min-h-screen bg-transparent text-foreground">
+              <Header />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </div>
+            <Toaster />
+          </GoogleMapsProvider>
         </AuthProvider>
       </body>
     </html>

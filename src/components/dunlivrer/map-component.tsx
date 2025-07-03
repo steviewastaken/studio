@@ -2,12 +2,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
+import { GoogleMap, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
 import { Skeleton } from '../ui/skeleton';
-import { locationMap } from '@/lib/locations';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Button } from '../ui/button';
 import { ExternalLink } from 'lucide-react';
+import { useGoogleMaps } from '@/context/google-maps-context';
 
 const containerStyle = {
   width: '100%',
@@ -106,40 +106,29 @@ type MapComponentProps = {
 
 export default function MapComponent({ pickupAddress, destinationAddresses }: MapComponentProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey || "",
-    libraries: ['places'],
-  });
+  const { isLoaded, loadError } = useGoogleMaps();
 
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [center, setCenter] = useState({ lat: 48.8566, lng: 2.3522 }); // Default to Paris
 
-  const validDestinations = useMemo(() => destinationAddresses.filter(d => d && locationMap.has(d)), [destinationAddresses]);
+  const validDestinations = useMemo(() => destinationAddresses.filter(d => d), [destinationAddresses]);
 
   useEffect(() => {
-    if (!isLoaded) return;
-
-    if (!pickupAddress || validDestinations.length === 0) {
+    if (!isLoaded || !pickupAddress || validDestinations.length === 0) {
       setDirections(null);
-      if (pickupAddress && locationMap.has(pickupAddress)) {
-        setCenter(locationMap.get(pickupAddress)!);
-      } else {
-        setCenter({ lat: 48.8566, lng: 2.3522 });
-      }
+      // We can't center on a single point without geocoding, so we'll just keep the default.
+      // The map will recenter once a route is calculated.
       return;
     }
 
-    const origin = locationMap.get(pickupAddress);
-    const waypoints = validDestinations.slice(0, -1).map(addr => ({ location: locationMap.get(addr)! }));
-    const destination = locationMap.get(validDestinations[validDestinations.length - 1]);
+    const origin = pickupAddress;
+    const waypoints = validDestinations.slice(0, -1).map(addr => ({ location: addr }));
+    const destination = validDestinations[validDestinations.length - 1];
 
     if (!origin || !destination) {
       setDirections(null);
       return;
     }
-
-    setCenter(origin);
 
     const directionsService = new window.google.maps.DirectionsService();
     directionsService.route(
@@ -203,18 +192,8 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
       zoom={12}
       options={mapOptions}
     >
-      {directions ? (
+      {directions && (
         <DirectionsRenderer directions={directions} options={{ suppressMarkers: true, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
-      ) : (
-        <>
-          {pickupAddress && locationMap.has(pickupAddress) && (
-            <Marker position={locationMap.get(pickupAddress)!} />
-          )}
-          {validDestinations.map((addr, i) => {
-            const pos = locationMap.get(addr);
-            return pos ? <Marker key={i} position={pos} /> : null;
-          })}
-        </>
       )}
     </GoogleMap>
   );

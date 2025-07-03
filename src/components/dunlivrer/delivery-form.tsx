@@ -9,18 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, ChevronsUpDown, Check, MapPin, Trash2, PlusCircle, Truck, CheckCircle2, DollarSign, Milestone, Timer } from 'lucide-react';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle2, DollarSign, Milestone, Timer } from 'lucide-react';
 import { handleFindDriver, handleGetQuote } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { ScrollArea } from '../ui/scroll-area';
 import type { FindDriverOutput } from '@/ai/flows/find-driver';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
-import { locations } from '@/lib/locations';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import AddressAutocomplete from './address-autocomplete';
 
 const formSchema = z.object({
   pickupAddress: z.string({ required_error: "Please select a pickup location."}).min(1, "Please select a pickup location."),
@@ -40,7 +37,6 @@ type DeliveryFormProps = {
 
 export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   const [isReviewed, setIsReviewed] = useState(false);
-  const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
   const [isFindingDriver, setIsFindingDriver] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   const [quote, setQuote] = useState<GetQuoteOutput | null>(null);
@@ -164,16 +160,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
       description: `Your delivery is scheduled for ${format(scheduledDate, 'PPP')} between ${scheduledTime}.`,
     });
   };
-  
-  const togglePopover = (id: string) => {
-    setOpenPopovers(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const setLocation = (fieldName: "pickupAddress" | `destinationAddresses.${number}.value`, address: string, popoverId: string) => {
-    setValue(fieldName, address, { shouldValidate: true, shouldDirty: true });
-    togglePopover(popoverId);
-  }
-  
+    
   const timeSlots = Array.from({ length: 10 }, (_, i) => {
     const hour = i + 9;
     return `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
@@ -195,41 +182,18 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Pickup Address</FormLabel>
-                      <Popover open={openPopovers['pickup']} onOpenChange={() => togglePopover('pickup')}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "w-full justify-between h-12 text-sm",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              <div className="flex items-center gap-2 truncate">
-                                <MapPin className="w-4 h-4 shrink-0" />
-                                <span className="truncate">{locations.find(l => l.address === field.value)?.name || "Select pickup location..."}</span>
-                              </div>
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <ScrollArea className="h-64">
-                              {locations.map((location) => (
-                                <Button
-                                      variant="ghost"
-                                      key={location.address}
-                                      onClick={() => setLocation("pickupAddress", location.address, 'pickup')}
-                                      className="w-full justify-start h-auto py-2 text-left"
-                                  >
-                                      <Check className={cn("mr-2 h-4 w-4 shrink-0", location.address === field.value ? "opacity-100" : "opacity-0")} />
-                                      <span className="whitespace-normal break-words">{location.name}</span>
-                                  </Button>
-                              ))}
-                            </ScrollArea>
-                        </PopoverContent>
-                      </Popover>
+                        <FormControl>
+                          <AddressAutocomplete
+                            {...field}
+                            placeholder="Enter pickup address..."
+                            onPlaceChanged={(place) => {
+                                if (place.formatted_address) {
+                                    setValue("pickupAddress", place.formatted_address, { shouldValidate: true, shouldDirty: true });
+                                }
+                            }}
+                            className="h-12"
+                          />
+                        </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -237,57 +201,34 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                 
                 <div className="space-y-4">
                   <FormLabel>Destination Addresses</FormLabel>
-                  {fields.map((field, index) => {
-                      const popoverId = `dest-${index}`;
-                      return (
-                          <FormField
-                              key={field.id}
-                              control={form.control}
-                              name={`destinationAddresses.${index}.value`}
-                              render={({ field: renderField }) => (
-                              <FormItem className="flex items-center gap-2">
-                                  <Popover open={openPopovers[popoverId]} onOpenChange={() => togglePopover(popoverId)}>
-                                  <PopoverTrigger asChild>
-                                      <FormControl>
-                                      <Button
-                                          variant="outline"
-                                          role="combobox"
-                                          className={cn("w-full justify-between h-12 text-sm", !renderField.value && "text-muted-foreground")}
-                                      >
-                                          <div className="flex items-center gap-2 truncate">
-                                          <MapPin className="w-4 h-4 shrink-0 text-accent" />
-                                          <span className="truncate">{locations.find(l => l.address === renderField.value)?.name || `Destination #${index + 1}`}</span>
-                                          </div>
-                                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                      </Button>
-                                      </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                      <ScrollArea className="h-64">
-                                          {locations.map((location) => (
-                                          <Button
-                                              variant="ghost"
-                                              key={location.address}
-                                              onClick={() => setLocation(`destinationAddresses.${index}.value`, location.address, popoverId)}
-                                              className="w-full justify-start h-auto py-2 text-left"
-                                          >
-                                              <Check className={cn("mr-2 h-4 w-4 shrink-0", location.address === renderField.value ? "opacity-100" : "opacity-0")} />
-                                              <span className="whitespace-normal break-words">{location.name}</span>
-                                          </Button>
-                                          ))}
-                                      </ScrollArea>
-                                  </PopoverContent>
-                                  </Popover>
-                                  {fields.length > 1 && (
-                                      <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0">
-                                          <Trash2 className="w-4 h-4 text-destructive"/>
-                                      </Button>
-                                  )}
-                              </FormItem>
-                              )}
-                          />
-                      );
-                  })}
+                  {fields.map((field, index) => (
+                    <FormField
+                      key={field.id}
+                      control={form.control}
+                      name={`destinationAddresses.${index}.value`}
+                      render={({ field: renderField }) => (
+                        <FormItem className="flex items-center gap-2">
+                          <FormControl>
+                            <AddressAutocomplete
+                                {...renderField}
+                                placeholder={`Destination #${index + 1}`}
+                                onPlaceChanged={(place) => {
+                                    if (place.formatted_address) {
+                                        setValue(`destinationAddresses.${index}.value`, place.formatted_address, { shouldValidate: true, shouldDirty: true });
+                                    }
+                                }}
+                                className="h-12"
+                            />
+                          </FormControl>
+                          {fields.length > 1 && (
+                            <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0">
+                                <Trash2 className="w-4 h-4 text-destructive"/>
+                            </Button>
+                          )}
+                        </FormItem>
+                      )}
+                    />
+                  ))}
                   <FormMessage>{form.formState.errors.destinationAddresses?.root?.message}</FormMessage>
                   <Button type="button" variant="outline" size="sm" onClick={() => append({ value: "" })}>
                       <PlusCircle className="mr-2"/> Add another destination
@@ -404,7 +345,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                       <span className="font-bold text-primary">{driverDetails?.driverName}</span> is on the way!
                   </p>
                   <div className="text-sm text-muted-foreground">
-                      Estimated arrival for pickup: <span className="font-bold text-foreground">{driverDetails?.driverEta} minutes</span>.
+                      Estimated arrival for pickup: <span className="font-bold text-foreground">{driverDetails?.driverEta}</span>.
                   </div>
               </div>
           </div>
