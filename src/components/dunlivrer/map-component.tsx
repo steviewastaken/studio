@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { GoogleMap, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
 import { Skeleton } from '../ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -113,52 +113,40 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
   const [center, setCenter] = useState({ lat: 48.8566, lng: 2.3522 }); // Default to Paris
 
   const validDestinations = useMemo(() => destinationAddresses.filter(d => d), [destinationAddresses]);
+  const hasAddresses = pickupAddress && validDestinations.length > 0;
 
-  useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
-    
-    // Reset state for new calculations
-    setDirections(null);
-    setError(null);
-
-    if (!pickupAddress || validDestinations.length === 0) {
-      return;
-    }
-
-    const origin = pickupAddress;
-    const waypoints = validDestinations.slice(0, -1).map(addr => ({ location: addr }));
-    const destination = validDestinations[validDestinations.length - 1];
-
-    if (!origin || !destination) {
-      return;
-    }
-
-    const directionsService = new window.google.maps.DirectionsService();
-    directionsService.route(
-      {
-        origin: origin,
-        destination: destination,
-        travelMode: google.maps.TravelMode.DRIVING,
-        waypoints: waypoints,
-        optimizeWaypoints: true,
-      },
-      (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK && result) {
-          setDirections(result);
-          setError(null);
-        } else {
-          setDirections(null);
-          if (status === 'NOT_FOUND') {
-            setError("Could not find a route for the addresses provided. Please check for typos and ensure they are valid locations.");
-          } else {
+  const directionsCallback = useCallback((
+    result: google.maps.DirectionsResult | null,
+    status: google.maps.DirectionsStatus
+  ) => {
+    if (status === google.maps.DirectionsStatus.OK && result) {
+      setDirections(result);
+      setError(null);
+    } else {
+      setDirections(null);
+      if (status === 'NOT_FOUND' || status === 'ZERO_RESULTS') {
+        setError("Could not find a route for the addresses provided. Please check for typos and ensure they are valid locations.");
+      } else {
+        // Don't show an error for empty requests, just clear the map.
+        if (status !== 'REQUEST_DENIED') {
             setError(`Map error: ${status}. Please try again.`);
-          }
         }
       }
-    );
-  }, [pickupAddress, validDestinations, isLoaded]);
+    }
+  }, []);
+
+  const directionsServiceOptions = useMemo(() => {
+      if (!hasAddresses) return null;
+
+      return {
+          origin: pickupAddress,
+          destination: validDestinations[validDestinations.length - 1],
+          waypoints: validDestinations.slice(0, -1).map(addr => ({ location: addr })),
+          travelMode: 'DRIVING' as const,
+          optimizeWaypoints: true,
+      };
+  }, [pickupAddress, validDestinations, hasAddresses]);
+
 
   if (!apiKey) {
     return (
@@ -199,14 +187,24 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
   return (
     <div className="relative w-full h-full">
         <GoogleMap
-        mapContainerStyle={containerStyle}
-        center={center}
-        zoom={12}
-        options={mapOptions}
+            mapContainerStyle={containerStyle}
+            center={center}
+            zoom={12}
+            options={mapOptions}
+            // Reset directions when addresses change by changing the key
+            key={JSON.stringify(destinationAddresses) + pickupAddress}
         >
-        {directions && !error && (
-            <DirectionsRenderer directions={directions} options={{ suppressMarkers: false, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
-        )}
+            {/* Use the DirectionsService component */}
+            {hasAddresses && directionsServiceOptions && (
+                <DirectionsService
+                    options={directionsServiceOptions}
+                    callback={directionsCallback}
+                />
+            )}
+
+            {directions && (
+                <DirectionsRenderer directions={directions} options={{ suppressMarkers: false, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
+            )}
         </GoogleMap>
         {error && (
             <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
