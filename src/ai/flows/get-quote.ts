@@ -76,7 +76,6 @@ const getQuoteFlow = ai.defineFlow(
 
         if (data.status !== 'OK') {
             const errorMessage = data.error_message || `API Error: ${data.status}`;
-            console.error('Directions API Error:', errorMessage, 'Status:', data.status);
             
             if (data.status === 'NOT_FOUND' || data.status === 'ZERO_RESULTS') {
                 throw new Error('No route could be found. Please check that the addresses are correct and try again.');
@@ -84,7 +83,7 @@ const getQuoteFlow = ai.defineFlow(
             if (data.status === 'REQUEST_DENIED') {
                 throw new Error('The request was denied. This may be an issue with the API key configuration.');
             }
-            throw new Error(`Failed to get directions. Please try again later.`);
+            throw new Error(`Failed to get directions: ${errorMessage}. Please try again later.`);
         }
 
         if (!data.routes || data.routes.length === 0 || !data.routes[0].legs || data.routes[0].legs.length === 0) {
@@ -98,7 +97,6 @@ const getQuoteFlow = ai.defineFlow(
         });
 
     } catch (e: any) {
-        console.error("Error fetching or processing Directions API response:", e.message);
         // Re-throw specific, user-friendly messages
         throw new Error(e.message || 'An unknown error occurred while calculating the route.');
     }
