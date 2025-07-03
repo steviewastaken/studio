@@ -76,22 +76,20 @@ const getQuoteFlow = ai.defineFlow(
 
         if (data.status !== 'OK') {
             const errorMessage = data.error_message || `API Error: ${data.status}`;
-            console.error('Directions API Error:', errorMessage);
-            if (data.status === 'NOT_FOUND') {
-                throw new Error('One of the specified locations could not be found. Please check the addresses and try again.');
-            }
-            if (data.status === 'ZERO_RESULTS') {
-                throw new Error('No route could be found. Please check if the addresses are correct and within a reasonable distance.');
+            console.error('Directions API Error:', errorMessage, 'Status:', data.status);
+            
+            if (data.status === 'NOT_FOUND' || data.status === 'ZERO_RESULTS') {
+                throw new Error('No route could be found. Please check that the addresses are correct and try again.');
             }
             if (data.status === 'REQUEST_DENIED') {
                 throw new Error('The request was denied. This may be an issue with the API key configuration.');
             }
-            throw new Error(`Failed to get directions: ${errorMessage}`);
+            throw new Error(`Failed to get directions. Please try again later.`);
         }
 
-        if (!data.routes || data.routes.length === 0) {
-            console.error('Directions API Error: No routes found for the given addresses.');
-            throw new Error('No valid route could be found between the specified addresses. They may be too far apart.');
+        if (!data.routes || data.routes.length === 0 || !data.routes[0].legs || data.routes[0].legs.length === 0) {
+            console.error('Directions API Error: No routes or legs found for the given addresses.');
+            throw new Error('No valid route could be found between the specified addresses. They may be too far apart or on disconnected road networks.');
         }
 
         data.routes[0].legs.forEach((leg: any) => {
@@ -101,13 +99,12 @@ const getQuoteFlow = ai.defineFlow(
 
     } catch (e: any) {
         console.error("Error fetching or processing Directions API response:", e.message);
-        // Re-throw the specific error message to be handled by the client
+        // Re-throw specific, user-friendly messages
         throw new Error(e.message || 'An unknown error occurred while calculating the route.');
     }
     
     if (totalDistanceMeters === 0) {
-        // This case should be rare now with the above checks, but it's a good safeguard.
-        throw new Error('Could not calculate a route for the given addresses. Please verify they are correct.');
+        throw new Error('Could not calculate a valid route for the given addresses. The distance is zero.');
     }
 
     const distanceInKm = totalDistanceMeters / 1000;
