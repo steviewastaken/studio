@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle2, DollarSign, Milestone, Timer } from 'lucide-react';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle2, Euro, Milestone, Timer } from 'lucide-react';
 import { handleFindDriver, handleGetQuote } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { FindDriverOutput } from '@/ai/flows/find-driver';
@@ -291,7 +291,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                     <div className="space-y-4">
                         <div className="grid grid-cols-3 gap-4 text-center">
                             <div className="p-4 bg-muted rounded-lg">
-                                <DollarSign className="mx-auto text-primary h-6 w-6 mb-2"/>
+                                <Euro className="mx-auto text-primary h-6 w-6 mb-2"/>
                                 <p className="text-xs text-muted-foreground">Price</p>
                                 <p className="font-bold text-lg">€{quote.price.toFixed(2)}</p>
                             </div>
