@@ -127,10 +127,9 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
       if (status === 'NOT_FOUND' || status === 'ZERO_RESULTS') {
         setError("Could not find a route for the addresses provided. Please check for typos and ensure they are valid locations.");
       } else {
-        // Don't show an error for empty requests, just clear the map.
-        if (status !== 'REQUEST_DENIED') {
-            setError(`Map error: ${status}. Please try again.`);
-        }
+        // A request will only be made if there are addresses, so we don't need to worry about empty requests.
+        // For other statuses (e.g., OVER_QUERY_LIMIT), we show a generic error.
+        setError(`Map service error: ${status}. Please try again later.`);
       }
     }
   }, []);
