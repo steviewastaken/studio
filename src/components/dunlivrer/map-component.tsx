@@ -149,7 +149,6 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
           setDirections(result);
           setError(null);
         } else {
-          console.error(`Error fetching directions: ${status}`);
           setDirections(null);
           if (status === 'NOT_FOUND') {
             setError("Could not find a route for the addresses provided. Please check for typos and ensure they are valid locations.");
