@@ -48,7 +48,7 @@ const getQuoteFlow = ai.defineFlow(
   async (input) => {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-      throw new Error('Google Maps API key is not configured on the server.');
+      throw new Error('The Google Maps API key is not configured on the server. Please contact support.');
     }
 
     const origin = input.pickupAddress;
@@ -75,8 +75,20 @@ const getQuoteFlow = ai.defineFlow(
         const data = await response.json();
 
         if (data.status !== 'OK') {
-            console.error('Directions API Error:', data.error_message || data.status);
-            throw new Error(`Failed to get directions from Google Maps API: ${data.status}`);
+            const errorMessage = data.error_message || `API Error: ${data.status}`;
+            console.error('Directions API Error:', errorMessage);
+            if (data.status === 'ZERO_RESULTS') {
+                throw new Error('No route could be found. Please check if the addresses are correct and within a reasonable distance.');
+            }
+            if (data.status === 'REQUEST_DENIED') {
+                throw new Error('The request was denied. This may be an issue with the API key configuration.');
+            }
+            throw new Error(`Failed to get directions: ${errorMessage}`);
+        }
+
+        if (!data.routes || data.routes.length === 0) {
+            console.error('Directions API Error: No routes found for the given addresses.');
+            throw new Error('No valid route could be found between the specified addresses. They may be too far apart.');
         }
 
         data.routes[0].legs.forEach((leg: any) => {
@@ -85,12 +97,14 @@ const getQuoteFlow = ai.defineFlow(
         });
 
     } catch (e: any) {
-        console.error("Error calling Directions API:", e);
-        throw new Error(`Failed to calculate route. Please check addresses and API key permissions. Reason: ${e.message}`);
+        console.error("Error fetching or processing Directions API response:", e.message);
+        // Re-throw the specific error message to be handled by the client
+        throw new Error(e.message || 'An unknown error occurred while calculating the route.');
     }
     
     if (totalDistanceMeters === 0) {
-        throw new Error('Could not calculate a route for the given addresses.');
+        // This case should be rare now with the above checks, but it's a good safeguard.
+        throw new Error('Could not calculate a route for the given addresses. Please verify they are correct.');
     }
 
     const distanceInKm = totalDistanceMeters / 1000;
@@ -98,50 +112,40 @@ const getQuoteFlow = ai.defineFlow(
     // Use duration from API for ETA, add buffer
     const etaInMinutes = Math.round(totalDurationSeconds / 60) + 10; // 10 min buffer for pickup/dropoff
 
-    // --- New France-Based Pricing Logic ---
-
-    // 1. Base Fare (assuming Paris for MVP)
-    const BASE_FARE = 5.00; // up to 2 km, <= 3 kg
+    // --- France-Based Pricing Logic ---
+    const BASE_FARE = 5.00; 
     const BASE_DISTANCE_KM = 2;
 
-    // 2. Variable Distance Cost (Marginal Rates)
     let distanceCost = 0;
     let remainingDistance = distanceInKm > BASE_DISTANCE_KM ? distanceInKm - BASE_DISTANCE_KM : 0;
 
-    // Slab 1: 2-5 km (i.e., first 3km of remaining distance)
     if (remainingDistance > 0) {
         const distInSlab = Math.min(remainingDistance, 3);
         distanceCost += distInSlab * 1.00;
         remainingDistance -= distInSlab;
     }
-    // Slab 2: 5-10 km (i.e., next 5km of remaining distance)
     if (remainingDistance > 0) {
         const distInSlab = Math.min(remainingDistance, 5);
         distanceCost += distInSlab * 0.80;
         remainingDistance -= distInSlab;
     }
-    // Slab 3: 10-20 km (i.e., next 10km of remaining distance)
     if (remainingDistance > 0) {
         const distInSlab = Math.min(remainingDistance, 10);
         distanceCost += distInSlab * 0.70;
         remainingDistance -= distInSlab;
     }
-    // Slab 4: 20+ km
     if (remainingDistance > 0) {
         distanceCost += remainingDistance * 0.60;
     }
 
-    // 3. Weight Surcharge
-    const weightSurchargeMap = { small: 0, medium: 1.00, large: 2.00 }; // small <= 3kg, medium 3-5kg, large 5-10kg
+    const weightSurchargeMap = { small: 0, medium: 1.00, large: 2.00 };
     const weightSurcharge = weightSurchargeMap[input.packageSize];
 
-    // 4. Speed & Time-Based Surcharges
     const speedSurchargeMap = { standard: 0, express: 3.00, night: 2.50 };
     const speedSurcharge = speedSurchargeMap[input.deliveryType];
     
     let totalCost = BASE_FARE + distanceCost + weightSurcharge + speedSurcharge;
 
-    // Round to 2 decimal places.
     const finalPrice = Math.round(totalCost * 100) / 100;
 
     return {
