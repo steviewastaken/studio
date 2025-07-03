@@ -5,6 +5,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
 import { Skeleton } from '../ui/skeleton';
 import { locationMap } from '@/lib/locations';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Button } from '../ui/button';
+import { ExternalLink } from 'lucide-react';
 
 const containerStyle = {
   width: '100%',
@@ -169,11 +172,18 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
 
   if (loadError) {
     return (
-        <div className="p-4 text-center text-sm text-destructive-foreground bg-destructive/80 h-full flex flex-col justify-center items-center">
-            <p className="font-bold text-lg">Map Loading Error</p>
-            <p className="mt-2">This is likely due to an incorrect API key or configuration issue in your Google Cloud project.</p>
-            <p className="mt-1">Please ensure the Maps JavaScript API is enabled and billing is configured.</p>
-        </div>
+        <Alert variant="destructive" className="h-full flex flex-col justify-center items-center text-center m-4">
+            <AlertTitle className="text-lg font-bold">Map Configuration Error</AlertTitle>
+            <AlertDescription className="mt-2">
+                <p>The map failed to load. The most common cause is the <strong>Maps JavaScript API</strong> not being enabled for your API key.</p>
+                <p className="mt-4">Please enable it in your Google Cloud project and ensure billing is set up.</p>
+                <Button asChild variant="link" className="mt-4 text-destructive-foreground hover:text-destructive-foreground/80">
+                    <a href="https://console.cloud.google.com/google/maps-apis/overview" target="_blank" rel="noopener noreferrer">
+                        Go to Google Cloud Console <ExternalLink className="ml-2 h-4 w-4" />
+                    </a>
+                </Button>
+            </AlertDescription>
+        </Alert>
     );
   }
 
