@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-client';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -28,15 +29,31 @@ export default function SignUpPage() {
 
   const { isSubmitting } = form.formState;
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // Dummy registration
-    toast({
-      title: "Account Created!",
-      description: "Welcome to Dunlivrer! You can now sign in.",
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const { data, error } = await supabase.auth.signUp({
+      email: values.email,
+      password: values.password,
+      options: {
+        data: {
+          full_name: values.name,
+        },
+      },
     });
-    form.reset();
-    router.push('/signin');
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: "Sign Up Failed",
+        description: error.message,
+      });
+    } else {
+        toast({
+            title: "Account Created!",
+            description: "Please check your email to confirm your account.",
+        });
+        form.reset();
+        router.push('/signin');
+    }
   }
 
   return (

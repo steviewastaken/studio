@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/lib/supabase-client';
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -20,7 +20,6 @@ const formSchema = z.object({
 export default function SignInPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { login } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -29,19 +28,25 @@ export default function SignInPage() {
 
   const { isSubmitting } = form.formState;
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // Dummy authentication
-    const name = values.email.split('@')[0];
-    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-    
-    login(capitalizedName);
-
-    toast({
-      title: "Signed In!",
-      description: `Welcome back, ${capitalizedName}!`,
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
     });
-    router.push('/');
+
+    if (error) {
+        toast({
+            variant: "destructive",
+            title: "Sign In Failed",
+            description: error.message,
+        });
+    } else {
+        toast({
+            title: "Signed In!",
+            description: "Welcome back!",
+        });
+        router.push('/');
+    }
   }
 
   return (

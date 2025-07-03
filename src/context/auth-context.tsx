@@ -1,34 +1,67 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/lib/supabase-client';
+import type { AuthSession } from '@supabase/supabase-js';
 
-type User = {
+type UserProfile = {
   name: string;
+  email: string;
 };
 
 type AuthContextType = {
-  user: User | null;
-  login: (name: string) => void;
-  logout: () => void;
+  user: UserProfile | null;
+  loading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = (name: string) => {
-    setUser({ name });
-  };
+  useEffect(() => {
+    const getSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            setUser({ 
+                name: session.user.user_metadata.full_name || session.user.email,
+                email: session.user.email!,
+            });
+        }
+        setLoading(false);
+    }
 
-  const logout = () => {
-    setUser(null);
+    getSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+            setUser({ 
+                name: session.user.user_metadata.full_name || session.user.email,
+                email: session.user.email!,
+            });
+        } else {
+            setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const value = {
+    user,
+    loading,
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 }

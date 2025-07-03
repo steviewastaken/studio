@@ -19,6 +19,7 @@ import DunlivrerLogo from './logo';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/context/language-context';
+import { supabase } from '@/lib/supabase-client';
 
 const navLinks = [
   { href: '/services', label: 'Services' },
@@ -65,9 +66,13 @@ function LanguageSwitcher() {
 }
 
 export default function Header() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  }
 
   useEffect(() => {
     const controlNavbar = () => {
@@ -128,12 +133,12 @@ export default function Header() {
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user.name}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      Welcome!
+                      {user.email}
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -174,9 +179,12 @@ export default function Header() {
                         <Avatar>
                            <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <p className="font-medium">{user.name}</p>
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                        </div>
                       </div>
-                       <Button variant="outline" onClick={() => logout()}>
+                       <Button variant="outline" onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         Sign Out
                       </Button>
