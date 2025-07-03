@@ -13,45 +13,9 @@ import { motion } from 'framer-motion';
 import LiveTrackingPreview from '@/components/dunlivrer/live-tracking-preview';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SupportChat from '@/components/dunlivrer/support-chat';
+import { useLanguage } from '@/context/language-context';
+import { translations } from '@/lib/translations';
 
-const investorFeatures = [
-  {
-    icon: <BrainCircuit className="w-8 h-8 text-primary" />,
-    title: 'Proprietary AI Engine',
-    description: 'Our core is a self-learning logistics model that optimizes routes, predicts traffic, and allocates resources with superhuman efficiency, reducing delivery times by up to 30%.',
-    color: 'primary'
-  },
-  {
-    icon: <TrendingUp className="w-8 h-8 text-accent" />,
-    title: 'Scalable Market-Fit',
-    description: 'Tapping into a multi-billion dollar last-mile delivery market, our model is designed for rapid horizontal and vertical scaling across cities and industries.',
-    color: 'accent'
-  },
-  {
-    icon: <ShieldCheck className="w-8 h-8 text-green-500" />,
-    title: 'High-Margin Operations',
-    description: 'AI-driven efficiency translates directly to lower operational costs, higher driver utilization, and industry-leading profit margins per delivery.',
-    color: 'green'
-  }
-];
-
-const services = [
-  {
-    icon: <Ship className="w-10 h-10 text-primary" />,
-    title: 'Hyperlocal & B2C',
-    description: 'On-demand delivery for individuals and local businesses. From documents to dinner, delivered in minutes.',
-  },
-  {
-    icon: <Briefcase className="w-10 h-10 text-primary" />,
-    title: 'B2B & Enterprise',
-    description: 'Robust logistics solutions for businesses. We handle supply chain, last-mile fulfillment, and more.',
-  },
-  {
-    icon: <BrainCircuit className="w-10 h-10 text-primary" />,
-    title: 'Predictive Fleet Management',
-    description: 'Our AI forecasts demand hotspots to pre-position couriers, drastically cutting wait times and maximizing network efficiency.',
-  }
-];
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -89,10 +53,51 @@ const staggeredContainer = {
 
 export default function DunlivrerPage() {
   const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
+  const { language } = useLanguage();
+  const content = translations[language as keyof typeof translations] || translations.en;
 
   const handleAddressChange = useCallback((addresses: { pickup: string | null; destinations: string[] }) => {
     setPreviewAddresses(addresses);
   }, []);
+  
+  const investorFeatures = [
+    {
+      icon: <BrainCircuit className="w-8 h-8 text-primary" />,
+      title: content.investorFeature1Title,
+      description: content.investorFeature1Desc,
+      color: 'primary'
+    },
+    {
+      icon: <TrendingUp className="w-8 h-8 text-accent" />,
+      title: content.investorFeature2Title,
+      description: content.investorFeature2Desc,
+      color: 'accent'
+    },
+    {
+      icon: <ShieldCheck className="w-8 h-8 text-green-500" />,
+      title: content.investorFeature3Title,
+      description: content.investorFeature3Desc,
+      color: 'green'
+    }
+  ];
+
+  const services = [
+    {
+      icon: <Ship className="w-10 h-10 text-primary" />,
+      title: content.service1Title,
+      description: content.service1Desc,
+    },
+    {
+      icon: <Briefcase className="w-10 h-10 text-primary" />,
+      title: content.service2Title,
+      description: content.service2Desc,
+    },
+    {
+      icon: <BrainCircuit className="w-10 h-10 text-primary" />,
+      title: content.service3Title,
+      description: content.service3Desc,
+    }
+  ];
 
   return (
     <div className="w-full">
@@ -104,20 +109,18 @@ export default function DunlivrerPage() {
         variants={staggeredContainer}
       >
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
-          <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold font-headline bg-clip-text text-transparent bg-gradient-to-br from-white to-gray-400 pb-4">
-            The Future of Logistics,
-            <br />
-            Delivered Today.
+          <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold font-headline bg-clip-text text-transparent bg-gradient-to-br from-white to-gray-400 pb-4" style={{ whiteSpace: 'pre-line' }}>
+            {content.heroTitle}
           </motion.h1>
           <motion.p variants={itemVariants} className="max-w-3xl mx-auto text-lg text-muted-foreground">
-            Dunlivrer is an AI-first technology company revolutionizing the delivery industry. We provide unparalleled speed, reliability, and efficiency for both consumers and businesses.
+            {content.heroSubtitle}
           </motion.p>
           <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="#get-started">Schedule a Delivery</Link>
+                <Link href="#get-started">{content.scheduleButton}</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/contact">Contact Sales</Link>
+                <Link href="/contact">{content.contactButton}</Link>
               </Button>
           </motion.div>
       </motion.section>
@@ -132,10 +135,10 @@ export default function DunlivrerPage() {
       >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8">
             <div className="text-center">
-              <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">The Dunlivrer Advantage</h2>
-              <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">Investing in Intelligent Infrastructure</p>
+              <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">{content.advantageTitle}</h2>
+              <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">{content.advantageHeadline}</p>
               <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                We're not just moving packages; we're building the intelligent, automated backbone of modern commerce.
+                {content.advantageSubtitle}
               </p>
             </div>
             <motion.div 
@@ -168,13 +171,13 @@ export default function DunlivrerPage() {
       >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
           <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">
-            Platform Integrity
+            {content.fraudTitle}
           </h2>
           <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
-            AI-Powered Fraud & Abuse Detection
+            {content.fraudHeadline}
           </p>
           <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-            Our sophisticated AI engine works silently in the background to protect every transaction, ensuring a secure and trustworthy platform for users, couriers, and investors.
+            {content.fraudSubtitle}
           </p>
           <motion.div
             className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
@@ -189,10 +192,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  Fake Account Prevention
+                  {content.fraudFeature1Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  Analyzes account creation patterns and behavior to identify and neutralize fraudulent accounts before they can be used.
+                  {content.fraudFeature1Desc}
                 </p>
               </div>
             </motion.div>
@@ -205,10 +208,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  Refund Abuse Detection
+                  {content.fraudFeature2Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  Identifies users with suspicious refund histories and high-risk patterns to prevent policy abuse and protect your bottom line.
+                  {content.fraudFeature2Desc}
                 </p>
               </div>
             </motion.div>
@@ -221,10 +224,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  Logistical Anomaly-Spotting
+                  {content.fraudFeature3Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  Detects unusual delivery patterns, such as courier avoidance tricks, to maintain the integrity and efficiency of the network.
+                  {content.fraudFeature3Desc}
                 </p>
               </div>
             </motion.div>
@@ -242,16 +245,13 @@ export default function DunlivrerPage() {
       >
         <div className="w-full max-w-3xl mx-auto px-4 md:px-8 text-center">
           <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">
-            Built on Trust
+            {content.blockchainTitle}
           </h2>
           <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
-            Blockchain-Verified Logistics
+            {content.blockchainHeadline}
           </p>
           <p className="mt-4 text-lg text-muted-foreground">
-            To provide ultimate transparency and security, every step of the
-            delivery process can be recorded on a secure, immutable blockchain
-            ledger. This builds unparalleled trust for high-value shipments and
-            sensitive enterprise logistics.
+            {content.blockchainSubtitle}
           </p>
           <motion.div
             className="mt-12 space-y-8"
@@ -266,11 +266,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  Immutable Record
+                  {content.blockchainFeature1Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  Every pickup, handoff, and delivery signature is permanently
-                  and verifiably recorded, eliminating disputes.
+                  {content.blockchainFeature1Desc}
                 </p>
               </div>
             </motion.div>
@@ -283,11 +282,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  Automated Smart Contracts
+                  {content.blockchainFeature2Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  Payment releases and compliance checks are automated upon
-                  verified delivery, reducing overhead.
+                  {content.blockchainFeature2Desc}
                 </p>
               </div>
             </motion.div>
@@ -300,11 +298,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  Real-Time Audits
+                  {content.blockchainFeature3Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  Stakeholders can independently verify the delivery trail at
-                  any time, ensuring complete accountability.
+                  {content.blockchainFeature3Desc}
                 </p>
               </div>
             </motion.div>
@@ -328,9 +325,9 @@ export default function DunlivrerPage() {
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-5 gap-16 items-start">
             <div className="lg:col-span-3 flex flex-col gap-8">
               <div className="space-y-4">
-                <h2 className="text-3xl md:text-4xl font-bold font-headline text-white">Ready to Ship?</h2>
+                <h2 className="text-3xl md:text-4xl font-bold font-headline text-white">{content.getStartedTitle}</h2>
                 <p className="mt-4 text-lg text-muted-foreground">
-                  Experience the difference. Enter your delivery details to get started. Fast, transparent, and reliable.
+                  {content.getStartedSubtitle}
                 </p>
               </div>
               <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
@@ -342,20 +339,20 @@ export default function DunlivrerPage() {
                         <div className="flex items-center gap-3">
                             <Bot className="text-primary h-8 w-8"/>
                             <div>
-                                <h3 className="font-headline text-2xl font-bold text-white">Track &amp; Support</h3>
-                                <p className="mt-1 text-muted-foreground">Already have a delivery in progress? Chat with our AI assistant for real-time updates and support.</p>
+                                <h3 className="font-headline text-2xl font-bold text-white">{content.trackSupportTitle}</h3>
+                                <p className="mt-1 text-muted-foreground">{content.trackSupportSubtitle}</p>
                             </div>
                         </div>
                         <DialogTrigger asChild>
                           <Button className="mt-6" size="lg">
-                              Track & Chat
+                              {content.trackSupportButton}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="p-0 bg-transparent border-none shadow-none w-full max-w-md">
                             <DialogHeader className="sr-only">
-                              <DialogTitle>Track & Support</DialogTitle>
+                              <DialogTitle>{content.trackSupportTitle}</DialogTitle>
                               <DialogDescription>
-                                Already have a delivery in progress? Chat with our AI assistant for real-time updates and support.
+                                {content.trackSupportSubtitle}
                               </DialogDescription>
                             </DialogHeader>
                             <SupportChat deliveryDetails={null} />
@@ -384,8 +381,8 @@ export default function DunlivrerPage() {
         variants={sectionVariants}
       >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
-            <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">Our Solutions</h2>
-            <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">Logistics for Everyone</p>
+            <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">{content.solutionsTitle}</h2>
+            <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">{content.solutionsHeadline}</p>
             <motion.div 
               className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
               variants={staggeredContainer}

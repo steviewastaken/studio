@@ -5,6 +5,7 @@ import Header from '@/components/dunlivrer/header';
 import Footer from '@/components/dunlivrer/footer';
 import { AuthProvider } from '@/context/auth-context';
 import { GoogleMapsProvider } from '@/context/google-maps-context';
+import { LanguageProvider } from '@/context/language-context';
 
 export const metadata: Metadata = {
   title: 'Dunlivrer',
@@ -25,18 +26,20 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
-          <GoogleMapsProvider>
-            <div className="flex flex-col min-h-screen bg-transparent text-foreground">
-              <Header />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-            </div>
-            <Toaster />
-          </GoogleMapsProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <GoogleMapsProvider>
+              <div className="flex flex-col min-h-screen bg-transparent text-foreground">
+                <Header />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+              <Toaster />
+            </GoogleMapsProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

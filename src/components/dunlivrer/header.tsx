@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import DunlivrerLogo from './logo';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/context/language-context';
 
 const navLinks = [
   { href: '/services', label: 'Services' },
@@ -40,6 +41,7 @@ const languages = [
 ];
 
 function LanguageSwitcher() {
+    const { setLanguage } = useLanguage();
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -52,7 +54,7 @@ function LanguageSwitcher() {
                 <DropdownMenuLabel>Select Language</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {languages.map((lang) => (
-                    <DropdownMenuItem key={lang.code}>
+                    <DropdownMenuItem key={lang.code} onSelect={() => setLanguage(lang.code)}>
                         <span className="w-2/3 truncate">{lang.name}</span>
                         <span className="w-1/3 text-right text-muted-foreground">{lang.native}</span>
                     </DropdownMenuItem>
