@@ -15,8 +15,10 @@ import {
 
 export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   try {
+    // The flow now returns a raw string.
     const result = await answerSupportQuestionFlow(data);
-    return { success: true, data: result };
+    // We wrap it in the object format the UI expects.
+    return { success: true, data: { answer: result } };
   } catch (error) {
     console.error(error);
     return { success: false, error: 'I am sorry, I am unable to answer that question at the moment.' };
@@ -39,6 +41,6 @@ export async function handleGetQuote(data: GetQuoteInput) {
     return { success: true, data: result };
   } catch (error) {
     console.error(error);
-    return { success: false, error: 'Failed to generate a quote. Please try again.' };
+    return { success: false, error: 'Failed to generate a quote. Please check addresses and try again.' };
   }
 }
