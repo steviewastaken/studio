@@ -26,7 +26,7 @@ export default function Header() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 p-4 md:px-8 backdrop-blur-sm bg-background/50 border-b border-white/5">
+    <header className="fixed top-0 left-0 right-0 z-50 p-4 md:px-8 bg-background border-b border-white/10 shadow-md">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <DunlivrerLogo />
         <nav className="hidden md:flex items-center gap-6">
