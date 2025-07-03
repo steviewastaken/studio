@@ -40,10 +40,6 @@ const AiEstimateSchema = z.object({
     .describe(
       'A realistic total travel distance for the delivery, as a single number in kilometers.'
     ),
-  etaInMinutes: z
-    .number()
-    .int()
-    .describe('A realistic total travel time, as a single number in minutes.'),
 });
 
 // The main exported function that the client calls.
@@ -51,12 +47,12 @@ export async function getQuote(input: GetQuoteInput): Promise<GetQuoteOutput> {
   return getQuoteFlow(input);
 }
 
-// The prompt now only asks the AI to do what it's good at: estimation.
+// The prompt now only asks the AI to do what it's good at: estimating distance.
 const getEstimatePrompt = ai.definePrompt({
   name: 'getEstimatePrompt',
   input: {schema: GetQuoteInputSchema},
   output: {schema: AiEstimateSchema},
-  prompt: `You are a logistics estimation API. Based on the pickup and destination addresses, calculate a realistic total distance and estimated time of arrival.
+  prompt: `You are a logistics estimation API. Based on the pickup and destination addresses, provide the total travel distance.
 Return ONLY the specified JSON.
 
 Pickup: {{{pickupAddress}}}
@@ -75,13 +71,16 @@ const getQuoteFlow = ai.defineFlow(
     outputSchema: GetQuoteOutputSchema,
   },
   async (input) => {
-    // Step 1: Get distance and time estimation from the AI.
+    // Step 1: Get distance estimation from the AI.
     const {output: estimate} = await getEstimatePrompt(input);
     if (!estimate) {
-      throw new Error('The AI model failed to provide a distance and ETA estimate.');
+      throw new Error('The AI model failed to provide a distance estimate.');
     }
 
-    // Step 2: Perform reliable price calculation in code.
+    // Step 2: Calculate ETA and perform reliable price calculation in code.
+    const AVERAGE_SPEED_KMH = 30; // Average speed in a city including stops
+    const etaInMinutes = Math.round((estimate.distanceInKm / AVERAGE_SPEED_KMH) * 60) + 10; // Add 10 mins for pickup/dropoff buffer
+
     const BASE_FARE = 5;
     const PER_KM_RATE = 1.5;
 
@@ -99,7 +98,7 @@ const getQuoteFlow = ai.defineFlow(
     return {
       price: finalPrice,
       distance: `${estimate.distanceInKm.toFixed(1)} km`,
-      eta: `${estimate.etaInMinutes} minutes`,
+      eta: `${etaInMinutes} minutes`,
     };
   }
 );
