@@ -6,7 +6,7 @@ import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks, Repeat, Shuffle } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion } from 'framer-motion';
@@ -155,6 +155,80 @@ export default function DunlivrerPage() {
                  </motion.div>
               ))}
             </motion.div>
+        </div>
+      </motion.section>
+      
+      {/* AI Fraud Detection Section */}
+      <motion.section
+        className="py-24"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={sectionVariants}
+      >
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
+          <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">
+            Platform Integrity
+          </h2>
+          <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
+            AI-Powered Fraud & Abuse Detection
+          </p>
+          <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
+            Our sophisticated AI engine works silently in the background to protect every transaction, ensuring a secure and trustworthy platform for users, couriers, and investors.
+          </p>
+          <motion.div
+            className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
+            variants={staggeredContainer}
+          >
+            <motion.div
+              variants={itemVariants}
+              className="flex items-start gap-4"
+            >
+              <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  Fake Account Prevention
+                </h3>
+                <p className="text-muted-foreground">
+                  Analyzes account creation patterns and behavior to identify and neutralize fraudulent accounts before they can be used.
+                </p>
+              </div>
+            </motion.div>
+            <motion.div
+              variants={itemVariants}
+              className="flex items-start gap-4"
+            >
+              <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                <Repeat className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  Refund Abuse Detection
+                </h3>
+                <p className="text-muted-foreground">
+                  Identifies users with suspicious refund histories and high-risk patterns to prevent policy abuse and protect your bottom line.
+                </p>
+              </div>
+            </motion.div>
+            <motion.div
+              variants={itemVariants}
+              className="flex items-start gap-4"
+            >
+              <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                <Shuffle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  Logistical Anomaly-Spotting
+                </h3>
+                <p className="text-muted-foreground">
+                  Detects unusual delivery patterns, such as courier avoidance tricks, to maintain the integrity and efficiency of the network.
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
       </motion.section>
 
