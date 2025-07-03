@@ -36,15 +36,31 @@ const prompt = ai.definePrompt({
   name: 'answerSupportQuestionPrompt',
   input: {schema: AnswerSupportQuestionInputSchema},
   output: {schema: AnswerSupportQuestionOutputSchema},
-  prompt: `You are a support chatbot for a delivery service called Dunlivrer. Answer the user's question.
+  prompt: `You are a support chatbot for a delivery service called Dunlivrer.
+Your task is to answer the user's question based on the context provided.
+You MUST provide your response as a valid JSON object that strictly adheres to the provided output schema.
+
+CONTEXT:
 {{#if deliveryDetails}}
-Use the following delivery details to answer the question.
-Delivery Details: {{{deliveryDetails}}}
+- The user has an active delivery.
+- Delivery Details: {{{deliveryDetails}}}
+- Use these details to answer questions about their specific delivery.
 {{else}}
-The user does not have an active delivery. Answer their general questions about the service. If they ask about a specific delivery, inform them they need to schedule one first.
+- The user does not have an active delivery.
+- Answer their general questions about the Dunlivrer service.
+- If they ask about a specific delivery, politely inform them they need to schedule one first to get tracking information.
 {{/if}}
 
-Question: {{{question}}}`,
+USER'S QUESTION:
+"{{{question}}}"
+
+EXAMPLE RESPONSE:
+For the question "What are your hours?", a valid response would be:
+{
+  "answer": "Our standard delivery hours are from 9 AM to 8 PM, Monday to Saturday. We also offer night delivery for an additional fee."
+}
+
+Now, provide a response for the user's question above.`,
 });
 
 const answerSupportQuestionFlow = ai.defineFlow(
@@ -55,6 +71,9 @@ const answerSupportQuestionFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+        throw new Error('The AI model failed to provide a valid answer.');
+    }
+    return output;
   }
 );
