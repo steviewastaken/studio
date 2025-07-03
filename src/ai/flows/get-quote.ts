@@ -77,6 +77,9 @@ const getQuoteFlow = ai.defineFlow(
         if (data.status !== 'OK') {
             const errorMessage = data.error_message || `API Error: ${data.status}`;
             console.error('Directions API Error:', errorMessage);
+            if (data.status === 'NOT_FOUND') {
+                throw new Error('One of the specified locations could not be found. Please check the addresses and try again.');
+            }
             if (data.status === 'ZERO_RESULTS') {
                 throw new Error('No route could be found. Please check if the addresses are correct and within a reasonable distance.');
             }
