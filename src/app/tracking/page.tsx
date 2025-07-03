@@ -12,10 +12,10 @@ import { motion } from 'framer-motion';
 import type { FindDriverOutput } from '@/ai/flows/find-driver';
 import { handleFindDriver } from '@/lib/actions';
 
-// Mock data until we have a backend
+// Mock data until we have a backend. Using realistic French addresses for consistency.
 const mockDelivery: DeliveryDetails = {
-    pickupAddress: '123 Main St, Anytown, USA',
-    destinationAddresses: ['456 Business Ave, Anytown, USA', '101 City Center, Anytown, USA'],
+    pickupAddress: 'Rue de Rivoli, 75001 Paris, France', // Louvre Museum
+    destinationAddresses: ['Champ de Mars, 5 Av. Anatole France, 75007 Paris, France'], // Eiffel Tower
     packageSize: 'medium',
     deliveryType: 'standard'
 };

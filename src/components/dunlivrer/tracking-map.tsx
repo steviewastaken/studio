@@ -25,6 +25,7 @@ function StatusStep({ icon, label, isCompleted, isCurrent }: { icon: React.React
 export default function TrackingMap({ deliveryDetails, driverDetails }: TrackingMapProps) {
   const pickup = deliveryDetails?.pickupAddress ?? null;
   const destinations = deliveryDetails?.destinationAddresses ?? [];
+  const progressPercentage = deliveryDetails ? (driverDetails ? 50 : 25) : 0;
   
   return (
     <Card className="w-full h-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
@@ -71,8 +72,9 @@ export default function TrackingMap({ deliveryDetails, driverDetails }: Tracking
             <CardContent className="p-0">
               <div className="flex items-center justify-between relative">
                 <div className="absolute top-6 left-0 w-full h-0.5 bg-muted-foreground/20">
-                    <div className="h-0.5 bg-primary transition-all duration-1000" style={{width: '25%'}}></div>
+                    <div className="h-0.5 bg-primary transition-all duration-1000" style={{width: `${progressPercentage}%`}}></div>
                 </div>
+                {/* For this demo, we'll show a static progress state once an order is tracked. */}
                 <StatusStep icon={<Package className="w-6 h-6" />} label="Scheduled" isCompleted={true} isCurrent={false} />
                 <StatusStep icon={<Truck className="w-6 h-6" />} label="In Transit" isCompleted={false} isCurrent={true} />
                 <StatusStep icon={<Home className="w-6 h-6" />} label="Delivered" isCompleted={false} isCurrent={false} />
@@ -84,7 +86,7 @@ export default function TrackingMap({ deliveryDetails, driverDetails }: Tracking
                       <span>Estimated Arrival:</span>
                   </div>
                   <span className="font-bold text-xl text-primary">
-                    {driverDetails ? `${driverDetails.driverEta} min` : 'Calculating...'}
+                    {driverDetails ? driverDetails.driverEta : 'Calculating...'}
                   </span>
               </div>
             </CardContent>
