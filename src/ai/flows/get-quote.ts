@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview Generates a delivery quote including price, distance, and ETA.
+ * @fileOverview Generates a delivery quote using the Google Maps Directions API for accuracy.
  *
  * - getQuote - A function that gets a delivery quote.
  * - GetQuoteInput - The input type for the getQuote function.
@@ -33,37 +33,12 @@ const GetQuoteOutputSchema = z.object({
 });
 export type GetQuoteOutput = z.infer<typeof GetQuoteOutputSchema>;
 
-// This is the schema for the AI's output. It's internal to this file and now more flexible.
-const AiEstimateSchema = z.object({
-  distanceInKm: z
-    .union([z.string(), z.number()])
-    .describe(
-      'A realistic total travel distance for the delivery, as a single number in kilometers (e.g., 15.2 or "15.2").'
-    ),
-});
-
 // The main exported function that the client calls.
 export async function getQuote(input: GetQuoteInput): Promise<GetQuoteOutput> {
   return getQuoteFlow(input);
 }
 
-// The prompt asks the AI to estimate distance.
-const getEstimatePrompt = ai.definePrompt({
-  name: 'getEstimatePrompt',
-  input: {schema: GetQuoteInputSchema},
-  output: {schema: AiEstimateSchema},
-  prompt: `You are a logistics estimation API. Based on the pickup and destination addresses, provide the total travel distance.
-Return ONLY the specified JSON.
-
-Pickup: {{{pickupAddress}}}
-Destinations:
-{{#each destinationAddresses}}
-- {{{this}}}
-{{/each}}
-`,
-});
-
-// The flow orchestrates the AI call and the reliable price calculation.
+// This flow now uses the Google Maps Directions API for reliable distance calculation.
 const getQuoteFlow = ai.defineFlow(
   {
     name: 'getQuoteFlow',
@@ -71,25 +46,59 @@ const getQuoteFlow = ai.defineFlow(
     outputSchema: GetQuoteOutputSchema,
   },
   async (input) => {
-    // Step 1: Get distance estimation from the AI.
-    const {output: estimate} = await getEstimatePrompt(input);
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      throw new Error('Google Maps API key is not configured on the server.');
+    }
+
+    const origin = input.pickupAddress;
+    const destination = input.destinationAddresses[input.destinationAddresses.length - 1];
+    const waypoints = input.destinationAddresses.slice(0, -1).join('|');
+
+    const params = new URLSearchParams({
+        origin,
+        destination,
+        key: apiKey,
+    });
+
+    if (waypoints) {
+        params.append('waypoints', `optimize:true|${waypoints}`);
+    }
+
+    const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
+
+    let totalDistanceMeters = 0;
+    let totalDurationSeconds = 0;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status !== 'OK') {
+            console.error('Directions API Error:', data.error_message || data.status);
+            throw new Error(`Failed to get directions from Google Maps API: ${data.status}`);
+        }
+
+        data.routes[0].legs.forEach((leg: any) => {
+            totalDistanceMeters += leg.distance.value;
+            totalDurationSeconds += leg.duration.value;
+        });
+
+    } catch (e: any) {
+        console.error("Error calling Directions API:", e);
+        throw new Error(`Failed to calculate route. Please check addresses and API key permissions. Reason: ${e.message}`);
+    }
     
-    if (!estimate || estimate.distanceInKm === undefined) {
-      throw new Error('The AI model failed to provide a distance estimate.');
+    if (totalDistanceMeters === 0) {
+        throw new Error('Could not calculate a route for the given addresses.');
     }
 
-    // Step 2: Defensively parse the distance from the AI's potentially varied response.
-    const distanceVal = estimate.distanceInKm;
-    const distanceInKm = typeof distanceVal === 'string' ? parseFloat(distanceVal) : distanceVal;
+    const distanceInKm = totalDistanceMeters / 1000;
+    
+    // Use duration from API for ETA, add buffer
+    const etaInMinutes = Math.round(totalDurationSeconds / 60) + 10; // 10 min buffer for pickup/dropoff
 
-    if (isNaN(distanceInKm)) {
-      throw new Error(`The AI model returned an invalid distance format: "${distanceVal}"`);
-    }
-
-    // Step 3: Calculate ETA and perform reliable price calculation in code.
-    const AVERAGE_SPEED_KMH = 30; // Average speed in a city including stops
-    const etaInMinutes = Math.round((distanceInKm / AVERAGE_SPEED_KMH) * 60) + 10; // Add 10 mins for pickup/dropoff buffer
-
+    // Reliable price calculation
     const BASE_FARE = 5;
     const PER_KM_RATE = 1.5;
 
@@ -103,7 +112,6 @@ const getQuoteFlow = ai.defineFlow(
     // Round to 2 decimal places.
     const finalPrice = Math.round(totalCost * 100) / 100;
 
-    // Step 4: Format the final output to match what the client expects.
     return {
       price: finalPrice,
       distance: `${distanceInKm.toFixed(1)} km`,
