@@ -16,7 +16,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import DunlivrerLogo from './logo';
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const navLinks = [
   { href: '/services', label: 'Services' },
@@ -54,10 +54,15 @@ export default function Header() {
   }, [lastScrollY]);
 
   return (
-    <header className={cn(
-      "fixed top-0 left-0 right-0 z-50 p-4 md:px-8 bg-background/50 backdrop-blur-lg border-b border-white/10 transition-transform duration-300",
-      isVisible ? 'translate-y-0' : '-translate-y-full'
-    )}>
+    <motion.header 
+      className="fixed top-0 left-0 right-0 z-50 p-4 md:px-8 bg-background/50 backdrop-blur-lg border-b border-white/10"
+      variants={{
+        visible: { y: 0 },
+        hidden: { y: "-100%" },
+      }}
+      animate={isVisible ? "visible" : "hidden"}
+      transition={{ duration: 0.35, ease: "easeInOut" }}
+    >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <DunlivrerLogo />
         <nav className="hidden md:flex items-center gap-6">
@@ -151,6 +156,6 @@ export default function Header() {
           </Sheet>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }
