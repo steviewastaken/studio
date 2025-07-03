@@ -38,6 +38,50 @@ export async function getQuote(input: GetQuoteInput): Promise<GetQuoteOutput> {
   return getQuoteFlow(input);
 }
 
+
+const etaPredictionPrompt = ai.definePrompt({
+    name: 'etaPredictionPrompt',
+    input: { schema: z.object({
+        baseDurationMinutes: z.number(),
+        distanceKm: z.number(),
+        timeOfDay: z.string(),
+        dayOfWeek: z.string(),
+        packageSize: z.enum(['small', 'medium', 'large']),
+        deliveryType: z.enum(['standard', 'express', 'night']),
+        hasBadWeather: z.boolean(),
+        isHighDemand: z.boolean(),
+    })},
+    output: { schema: z.object({
+        predictedEtaMinutes: z.number().describe('The final predicted ETA in total minutes, including all factors.'),
+    })},
+    prompt: `You are an expert logistics AI specializing in hyper-accurate delivery time estimation for a service called Dunlivrer.
+Your task is to predict the final Estimated Time of Arrival (ETA) in minutes by adjusting a base travel time from a mapping service.
+
+You must consider the following factors and adjust the base ETA accordingly:
+
+- **Base ETA:** The initial travel time is {{{baseDurationMinutes}}} minutes for a distance of {{{distanceKm}}} km. This is your starting point.
+- **Time of Day:** It is currently {{{timeOfDay}}} on a {{{dayOfWeek}}}.
+  - **Peak Hours (8-10am, 5-7pm):** Add 5-15 minutes for traffic congestion.
+  - **Night Delivery (for 'night' type):** Night deliveries are often faster due to less traffic, but might have a small delay for finding addresses in the dark. Adjust by -5 to +5 minutes.
+- **Delivery Type:** The requested service is '{{{deliveryType}}}'.
+  - **'express':** This is a priority delivery. Reduce the final ETA by 10-20% compared to standard, but don't go below the base mapping service time. The driver will be rushed.
+  - **'standard' / 'night':** No special adjustment for speed.
+- **Package Size:** The package size is '{{{packageSize}}}'.
+  - **'large':** Add 3-5 minutes for extra handling time at pickup and dropoff.
+  - **'medium' / 'small':** No significant adjustment.
+- **Real-World Conditions:**
+  - **Bad Weather:** {{{hasBadWeather}}}. If true, add 5-10 minutes for slower travel speeds.
+  - **High Demand:** {{{isHighDemand}}}. If true, add 2-5 minutes as the network is busier.
+
+**Pickup/Dropoff Buffer:** ALWAYS add a base buffer of 10 minutes to the travel time to account for parking, finding the exact door, and handover. This should be added ON TOP of the base duration *before* other adjustments.
+
+Your final output must be a single integer representing the total predicted ETA in minutes.
+
+Analyze all these factors and provide your final \`predictedEtaMinutes\` in the required JSON format.
+`,
+});
+
+
 // This flow now uses the Google Maps Directions API for reliable distance calculation.
 const getQuoteFlow = ai.defineFlow(
   {
@@ -106,9 +150,6 @@ const getQuoteFlow = ai.defineFlow(
 
     const distanceInKm = totalDistanceMeters / 1000;
     
-    // Use duration from API for ETA, add buffer
-    const etaInMinutes = Math.round(totalDurationSeconds / 60) + 10; // 10 min buffer for pickup/dropoff
-
     // --- Dynamic Pricing Engine ---
     const BASE_FARE = 5.00; 
     const BASE_DISTANCE_KM = 2;
@@ -144,8 +185,9 @@ const getQuoteFlow = ai.defineFlow(
     const speedSurcharge = speedSurchargeMap[input.deliveryType];
     
     // 4. Time-based Surcharges (Peak Hours)
+    const now = new Date();
     let timeSurcharge = 0;
-    const currentHour = new Date().getHours();
+    const currentHour = now.getHours();
     // Peak hours: 8-10am and 5-7pm
     if ((currentHour >= 8 && currentHour < 10) || (currentHour >= 17 && currentHour < 19)) {
         timeSurcharge = 1.25; // €1.25 peak hour surcharge
@@ -166,10 +208,32 @@ const getQuoteFlow = ai.defineFlow(
     let totalCost = BASE_FARE + distanceCost + weightSurcharge + speedSurcharge + timeSurcharge + weatherSurcharge + supplySurcharge;
     const finalPrice = Math.round(totalCost * 100) / 100;
 
+    // --- AI-Powered ETA Prediction ---
+    const dayOfWeek = now.toLocaleString('en-US', { weekday: 'long' }); // e.g., "Monday"
+    const timeOfDay = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }); // e.g., "14:30"
+    const baseDurationMinutes = Math.round(totalDurationSeconds / 60);
+
+    const etaPredictionInput = {
+        baseDurationMinutes,
+        distanceKm: distanceInKm,
+        timeOfDay,
+        dayOfWeek,
+        packageSize: input.packageSize,
+        deliveryType: input.deliveryType,
+        hasBadWeather: weatherSurcharge > 0,
+        isHighDemand: supplySurcharge > 0,
+    };
+
+    const { output: etaOutput } = await etaPredictionPrompt(etaPredictionInput);
+    if (!etaOutput) {
+        throw new Error('The AI model failed to predict an ETA.');
+    }
+    const finalEtaMinutes = etaOutput.predictedEtaMinutes;
+
     return {
       price: finalPrice,
       distance: `${distanceInKm.toFixed(1)} km`,
-      eta: `${etaInMinutes} minutes`,
+      eta: `${finalEtaMinutes} minutes`,
     };
   }
 );
