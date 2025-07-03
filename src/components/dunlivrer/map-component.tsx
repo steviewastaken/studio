@@ -161,8 +161,8 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
   if (!apiKey) {
     return (
         <div className="p-4 text-center text-sm text-destructive-foreground bg-destructive/80 h-full flex flex-col justify-center items-center">
-            <p className="font-bold text-lg">Google Maps API Key Missing</p>
-            <p className="mt-2">Please add your Google Maps API key to the <code className="bg-white/20 px-1 rounded">.env</code> file to enable map functionality.</p>
+            <p className="font-bold text-lg">API Key Missing</p>
+            <p className="mt-2">Please set the <code className="bg-white/20 px-1 rounded">GEMINI_API_KEY</code> in the <code className="bg-white/20 px-1 rounded">.env</code> file to enable map and AI functionality.</p>
         </div>
     );
   }

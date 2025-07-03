@@ -46,9 +46,9 @@ const getQuoteFlow = ai.defineFlow(
     outputSchema: GetQuoteOutputSchema,
   },
   async (input) => {
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error('The Google Maps API key is not configured on the server. Please contact support.');
+      throw new Error('The API key is not configured on the server. Please contact support.');
     }
 
     const origin = input.pickupAddress;
