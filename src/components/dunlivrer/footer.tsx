@@ -1,8 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import { Truck } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import DunlivrerLogo from './logo';
 
 export default function Footer() {
   const [year, setYear] = useState<string>('');
@@ -15,15 +15,8 @@ export default function Footer() {
     <footer className="w-full bg-background/20 border-t border-white/5 mt-16">
       <div className="max-w-7xl mx-auto py-12 px-4 md:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="flex flex-col gap-4">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-primary rounded-lg text-primary-foreground shadow-lg shadow-primary/30">
-                <Truck className="w-6 h-6" />
-              </div>
-              <h1 className="text-2xl font-headline font-bold text-gray-100">
-                Dunlivrer
-              </h1>
-            </div>
-          <p className="text-sm text-muted-foreground">Instant Delivery, Intelligently Done.</p>
+          <DunlivrerLogo />
+          <p className="text-sm text-muted-foreground mt-2">Instant Delivery, Intelligently Done.</p>
         </div>
         <div>
           <h3 className="font-semibold font-headline text-white">Company</h3>
