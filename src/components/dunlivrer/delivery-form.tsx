@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle2, Euro, Milestone, Timer } from 'lucide-react';
-import { handleFindDriver, handleGetQuote } from '@/lib/actions';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle2, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion } from 'lucide-react';
+import { handleFindDriver, handleGetQuote, handleDetectFraud } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { FindDriverOutput } from '@/ai/flows/find-driver';
-import type { GetQuoteOutput } from '@/ai/flows/get-quote';
+import type { FindDriverOutput, FindDriverInput } from '@/ai/flows/find-driver';
+import type { GetQuoteOutput, GetQuoteInput } from '@/ai/flows/get-quote';
+import type { DetectFraudOutput, DetectFraudInput } from '@/ai/flows/detect-fraud';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import AddressAutocomplete from './address-autocomplete';
@@ -44,6 +46,9 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
   const [scheduledTime, setScheduledTime] = useState('');
+  const [isCheckingFraud, setIsCheckingFraud] = useState(false);
+  const [fraudResult, setFraudResult] = useState<DetectFraudOutput | null>(null);
+  const [showFraudDialog, setShowFraudDialog] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -111,17 +116,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     setIsGettingQuote(false);
   }
 
-  const handleConfirmDispatch = async () => {
-    const pickupAddress = form.getValues('pickupAddress');
-    if (!pickupAddress) {
-        toast({
-            variant: 'destructive',
-            title: "Missing Pickup Address",
-            description: 'Please select a pickup address before scheduling.',
-        });
-        return;
-    }
-
+  const findDriver = async (pickupAddress: string) => {
     setIsFindingDriver(true);
     setDriverDetails(null);
     const driverResult = await handleFindDriver({ pickupAddress });
@@ -135,6 +130,56 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
         });
     }
     setIsFindingDriver(false);
+  };
+
+  const handleConfirmDispatch = async () => {
+    const values = form.getValues();
+    if (!values.pickupAddress) {
+        toast({
+            variant: 'destructive',
+            title: "Missing Pickup Address",
+            description: 'Please select a pickup address before scheduling.',
+        });
+        return;
+    }
+
+    setIsCheckingFraud(true);
+
+    // --- MOCK USER DATA for fraud detection demo ---
+    // In a real app, this would come from the authenticated user's context.
+    const mockFraudInput: DetectFraudInput = {
+      userId: 'user-123',
+      // Simulate a new-ish user to trigger rules. Refresh to get a different scenario.
+      userAccountAgeDays: Math.random() < 0.5 ? 5 : 90, 
+      userTotalDeliveries: 15,
+      // Occasionally add a suspicious refund history
+      userRefundHistory: Math.random() < 0.3 ? [{ refundId: 'refund-abc', reason: 'Item damaged', amount: 150, date: '2024-05-01' }] : [],
+      deliveryValue: Math.random() < 0.4 ? 250 : 80, // Occasionally high-value
+      pickupAddress: values.pickupAddress,
+      destinationAddress: values.destinationAddresses[0].value,
+    };
+    // --- END MOCK DATA ---
+
+    const fraudCheckResult = await handleDetectFraud(mockFraudInput);
+    setIsCheckingFraud(false);
+
+    if (!fraudCheckResult.success) {
+      toast({
+        variant: 'destructive',
+        title: "Fraud Check Failed",
+        description: fraudCheckResult.error,
+      });
+      return;
+    }
+
+    setFraudResult(fraudCheckResult.data);
+
+    if (fraudCheckResult.data.isSuspicious) {
+        setShowFraudDialog(true);
+    } else {
+        // If not suspicious, proceed to find driver
+        findDriver(values.pickupAddress);
+    }
   };
 
   const handleScheduleForLater = () => {
@@ -165,6 +210,8 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     const hour = i + 9;
     return `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
   });
+
+  const isDispatchLoading = isCheckingFraud || isFindingDriver;
 
   return (
     <>
@@ -312,9 +359,11 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                                 <Clock className="mr-2 h-4 w-4" />
                                 Schedule for Later
                             </Button>
-                            <Button type="button" onClick={handleConfirmDispatch} size="lg">
-                                {isFindingDriver ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
-                                {isFindingDriver ? 'Finding Driver...' : 'Dispatch Now'}
+                            <Button type="button" onClick={handleConfirmDispatch} size="lg" disabled={isDispatchLoading}>
+                                {isCheckingFraud && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isFindingDriver && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {!isDispatchLoading && <Truck className="mr-2 h-4 w-4" />}
+                                {isCheckingFraud ? 'Analyzing Risk...' : isFindingDriver ? 'Finding Driver...' : 'Dispatch Now'}
                             </Button>
                         </div>
                     </div>
@@ -389,6 +438,42 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
             </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showFraudDialog} onOpenChange={setShowFraudDialog}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                {fraudResult?.recommendedAction === 'BLOCK' && <ShieldAlert className="w-12 h-12 text-destructive mx-auto"/>}
+                {fraudResult?.recommendedAction === 'MANUAL_REVIEW' && <ShieldQuestion className="w-12 h-12 text-amber-500 mx-auto"/>}
+                <AlertDialogTitle className="text-center">
+                    {fraudResult?.recommendedAction === 'BLOCK' && 'Transaction Blocked'}
+                    {fraudResult?.recommendedAction === 'MANUAL_REVIEW' && 'Transaction Flagged'}
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-center">
+                    <p className="font-semibold">Reason: <span className="font-normal">{fraudResult?.reason}</span></p>
+                    <p className="mt-2 text-sm">Risk Score: {fraudResult?.riskScore}/100</p>
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                {fraudResult?.recommendedAction === 'BLOCK' && (
+                    <>
+                        <AlertDialogCancel>Close</AlertDialogCancel>
+                        <AlertDialogAction asChild><a href="/contact">Contact Support</a></AlertDialogAction>
+                    </>
+                )}
+                {fraudResult?.recommendedAction === 'MANUAL_REVIEW' && (
+                     <>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            setShowFraudDialog(false);
+                            findDriver(form.getValues('pickupAddress'));
+                        }}>
+                            Proceed Anyway
+                        </AlertDialogAction>
+                    </>
+                )}
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

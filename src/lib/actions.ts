@@ -5,6 +5,10 @@ import {
   type AnswerSupportQuestionInput,
 } from '@/ai/flows/answer-support-questions';
 import {
+  detectFraud as detectFraudFlow,
+  type DetectFraudInput,
+} from '@/ai/flows/detect-fraud';
+import {
   findDriver as findDriverFlow,
   type FindDriverInput,
 } from '@/ai/flows/find-driver';
@@ -22,6 +26,18 @@ export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
     console.error("handleSupportQuestion Error:", error.message);
     // Pass the specific error message to the client for better feedback.
     return { success: false, error: error.message || 'I am sorry, I am unable to answer that question at the moment.' };
+  }
+}
+
+export async function handleDetectFraud(data: DetectFraudInput) {
+  try {
+    const result = await detectFraudFlow(data);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error("handleDetectFraud Error:", error.message);
+    // In a real app, you might want to fail open (allow the transaction) or fail closed (block it) depending on risk tolerance.
+    // For this prototype, we'll let the user know the check failed.
+    return { success: false, error: error.message || 'Fraud check could not be completed. Please try again.' };
   }
 }
 
