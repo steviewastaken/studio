@@ -131,9 +131,7 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
     }
 
     const origin = locationMap.get(pickupAddress);
-    // All but the last valid destination are waypoints
     const waypoints = validDestinations.slice(0, -1).map(addr => ({ location: locationMap.get(addr)! }));
-    // The last valid destination is the final stop
     const destination = locationMap.get(validDestinations[validDestinations.length - 1]);
 
     if (!origin || !destination) {
@@ -149,6 +147,7 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
         origin: origin,
         destination: destination,
         travelMode: google.maps.TravelMode.DRIVING,
+        waypoints: waypoints,
         optimizeWaypoints: true,
       },
       (result, status) => {
@@ -175,8 +174,14 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
         <Alert variant="destructive" className="h-full flex flex-col justify-center items-center text-center m-4">
             <AlertTitle className="text-lg font-bold">Map Configuration Error</AlertTitle>
             <AlertDescription className="mt-2">
-                <p>The map failed to load. The most common cause is the <strong>Maps JavaScript API</strong> not being enabled for your API key.</p>
-                <p className="mt-4">Please enable it in your Google Cloud project and ensure billing is set up.</p>
+                <p>The map failed to load. This is usually caused by an API key configuration issue in your Google Cloud project.</p>
+                <p className="mt-4 font-semibold">Please ensure the following APIs are enabled for your key:</p>
+                <ul className="list-disc list-inside text-left mt-2 space-y-1 mx-auto max-w-sm">
+                    <li><strong>Maps JavaScript API</strong> (for displaying the map)</li>
+                    <li><strong>Directions API</strong> (for calculating routes)</li>
+                    <li><strong>Places API</strong> (for address details)</li>
+                </ul>
+                <p className="mt-4">You must also have a valid billing account linked to your project.</p>
                 <Button asChild variant="link" className="mt-4 text-destructive-foreground hover:text-destructive-foreground/80">
                     <a href="https://console.cloud.google.com/google/maps-apis/overview" target="_blank" rel="noopener noreferrer">
                         Go to Google Cloud Console <ExternalLink className="ml-2 h-4 w-4" />
@@ -199,7 +204,7 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
       options={mapOptions}
     >
       {directions ? (
-        <DirectionsRenderer directions={directions} options={{ suppressMarkers: false, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
+        <DirectionsRenderer directions={directions} options={{ suppressMarkers: true, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
       ) : (
         <>
           {pickupAddress && locationMap.has(pickupAddress) && (
