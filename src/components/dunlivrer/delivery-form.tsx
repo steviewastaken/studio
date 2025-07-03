@@ -8,18 +8,22 @@ import * as z from 'zod';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion, CheckCircle2 } from 'lucide-react';
-import { handleFindDriver, handleGetQuote, handleDetectFraud } from '@/lib/actions';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion, CheckCircle2, Star, Briefcase, Home } from 'lucide-react';
+import { handleFindDriver, handleGetQuote, handleDetectFraud, getSavedAddresses, addSavedAddress } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { FindDriverOutput, FindDriverInput } from '@/ai/flows/find-driver';
 import type { GetQuoteOutput, GetQuoteInput } from '@/ai/flows/get-quote';
 import type { DetectFraudOutput, DetectFraudInput } from '@/ai/flows/detect-fraud';
+import type { SavedAddress } from './types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import AddressAutocomplete from './address-autocomplete';
+import { useAuth } from '@/context/auth-context';
+import { Badge } from '../ui/badge';
 
 const formSchema = z.object({
   pickupAddress: z.string({ required_error: "Please select a pickup location."}).min(1, "Please select a pickup location."),
@@ -37,7 +41,14 @@ type DeliveryFormProps = {
   onAddressChange: (addresses: { pickup: string | null; destinations: string[] }) => void;
 };
 
+const addressIcons: { [key: string]: React.ReactNode } = {
+    'home': <Home className="w-3 h-3" />,
+    'work': <Briefcase className="w-3 h-3" />,
+    'office': <Briefcase className="w-3 h-3" />,
+};
+
 export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
+  const { user } = useAuth();
   const [isReviewed, setIsReviewed] = useState(false);
   const [isFindingDriver, setIsFindingDriver] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
@@ -50,6 +61,11 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   const [fraudResult, setFraudResult] = useState<DetectFraudOutput | null>(null);
   const [showFraudDialog, setShowFraudDialog] = useState(false);
   const [validatedFields, setValidatedFields] = useState(new Set<string>());
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [addressToSave, setAddressToSave] = useState<string | null>(null);
+  const [newLabel, setNewLabel] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -67,7 +83,19 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     name: "destinationAddresses"
   });
 
-  const { watch, setValue } = form;
+  const { watch, setValue, trigger } = form;
+
+  const fetchSavedAddresses = useCallback(async () => {
+    if (!user) return;
+    const result = await getSavedAddresses();
+    if (result.success && result.data) {
+        setSavedAddresses(result.data);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchSavedAddresses();
+  }, [fetchSavedAddresses]);
 
   const handleAddressChangeCallback = useCallback((value: z.infer<typeof formSchema>) => {
     const { pickupAddress, destinationAddresses } = value;
@@ -83,7 +111,6 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
         handleAddressChangeCallback(value as z.infer<typeof formSchema>);
         setIsReviewed(false);
         setQuote(null);
-        // If a field is changed manually, we can assume it's no longer validated
         if (name && validatedFields.has(name)) {
             setValidatedFields(prev => {
                 const newSet = new Set(prev);
@@ -162,20 +189,15 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
 
     setIsCheckingFraud(true);
 
-    // --- MOCK USER DATA for fraud detection demo ---
-    // In a real app, this would come from the authenticated user's context.
     const mockFraudInput: DetectFraudInput = {
-      userId: 'user-123',
-      // Simulate a new-ish user to trigger rules. Refresh to get a different scenario.
+      userId: user?.id || 'guest-user',
       userAccountAgeDays: Math.random() < 0.5 ? 5 : 90, 
       userTotalDeliveries: 15,
-      // Occasionally add a suspicious refund history
       userRefundHistory: Math.random() < 0.3 ? [{ refundId: 'refund-abc', reason: 'Item damaged', amount: 150, date: '2024-05-01' }] : [],
-      deliveryValue: Math.random() < 0.4 ? 250 : 80, // Occasionally high-value
+      deliveryValue: Math.random() < 0.4 ? 250 : 80,
       pickupAddress: values.pickupAddress,
       destinationAddress: values.destinationAddresses[0].value,
     };
-    // --- END MOCK DATA ---
 
     const fraudCheckResult = await handleDetectFraud(mockFraudInput);
     setIsCheckingFraud(false);
@@ -194,7 +216,6 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     if (fraudCheckResult.data.isSuspicious) {
         setShowFraudDialog(true);
     } else {
-        // If not suspicious, proceed to find driver
         findDriver(values.pickupAddress);
     }
   };
@@ -219,6 +240,39 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
       description: `Your delivery is scheduled for ${format(scheduledDate, 'PPP')} between ${scheduledTime}.`,
     });
   };
+  
+  const handleOpenSaveDialog = (address: string) => {
+    setAddressToSave(address);
+    setIsSaveDialogOpen(true);
+  };
+
+  const handleSaveAddress = async () => {
+    if (!newLabel.trim() || !addressToSave) return;
+    setIsSaving(true);
+    const result = await addSavedAddress(addressToSave, newLabel);
+    if (result.success) {
+        toast({
+            title: "Address Saved!",
+            description: `Saved "${addressToSave}" as "${newLabel}".`
+        });
+        setIsSaveDialogOpen(false);
+        setNewLabel("");
+        setAddressToSave(null);
+        fetchSavedAddresses();
+    } else {
+        toast({
+            variant: 'destructive',
+            title: "Failed to Save",
+            description: result.error,
+        });
+    }
+    setIsSaving(false);
+  }
+
+  const handleSelectSavedAddress = (fieldName: any, address: string) => {
+    setValue(fieldName, address, { shouldValidate: true, shouldDirty: true });
+    setValidatedFields(prev => new Set(prev).add(fieldName));
+  };
     
   const timeSlots = Array.from({ length: 10 }, (_, i) => {
     const hour = i + 9;
@@ -226,6 +280,50 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   });
 
   const isDispatchLoading = isCheckingFraud || isFindingDriver;
+
+  const renderAddressField = (field: any, fieldName: any, placeholder: string) => {
+      const isVerified = validatedFields.has(fieldName);
+      const fieldValue = watch(fieldName);
+      const isAlreadySaved = savedAddresses.some(addr => addr.address === fieldValue);
+
+      return (
+        <FormItem className="flex flex-col">
+            <FormControl>
+                <AddressAutocomplete
+                    {...field}
+                    placeholder={placeholder}
+                    onPlaceChanged={(place) => {
+                        if (place.formatted_address) {
+                            setValue(fieldName, place.formatted_address, { shouldValidate: true, shouldDirty: true });
+                            setValidatedFields(prev => new Set(prev).add(fieldName));
+                        }
+                    }}
+                    className="h-12"
+                />
+            </FormControl>
+            <FormMessage />
+            <div className="flex flex-wrap items-center gap-2 pt-1 min-h-[26px]">
+                {isVerified && (
+                    <div className="flex items-center gap-1.5 text-xs text-green-500 mt-1 animate-in fade-in-0">
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        <span>Address Verified</span>
+                    </div>
+                )}
+                {isVerified && user && !isAlreadySaved && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-auto py-0.5 px-2 text-primary hover:bg-primary/10"
+                        onClick={() => handleOpenSaveDialog(fieldValue)}
+                    >
+                        <Star className="w-3 h-3 mr-1.5"/> Save
+                    </Button>
+                )}
+            </div>
+        </FormItem>
+      )
+  };
 
   return (
     <>
@@ -237,75 +335,55 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
               <CardDescription>Fill in your delivery details. Add multiple destinations for a smart route.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <FormField
-                  control={form.control}
-                  name="pickupAddress"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Pickup Address</FormLabel>
-                        <FormControl>
-                          <AddressAutocomplete
-                            {...field}
-                            placeholder="Enter pickup address..."
-                            onPlaceChanged={(place) => {
-                                if (place.formatted_address) {
-                                    setValue("pickupAddress", place.formatted_address, { shouldValidate: true, shouldDirty: true });
-                                    setValidatedFields(prev => new Set(prev).add('pickupAddress'));
-                                }
-                            }}
-                            className="h-12"
-                          />
-                        </FormControl>
-                      <FormMessage />
-                      {validatedFields.has('pickupAddress') && (
-                        <div className="flex items-center gap-1.5 text-xs text-green-500 mt-1 animate-in fade-in-0">
-                            <CheckCircle className="h-3.5 w-3.5" />
-                            <span>Address Verified</span>
-                        </div>
-                      )}
-                    </FormItem>
-                  )}
+              <div className="space-y-2">
+                <FormLabel>Pickup Address</FormLabel>
+                {user && savedAddresses.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        {savedAddresses.map(addr => (
+                            <Badge key={addr.id} variant="outline" className="cursor-pointer hover:border-primary/80 hover:bg-primary/10" onClick={() => handleSelectSavedAddress('pickupAddress', addr.address)}>
+                                {addressIcons[addr.label.toLowerCase()] || <Star className="w-3 h-3"/>}
+                                <span className="ml-1.5">{addr.label}</span>
+                            </Badge>
+                        ))}
+                    </div>
+                )}
+                <FormField
+                    control={form.control}
+                    name="pickupAddress"
+                    render={({ field }) => renderAddressField(field, 'pickupAddress', 'Enter pickup address...')}
                 />
-                
+              </div>
+
                 <div className="space-y-4">
                   <FormLabel>Destination Addresses</FormLabel>
+                   {user && savedAddresses.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        {savedAddresses.map(addr => (
+                            <Badge key={addr.id} variant="outline" className="cursor-pointer hover:border-primary/80 hover:bg-primary/10" onClick={() => handleSelectSavedAddress(`destinationAddresses.0.value`, addr.address)}>
+                                 {addressIcons[addr.label.toLowerCase()] || <Star className="w-3 h-3"/>}
+                                <span className="ml-1.5">{addr.label}</span>
+                            </Badge>
+                        ))}
+                    </div>
+                )}
                   {fields.map((field, index) => {
                     const fieldName = `destinationAddresses.${index}.value`;
                     return (
-                        <div key={field.id} className="space-y-2">
-                            <FormField
-                            control={form.control}
-                            name={fieldName}
-                            render={({ field: renderField }) => (
-                                <FormItem className="flex items-center gap-2">
-                                <FormControl>
-                                    <AddressAutocomplete
-                                        {...renderField}
-                                        placeholder={`Destination #${index + 1}`}
-                                        onPlaceChanged={(place) => {
-                                            if (place.formatted_address) {
-                                                setValue(fieldName, place.formatted_address, { shouldValidate: true, shouldDirty: true });
-                                                setValidatedFields(prev => new Set(prev).add(fieldName));
-                                            }
-                                        }}
-                                        className="h-12"
+                        <div key={field.id} className="relative space-y-2">
+                            <div className="flex items-start gap-2">
+                                <div className="flex-grow">
+                                    <FormField
+                                        control={form.control}
+                                        name={fieldName}
+                                        render={({ field: renderField }) => renderAddressField(renderField, fieldName, `Destination #${index + 1}`)}
                                     />
-                                </FormControl>
+                                </div>
                                 {fields.length > 1 && (
-                                    <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0">
+                                    <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0 mt-2">
                                         <Trash2 className="w-4 h-4 text-destructive"/>
                                     </Button>
                                 )}
-                                </FormItem>
-                            )}
-                            />
-                            <FormMessage>{form.formState.errors.destinationAddresses?.[index]?.value?.message}</FormMessage>
-                            {validatedFields.has(fieldName) && (
-                                <div className="flex items-center gap-1.5 text-xs text-green-500 animate-in fade-in-0 pl-1">
-                                    <CheckCircle className="h-3.5 w-3.5" />
-                                    <span>Address Verified</span>
-                                </div>
-                            )}
+                            </div>
                         </div>
                     )
                   })}
@@ -470,6 +548,35 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
             </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                  <DialogTitle>Save Address</DialogTitle>
+                  <DialogDescription>
+                      Give this address a short label (e.g., Home, Work, Gym) for easy access next time.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="address-to-save">Address</Label>
+                    <Input id="address-to-save" value={addressToSave || ""} readOnly disabled />
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="address-label">Label</Label>
+                    <Input id="address-label" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="e.g., Home" />
+                  </div>
+              </div>
+              <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleSaveAddress} disabled={isSaving || !newLabel.trim()}>
+                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Address
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+
 
       <AlertDialog open={showFraudDialog} onOpenChange={setShowFraudDialog}>
         <AlertDialogContent>

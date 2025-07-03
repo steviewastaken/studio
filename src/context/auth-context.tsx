@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase-client';
 import type { AuthSession } from '@supabase/supabase-js';
 
 type UserProfile = {
+  id: string;
   name: string;
   email: string;
 };
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             setUser({ 
+                id: session.user.id,
                 name: session.user.user_metadata.full_name || session.user.email,
                 email: session.user.email!,
             });
@@ -38,7 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session) {
-            setUser({ 
+            setUser({
+                id: session.user.id,
                 name: session.user.user_metadata.full_name || session.user.email,
                 email: session.user.email!,
             });

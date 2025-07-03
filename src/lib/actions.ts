@@ -16,6 +16,8 @@ import {
   getQuote as getQuoteFlow,
   type GetQuoteInput,
 } from '@/ai/flows/get-quote';
+import { createClient } from '@/lib/supabase-server';
+import { revalidatePath } from 'next/cache';
 
 export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   try {
@@ -60,4 +62,40 @@ export async function handleGetQuote(data: GetQuoteInput) {
     // Pass the specific error message to the client for better feedback.
     return { success: false, error: error.message || 'An unknown error occurred while generating the quote.' };
   }
+}
+
+// --- Address Book Actions ---
+
+export async function getSavedAddresses() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const { data, error } = await supabase
+    .from('user_addresses')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('label');
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function addSavedAddress(address: string, label: string) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const { data, error } = await supabase
+        .from('user_addresses')
+        .insert({ user_id: user.id, address, label });
+
+    if (error) {
+        if (error.code === '23505') { // unique_violation
+            return { success: false, error: `You already have an address with the label "${label}".` };
+        }
+        return { success: false, error: error.message };
+    }
+    revalidatePath('/');
+    return { success: true, data };
 }
