@@ -33,12 +33,12 @@ const GetQuoteOutputSchema = z.object({
 });
 export type GetQuoteOutput = z.infer<typeof GetQuoteOutputSchema>;
 
-// This is the schema for the AI's output. It's internal to this file.
+// This is the schema for the AI's output. It's internal to this file and now more flexible.
 const AiEstimateSchema = z.object({
   distanceInKm: z
-    .number()
+    .union([z.string(), z.number()])
     .describe(
-      'A realistic total travel distance for the delivery, as a single number in kilometers.'
+      'A realistic total travel distance for the delivery, as a single number in kilometers (e.g., 15.2 or "15.2").'
     ),
 });
 
@@ -47,7 +47,7 @@ export async function getQuote(input: GetQuoteInput): Promise<GetQuoteOutput> {
   return getQuoteFlow(input);
 }
 
-// The prompt now only asks the AI to do what it's good at: estimating distance.
+// The prompt asks the AI to estimate distance.
 const getEstimatePrompt = ai.definePrompt({
   name: 'getEstimatePrompt',
   input: {schema: GetQuoteInputSchema},
@@ -73,13 +73,22 @@ const getQuoteFlow = ai.defineFlow(
   async (input) => {
     // Step 1: Get distance estimation from the AI.
     const {output: estimate} = await getEstimatePrompt(input);
-    if (!estimate) {
+    
+    if (!estimate || estimate.distanceInKm === undefined) {
       throw new Error('The AI model failed to provide a distance estimate.');
     }
 
-    // Step 2: Calculate ETA and perform reliable price calculation in code.
+    // Step 2: Defensively parse the distance from the AI's potentially varied response.
+    const distanceVal = estimate.distanceInKm;
+    const distanceInKm = typeof distanceVal === 'string' ? parseFloat(distanceVal) : distanceVal;
+
+    if (isNaN(distanceInKm)) {
+      throw new Error(`The AI model returned an invalid distance format: "${distanceVal}"`);
+    }
+
+    // Step 3: Calculate ETA and perform reliable price calculation in code.
     const AVERAGE_SPEED_KMH = 30; // Average speed in a city including stops
-    const etaInMinutes = Math.round((estimate.distanceInKm / AVERAGE_SPEED_KMH) * 60) + 10; // Add 10 mins for pickup/dropoff buffer
+    const etaInMinutes = Math.round((distanceInKm / AVERAGE_SPEED_KMH) * 60) + 10; // Add 10 mins for pickup/dropoff buffer
 
     const BASE_FARE = 5;
     const PER_KM_RATE = 1.5;
@@ -87,17 +96,17 @@ const getQuoteFlow = ai.defineFlow(
     const sizeCostMap = {small: 0, medium: 3, large: 7};
     const typeMultiplierMap = {standard: 1, express: 1.5, night: 2};
 
-    const distanceCost = estimate.distanceInKm * PER_KM_RATE;
+    const distanceCost = distanceInKm * PER_KM_RATE;
     const sizeCost = sizeCostMap[input.packageSize];
     let totalCost = (BASE_FARE + distanceCost + sizeCost) * typeMultiplierMap[input.deliveryType];
 
     // Round to 2 decimal places.
     const finalPrice = Math.round(totalCost * 100) / 100;
 
-    // Step 3: Format the final output to match what the client expects.
+    // Step 4: Format the final output to match what the client expects.
     return {
       price: finalPrice,
-      distance: `${estimate.distanceInKm.toFixed(1)} km`,
+      distance: `${distanceInKm.toFixed(1)} km`,
       eta: `${etaInMinutes} minutes`,
     };
   }
