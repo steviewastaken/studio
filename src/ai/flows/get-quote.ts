@@ -33,44 +33,41 @@ const GetQuoteOutputSchema = z.object({
 });
 export type GetQuoteOutput = z.infer<typeof GetQuoteOutputSchema>;
 
+// This is the schema for the AI's output. It's internal to this file.
+const AiEstimateSchema = z.object({
+  distanceInKm: z
+    .number()
+    .describe(
+      'A realistic total travel distance for the delivery, as a single number in kilometers.'
+    ),
+  etaInMinutes: z
+    .number()
+    .int()
+    .describe('A realistic total travel time, as a single number in minutes.'),
+});
+
+// The main exported function that the client calls.
 export async function getQuote(input: GetQuoteInput): Promise<GetQuoteOutput> {
   return getQuoteFlow(input);
 }
 
-const getQuotePrompt = ai.definePrompt({
-  name: 'getQuotePrompt',
+// The prompt now only asks the AI to do what it's good at: estimation.
+const getEstimatePrompt = ai.definePrompt({
+  name: 'getEstimatePrompt',
   input: {schema: GetQuoteInputSchema},
-  output: {schema: GetQuoteOutputSchema},
-  prompt: `You are a JSON API for a delivery service called Dunlivrer. Your task is to calculate a price, total distance, and ETA for a delivery request.
-
-Base the price on the following:
-- Base fare: $5
-- Per kilometer: $1.5
-- Package size: small (+$0), medium (+$3), large (+$7)
-- Delivery type: standard (x1), express (x1.5), night (x2)
-
-- Calculate a realistic total distance in kilometers for the entire journey.
-- Calculate a realistic total travel time in minutes.
+  output: {schema: AiEstimateSchema},
+  prompt: `You are a logistics estimation API. Based on the pickup and destination addresses, calculate a realistic total distance and estimated time of arrival.
+Return ONLY the specified JSON.
 
 Pickup: {{{pickupAddress}}}
 Destinations:
 {{#each destinationAddresses}}
 - {{{this}}}
 {{/each}}
-Package Size: {{{packageSize}}}
-Delivery Type: {{{deliveryType}}}
-
-Provide the response ONLY in the specified JSON format. Do not add any extra text or explanations.
-
-Example of a valid response for a 4.2 km express delivery of a medium package:
-{
-  "price": 21.45,
-  "distance": "4.2 km",
-  "eta": "15 minutes"
-}
 `,
 });
 
+// The flow orchestrates the AI call and the reliable price calculation.
 const getQuoteFlow = ai.defineFlow(
   {
     name: 'getQuoteFlow',
@@ -78,10 +75,31 @@ const getQuoteFlow = ai.defineFlow(
     outputSchema: GetQuoteOutputSchema,
   },
   async (input) => {
-    const {output} = await getQuotePrompt(input);
-    if (!output) {
-      throw new Error('The AI model failed to generate a quote.');
+    // Step 1: Get distance and time estimation from the AI.
+    const {output: estimate} = await getEstimatePrompt(input);
+    if (!estimate) {
+      throw new Error('The AI model failed to provide a distance and ETA estimate.');
     }
-    return output;
+
+    // Step 2: Perform reliable price calculation in code.
+    const BASE_FARE = 5;
+    const PER_KM_RATE = 1.5;
+
+    const sizeCostMap = {small: 0, medium: 3, large: 7};
+    const typeMultiplierMap = {standard: 1, express: 1.5, night: 2};
+
+    const distanceCost = estimate.distanceInKm * PER_KM_RATE;
+    const sizeCost = sizeCostMap[input.packageSize];
+    let totalCost = (BASE_FARE + distanceCost + sizeCost) * typeMultiplierMap[input.deliveryType];
+
+    // Round to 2 decimal places.
+    const finalPrice = Math.round(totalCost * 100) / 100;
+
+    // Step 3: Format the final output to match what the client expects.
+    return {
+      price: finalPrice,
+      distance: `${estimate.distanceInKm.toFixed(1)} km`,
+      eta: `${estimate.etaInMinutes} minutes`,
+    };
   }
 );
