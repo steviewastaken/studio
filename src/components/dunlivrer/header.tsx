@@ -20,6 +20,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/context/language-context';
 import { supabase } from '@/lib/supabase-client';
+import { Skeleton } from '../ui/skeleton';
 
 const navLinks = [
   { href: '/services', label: 'Services' },
@@ -66,7 +67,7 @@ function LanguageSwitcher() {
 }
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -119,7 +120,12 @@ export default function Header() {
         </nav>
         <div className="hidden md:flex items-center gap-2">
           <LanguageSwitcher />
-          {user ? (
+          {loading ? (
+            <div className="flex items-center gap-2">
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-9 w-20" />
+            </div>
+          ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -173,7 +179,18 @@ export default function Header() {
                   ))}
                 </nav>
                 <div className="mt-auto flex flex-col gap-4">
-                  {user ? (
+                  {loading ? (
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-4 px-2 py-2">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[100px]" />
+                                <Skeleton className="h-3 w-[150px]" />
+                            </div>
+                        </div>
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                  ) : user ? (
                     <>
                       <div className="flex items-center gap-4 px-2 py-2">
                         <Avatar>
