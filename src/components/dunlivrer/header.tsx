@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import DunlivrerLogo from './logo';
+import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 const navLinks = [
   { href: '/services', label: 'Services' },
@@ -24,9 +26,38 @@ const navLinks = [
 
 export default function Header() {
   const { user, logout } = useAuth();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const controlNavbar = () => {
+      if (typeof window !== 'undefined') {
+        // Hide header on scroll down, but only after a certain point
+        // Show header on scroll up
+        if (window.scrollY > lastScrollY && window.scrollY > 100) { 
+          setIsVisible(false);
+        } else {
+          setIsVisible(true);
+        }
+        setLastScrollY(window.scrollY);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', controlNavbar);
+
+      // cleanup function
+      return () => {
+        window.removeEventListener('scroll', controlNavbar);
+      };
+    }
+  }, [lastScrollY]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 p-4 md:px-8 bg-background border-b border-white/10 shadow-md">
+    <header className={cn(
+      "fixed top-0 left-0 right-0 z-50 p-4 md:px-8 bg-background/50 backdrop-blur-lg border-b border-white/10 transition-transform duration-300",
+      isVisible ? 'translate-y-0' : '-translate-y-full'
+    )}>
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <DunlivrerLogo />
         <nav className="hidden md:flex items-center gap-6">
