@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import AddressAutocomplete from './address-autocomplete';
 import { useAuth } from '@/context/auth-context';
 import { Badge } from '../ui/badge';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   pickupAddress: z.string({ required_error: "Please select a pickup location."}).min(1, "Please select a pickup location."),
