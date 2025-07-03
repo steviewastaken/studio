@@ -193,7 +193,7 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
       options={mapOptions}
     >
       {directions && (
-        <DirectionsRenderer directions={directions} options={{ suppressMarkers: true, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
+        <DirectionsRenderer directions={directions} options={{ suppressMarkers: false, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
       )}
     </GoogleMap>
   );
