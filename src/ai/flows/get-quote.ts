@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview Generates a delivery quote using the Google Maps Directions API for accuracy.
+ * @fileOverview Generates a delivery quote using the Google Maps Directions API and a dynamic pricing model.
  *
  * - getQuote - A function that gets a delivery quote.
  * - GetQuoteInput - The input type for the getQuote function.
@@ -87,7 +87,6 @@ const getQuoteFlow = ai.defineFlow(
         }
 
         if (!data.routes || data.routes.length === 0 || !data.routes[0].legs || data.routes[0].legs.length === 0) {
-            console.error('Directions API Error: No routes or legs found for the given addresses.');
             throw new Error('No valid route could be found between the specified addresses. They may be too far apart or on disconnected road networks.');
         }
 
@@ -110,13 +109,13 @@ const getQuoteFlow = ai.defineFlow(
     // Use duration from API for ETA, add buffer
     const etaInMinutes = Math.round(totalDurationSeconds / 60) + 10; // 10 min buffer for pickup/dropoff
 
-    // --- France-Based Pricing Logic ---
+    // --- Dynamic Pricing Engine ---
     const BASE_FARE = 5.00; 
     const BASE_DISTANCE_KM = 2;
 
+    // 1. Distance-based Cost
     let distanceCost = 0;
     let remainingDistance = distanceInKm > BASE_DISTANCE_KM ? distanceInKm - BASE_DISTANCE_KM : 0;
-
     if (remainingDistance > 0) {
         const distInSlab = Math.min(remainingDistance, 3);
         distanceCost += distInSlab * 1.00;
@@ -136,14 +135,35 @@ const getQuoteFlow = ai.defineFlow(
         distanceCost += remainingDistance * 0.60;
     }
 
+    // 2. Package Size Surcharge
     const weightSurchargeMap = { small: 0, medium: 1.00, large: 2.00 };
     const weightSurcharge = weightSurchargeMap[input.packageSize];
 
+    // 3. Delivery Type Surcharge
     const speedSurchargeMap = { standard: 0, express: 3.00, night: 2.50 };
     const speedSurcharge = speedSurchargeMap[input.deliveryType];
     
-    let totalCost = BASE_FARE + distanceCost + weightSurcharge + speedSurcharge;
+    // 4. Time-based Surcharges (Peak Hours)
+    let timeSurcharge = 0;
+    const currentHour = new Date().getHours();
+    // Peak hours: 8-10am and 5-7pm
+    if ((currentHour >= 8 && currentHour < 10) || (currentHour >= 17 && currentHour < 19)) {
+        timeSurcharge = 1.25; // €1.25 peak hour surcharge
+    }
 
+    // 5. Simulated Real-time Factors
+    let weatherSurcharge = 0;
+    if (Math.random() < 0.15) { // 15% chance of bad weather
+        weatherSurcharge = 1.50; // €1.50 bad weather surcharge
+    }
+
+    let supplySurcharge = 0;
+    if (Math.random() < 0.20) { // 20% chance of high demand / low courier supply
+        supplySurcharge = 0.75 * (distanceInKm / 10); // Surcharge increases with distance during high demand
+    }
+    
+    // Final Price Calculation
+    let totalCost = BASE_FARE + distanceCost + weightSurcharge + speedSurcharge + timeSurcharge + weatherSurcharge + supplySurcharge;
     const finalPrice = Math.round(totalCost * 100) / 100;
 
     return {
