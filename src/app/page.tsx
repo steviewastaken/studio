@@ -47,9 +47,9 @@ const services = [
     description: 'Robust logistics solutions for businesses. We handle supply chain, last-mile fulfillment, and more.',
   },
   {
-    icon: <Zap className="w-10 h-10 text-primary" />,
-    title: 'API for Developers',
-    description: 'Integrate Dunlivrer\'s logistics power directly into your app or e-commerce platform.',
+    icon: <BrainCircuit className="w-10 h-10 text-primary" />,
+    title: 'Predictive Fleet Management',
+    description: 'Our AI forecasts demand hotspots to pre-position couriers, drastically cutting wait times and maximizing network efficiency.',
   }
 ];
 

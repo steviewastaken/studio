@@ -1,6 +1,6 @@
 "use client";
 
-import { Ship, Briefcase, Zap, Bot, CheckCircle } from 'lucide-react';
+import { Ship, Briefcase, Bot, CheckCircle, BrainCircuit } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -19,10 +19,10 @@ const serviceList = [
     details: ['Dedicated account management', 'Volume-based pricing', 'Proof-of-delivery']
   },
   {
-    icon: <Zap className="w-8 h-8 text-primary" />,
-    title: 'API for Developers',
-    description: 'Integrate the power of Dunlivrer\'s AI logistics network directly into your application, e-commerce site, or internal tools.',
-    details: ['RESTful API with clear documentation', 'Webhook support for real-time events', 'Scalable and reliable infrastructure']
+    icon: <BrainCircuit className="w-8 h-8 text-primary" />,
+    title: 'Predictive Fleet Management',
+    description: "We don't just react to delivery requests—we predict them. Our AI analyzes historical data and real-time signals to forecast demand hotspots, proactively positioning our courier fleet for unmatched speed.",
+    details: ['Proactive courier positioning', 'Real-time demand forecasting', 'Reduced customer wait times']
   },
   {
     icon: <Bot className="w-8 h-8 text-primary" />,
