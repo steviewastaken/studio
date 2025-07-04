@@ -2,16 +2,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { DeliveryDetails } from "./types";
-import { MapPin, Package, Clock, CheckCircle2, Truck, Home, UserRoundCheck, ArrowRight } from "lucide-react";
+import { MapPin, Package, Clock, CheckCircle2, Truck, Home, UserRoundCheck, ArrowRight, RefreshCw } from "lucide-react";
 import MapComponent from "./map-component";
 import type { FindDriverOutput } from "@/ai/flows/find-driver";
 import type { DeliveryStatus } from "@/app/tracking/page";
 import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
 
 type TrackingMapProps = {
   deliveryDetails: DeliveryDetails | null;
   driverDetails: FindDriverOutput | null;
   deliveryStatus: DeliveryStatus;
+  onRerouteRequest: () => void;
 };
 
 function StatusStep({ icon, label, isCompleted, isCurrent }: { icon: React.ReactNode, label: string, isCompleted: boolean, isCurrent: boolean }) {
@@ -26,7 +28,7 @@ function StatusStep({ icon, label, isCompleted, isCurrent }: { icon: React.React
         {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : icon}
       </div>
       <p className={cn(
-        "text-xs md:text-sm font-medium transition-colors",
+        "text-xs md:text-sm font-medium transition-colors text-center",
         isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
       )}>{label}</p>
     </div>
@@ -48,7 +50,7 @@ const statusMap: { [key in DeliveryStatus]: number } = {
     DELIVERED: 3
 };
 
-export default function TrackingMap({ deliveryDetails, driverDetails, deliveryStatus }: TrackingMapProps) {
+export default function TrackingMap({ deliveryDetails, driverDetails, deliveryStatus, onRerouteRequest }: TrackingMapProps) {
   const pickup = deliveryDetails?.pickupAddress ?? null;
   const destinations = deliveryDetails?.destinationAddresses ?? [];
 
@@ -114,19 +116,25 @@ export default function TrackingMap({ deliveryDetails, driverDetails, deliverySt
                 ))}
               </div>
               <Separator className="my-6" />
-              <div className="flex justify-between items-center text-foreground">
+              <div className="flex flex-col md:flex-row justify-between items-center text-foreground gap-4">
                   <div className="flex items-center gap-2 text-sm">
                       <Clock className="w-4 h-4 text-muted-foreground" />
                       <span>{deliveryStatus === 'DELIVERED' ? 'Status' : 'Estimated Arrival:'}</span>
+                       <span className="font-bold text-lg text-primary">
+                        {deliveryStatus === 'DELIVERED'
+                            ? 'Package Delivered'
+                            : driverDetails
+                            ? driverDetails.driverEta
+                            : 'Calculating...'
+                        }
+                      </span>
                   </div>
-                  <span className="font-bold text-xl text-primary">
-                    {deliveryStatus === 'DELIVERED'
-                        ? 'Package Delivered'
-                        : driverDetails
-                        ? driverDetails.driverEta
-                        : 'Calculating...'
-                    }
-                  </span>
+                  {deliveryStatus === 'IN_TRANSIT' && (
+                    <Button onClick={onRerouteRequest} variant="outline" size="sm">
+                        <RefreshCw className="mr-2 h-4 w-4"/>
+                        Change Destination
+                    </Button>
+                  )}
               </div>
             </CardContent>
           </Card>
