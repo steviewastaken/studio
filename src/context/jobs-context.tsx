@@ -9,6 +9,8 @@ export type Job = {
   distance: string;
   payout: string;
   time: string;
+  suggestion: string;
+  suggestionType: 'accept' | 'neutral';
 };
 
 type JobsContextType = {
@@ -26,6 +28,8 @@ const initialJobs: Job[] = [
     distance: '5.2 km',
     payout: '12.50',
     time: '25 min',
+    suggestion: "High payout for a short distance. Fits your peak hour strategy.",
+    suggestionType: 'accept'
   },
   {
     id: 'job-init-2',
@@ -34,6 +38,8 @@ const initialJobs: Job[] = [
     distance: '10.8 km',
     payout: '18.75',
     time: '45 min',
+    suggestion: "Standard rate for this distance. Good to keep momentum.",
+    suggestionType: 'neutral'
   },
 ];
 

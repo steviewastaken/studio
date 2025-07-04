@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered, AlertTriangle } from "lucide-react";
+import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered, AlertTriangle, Lightbulb } from "lucide-react";
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -21,6 +21,11 @@ import { useJobs, type Job } from "@/context/jobs-context";
 // --- Components for Driver View ---
 
 const JobCard = ({ job, onAccept, onDecline }: { job: Job, onAccept: (id: string) => void, onDecline: (id: string) => void }) => {
+    const suggestionColors = {
+        accept: 'text-green-400',
+        neutral: 'text-amber-400',
+    };
+
     return (
         <motion.div
             layout
@@ -49,7 +54,7 @@ const JobCard = ({ job, onAccept, onDecline }: { job: Job, onAccept: (id: string
                         <p className="text-sm font-medium">{job.dropoff}</p>
                     </div>
                     <Separator />
-                    <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="grid grid-cols-3 gap-4 text-center py-2">
                         <div>
                             <p className="text-xs text-muted-foreground">Payout</p>
                             <p className="font-bold text-lg text-white flex items-center justify-center gap-1"><Euro className="w-4 h-4" />{job.payout}</p>
@@ -61,6 +66,16 @@ const JobCard = ({ job, onAccept, onDecline }: { job: Job, onAccept: (id: string
                         <div>
                             <p className="text-xs text-muted-foreground">Est. Time</p>
                             <p className="font-bold text-lg text-white">{job.time}</p>
+                        </div>
+                    </div>
+                    <Separator />
+                    <div className={cn("mt-4 p-4 rounded-lg flex items-start gap-3", job.suggestionType === 'accept' ? 'bg-green-500/10' : 'bg-amber-500/10')}>
+                        <Lightbulb className={cn("w-5 h-5 mt-0.5 shrink-0", suggestionColors[job.suggestionType])} />
+                        <div>
+                            <h4 className={cn("font-semibold text-sm", suggestionColors[job.suggestionType])}>AI Suggestion</h4>
+                            <p className={cn("text-sm", suggestionColors[job.suggestionType], "opacity-80")}>
+                                {job.suggestion}
+                            </p>
                         </div>
                     </div>
                 </CardContent>
