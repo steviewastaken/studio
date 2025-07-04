@@ -4,15 +4,16 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Mic, MicOff, Loader2, Send, FileText, Siren, AlertTriangle, Package, User, HardHat } from 'lucide-react';
+import { Mic, MicOff, Loader2, Send, FileText, Siren, AlertTriangle, Package, User, HardHat, Camera, X } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
 import { handleCreateIncidentReport } from '@/lib/actions';
-import type { CreateIncidentReportOutput } from '@/ai/flows/create-incident-report';
+import type { CreateIncidentReportInput, CreateIncidentReportOutput } from '@/ai/flows/create-incident-report';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 // For SpeechRecognition
 declare global {
@@ -22,7 +23,7 @@ declare global {
   }
 }
 
-const ReportResultCard = ({ report, onConfirm, onDiscard }: { report: CreateIncidentReportOutput, onConfirm: () => void, onDiscard: () => void }) => {
+const ReportResultCard = ({ report, capturedImage, onConfirm, onDiscard }: { report: CreateIncidentReportOutput, capturedImage: string | null, onConfirm: () => void, onDiscard: () => void }) => {
     const urgencyColors: {[key: string]: string} = {
         'Low': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
         'Medium': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
@@ -51,6 +52,11 @@ const ReportResultCard = ({ report, onConfirm, onDiscard }: { report: CreateInci
                     <CardDescription>Please review the structured report below before sending it to support.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {capturedImage && (
+                        <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
+                            <Image src={capturedImage} alt="Incident report photo" layout="fill" objectFit="cover" />
+                        </div>
+                    )}
                     <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
                         <div className="flex items-center gap-3">
                             <span className="p-2 bg-primary/20 rounded-md text-primary">{incidentIcons[report.incidentType]}</span>
@@ -80,7 +86,7 @@ const ReportResultCard = ({ report, onConfirm, onDiscard }: { report: CreateInci
                     </div>
                 </CardContent>
                 <CardContent className="flex gap-4">
-                     <Button onClick={onDiscard} variant="outline" className="w-full">Discard</Button>
+                     <Button onClick={onDiscard} variant="outline" className="w-full">Discard & Edit</Button>
                      <Button onClick={onConfirm} className="w-full">Confirm & Send Report</Button>
                 </CardContent>
             </Card>
@@ -96,6 +102,9 @@ export default function ReportIncidentPage() {
     const [description, setDescription] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [generatedReport, setGeneratedReport] = useState<CreateIncidentReportOutput | null>(null);
+
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isListening, setIsListening] = useState(false);
     const recognitionRef = useRef<any>(null);
@@ -128,6 +137,17 @@ export default function ReportIncidentPage() {
         }
     }, [toast, isListening]);
 
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const toggleListening = () => {
         if (!recognitionRef.current) {
             toast({ variant: "destructive", title: "Not Supported", description: "Your browser does not support speech recognition."});
@@ -151,7 +171,12 @@ export default function ReportIncidentPage() {
         setIsLoading(true);
         setGeneratedReport(null);
 
-        const result = await handleCreateIncidentReport({ description });
+        const inputData: CreateIncidentReportInput = { description };
+        if (imagePreview) {
+            inputData.photoDataUri = imagePreview;
+        }
+
+        const result = await handleCreateIncidentReport(inputData);
         
         if (result.success && result.data) {
             setGeneratedReport(result.data);
@@ -169,6 +194,7 @@ export default function ReportIncidentPage() {
     
     const discardReport = () => {
         setGeneratedReport(null);
+        // Don't clear the description or image, so the user can edit
     }
 
     if (!user) {
@@ -192,7 +218,7 @@ export default function ReportIncidentPage() {
         >
             <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">Report an Incident</h1>
             <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                Quickly report issues from the road. Just speak or type what happened, and our AI will handle the rest.
+                Quickly report issues from the road. Speak or type what happened, and optionally add a photo. Our AI will handle the rest.
             </p>
         </motion.div>
 
@@ -211,23 +237,49 @@ export default function ReportIncidentPage() {
                                 <CardDescription>Be as detailed as possible. Mention tracking numbers or customer names if you can.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
+                                {imagePreview && (
+                                    <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
+                                        <Image src={imagePreview} alt="Incident preview" layout="fill" objectFit="cover" />
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute top-2 right-2 z-10 h-8 w-8"
+                                            onClick={() => {
+                                                setImagePreview(null);
+                                                if (fileInputRef.current) fileInputRef.current.value = "";
+                                            }}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                )}
                                  <Textarea 
-                                    placeholder="e.g., 'Customer at 123 Main St didn't answer after 3 tries. I left the package, tracking ID XYZ-789, at the front door.'" 
-                                    rows={8}
+                                    placeholder="e.g., 'Customer at 123 Main St didn't answer after 3 tries. The package is damaged. I have attached a photo.'" 
+                                    rows={6}
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     disabled={isLoading}
                                  />
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <Button onClick={toggleListening} variant="outline" className="w-full" disabled={!recognitionRef.current}>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    onChange={handleFileChange} 
+                                    className="hidden"
+                                    accept="image/*"
+                                />
+                                <div className="grid grid-cols-2 gap-4">
+                                     <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="w-full" disabled={isLoading}>
+                                        <Camera className="mr-2" /> {imagePreview ? 'Change Photo' : 'Add Photo'}
+                                     </Button>
+                                    <Button onClick={toggleListening} variant="outline" className="w-full" disabled={!recognitionRef.current || isLoading}>
                                         {isListening ? <MicOff className="mr-2" /> : <Mic className="mr-2" />}
                                         {isListening ? 'Stop Listening' : 'Use Voice'}
                                     </Button>
-                                    <Button onClick={handleSubmit} disabled={isLoading || !description} className="w-full">
-                                        {isLoading ? <Loader2 className="mr-2 animate-spin" /> : <Send className="mr-2" />}
-                                        {isLoading ? 'Analyzing...' : 'Generate Report'}
-                                    </Button>
                                 </div>
+                                <Button onClick={handleSubmit} disabled={isLoading || !description} className="w-full" size="lg">
+                                    {isLoading ? <Loader2 className="mr-2 animate-spin" /> : <Send className="mr-2" />}
+                                    {isLoading ? 'Analyzing...' : 'Generate Report'}
+                                </Button>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -235,6 +287,7 @@ export default function ReportIncidentPage() {
                     <ReportResultCard 
                         key="result" 
                         report={generatedReport}
+                        capturedImage={imagePreview}
                         onConfirm={confirmAndSend}
                         onDiscard={discardReport}
                     />
