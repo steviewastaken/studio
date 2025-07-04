@@ -30,6 +30,9 @@ const GetQuoteOutputSchema = z.object({
   price: z.number().describe('The total cost of the delivery in Euros, rounded to 2 decimal places.'),
   distance: z.string().describe('The total travel distance for the delivery, in kilometers (e.g., "15.2 km").'),
   eta: z.string().describe('The estimated time of arrival in minutes (e.g., "25 minutes").'),
+  etaConfidenceRange: z.string().describe('The confidence range for the ETA, e.g., "42–50 min".'),
+  etaConfidencePercentage: z.number().describe('The confidence percentage for the ETA prediction, e.g., 94.'),
+  co2Emission: z.string().describe('The estimated CO2 equivalent emission for the delivery, in grams (e.g., "3040g CO₂e").')
 });
 export type GetQuoteOutput = z.infer<typeof GetQuoteOutputSchema>;
 
@@ -53,6 +56,9 @@ const etaPredictionPrompt = ai.definePrompt({
     })},
     output: { schema: z.object({
         predictedEtaMinutes: z.number().describe('The final predicted ETA in total minutes, including all factors.'),
+        minEtaMinutes: z.number().describe('The lower bound of the estimated time of arrival in minutes. This should be a few minutes less than the predicted ETA.'),
+        maxEtaMinutes: z.number().describe('The upper bound of the estimated time of arrival in minutes. This should be a few minutes more than the predicted ETA.'),
+        confidencePercentage: z.number().min(85).max(98).describe('Your confidence level in this ETA prediction, as an integer percentage (e.g., 94).'),
     })},
     prompt: `You are an expert logistics AI specializing in hyper-accurate delivery time estimation for a service called Dunlivrer.
 Your task is to predict the final Estimated Time of Arrival (ETA) in minutes by adjusting a base travel time from a mapping service.
@@ -75,9 +81,13 @@ You must consider the following factors and adjust the base ETA accordingly:
 
 **Pickup/Dropoff Buffer:** ALWAYS add a base buffer of 10 minutes to the travel time to account for parking, finding the exact door, and handover. This should be added ON TOP of the base duration *before* other adjustments.
 
-Your final output must be a single integer representing the total predicted ETA in minutes.
+**Analysis and Output:**
+Based on all factors, provide:
+1.  **predictedEtaMinutes:** Your best single-point estimate for the total delivery time in minutes.
+2.  **minEtaMinutes & maxEtaMinutes:** A realistic time range for the delivery. The range should be reasonable, reflecting the potential for minor, common variations.
+3.  **confidencePercentage:** Your confidence in the \`predictedEtaMinutes\` estimate, as an integer percentage between 85 and 98. Higher confidence for shorter, simpler routes during off-peak hours; lower confidence for complex routes in bad weather or peak traffic.
 
-Analyze all these factors and provide your final \`predictedEtaMinutes\` in the required JSON format.
+Analyze all these factors and provide your final results in the required JSON format.
 `,
 });
 
@@ -228,12 +238,17 @@ const getQuoteFlow = ai.defineFlow(
     if (!etaOutput) {
         throw new Error('The AI model failed to predict an ETA.');
     }
-    const finalEtaMinutes = etaOutput.predictedEtaMinutes;
+    const { predictedEtaMinutes, minEtaMinutes, maxEtaMinutes, confidencePercentage } = etaOutput;
+    
+    const co2EmissionGrams = Math.round(distanceInKm * 200); // 200g CO2e per km heuristic
 
     return {
       price: finalPrice,
       distance: `${distanceInKm.toFixed(1)} km`,
-      eta: `${finalEtaMinutes} minutes`,
+      eta: `${predictedEtaMinutes} minutes`,
+      etaConfidenceRange: `${minEtaMinutes}–${maxEtaMinutes} min`,
+      etaConfidencePercentage: confidencePercentage,
+      co2Emission: `${co2EmissionGrams}g CO₂e`,
     };
   }
 );

@@ -40,6 +40,11 @@ const formSchema = z.object({
 
 type DeliveryFormProps = {
   onAddressChange: (addresses: { pickup: string | null; destinations: string[] }) => void;
+  onQuoteChange: (quote: GetQuoteOutput | null) => void;
+  quote: GetQuoteOutput | null;
+  isReviewed: boolean;
+  isGettingQuote: boolean;
+  setIsGettingQuote: (loading: boolean) => void;
 };
 
 const addressIcons: { [key: string]: React.ReactNode } = {
@@ -48,12 +53,9 @@ const addressIcons: { [key: string]: React.ReactNode } = {
     'office': <Briefcase className="w-3 h-3" />,
 };
 
-export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
+export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, isReviewed, isGettingQuote, setIsGettingQuote }: DeliveryFormProps) {
   const { user } = useAuth();
-  const [isReviewed, setIsReviewed] = useState(false);
   const [isFindingDriver, setIsFindingDriver] = useState(false);
-  const [isGettingQuote, setIsGettingQuote] = useState(false);
-  const [quote, setQuote] = useState<GetQuoteOutput | null>(null);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
@@ -108,8 +110,6 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   useEffect(() => {
     const subscription = watch((value) => {
         handleAddressChangeCallback(value as z.infer<typeof formSchema>);
-        setIsReviewed(false);
-        setQuote(null);
     });
     return () => subscription.unsubscribe();
   }, [watch, handleAddressChangeCallback]);
@@ -117,7 +117,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
 
   async function onGetQuote(values: z.infer<typeof formSchema>) {
     setIsGettingQuote(true);
-    setQuote(null);
+    onQuoteChange(null);
 
     const result = await handleGetQuote({
         pickupAddress: values.pickupAddress,
@@ -127,13 +127,13 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     });
     
     if (result.success && result.data) {
-        setQuote(result.data);
-        setIsReviewed(true);
+        onQuoteChange(result.data);
         toast({
             title: "Quote Generated!",
-            description: "Review your quote below and proceed to dispatch.",
+            description: "Review your AI estimate on the right.",
         });
     } else {
+        onQuoteChange(null);
         toast({
             variant: 'destructive',
             title: "Quotation Failed",
@@ -162,8 +162,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
 
   const resetFormState = () => {
     setDriverDetails(null);
-    setIsReviewed(false);
-    setQuote(null);
+    onQuoteChange(null);
     form.reset();
   }
 
@@ -406,37 +405,17 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
               </Button>
               {isReviewed && quote && (
                 <div className="w-full pt-4 mt-4 border-t border-white/10 border-dashed animate-in fade-in-0 slide-in-from-bottom-5">
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                            <div className="p-4 bg-muted rounded-lg">
-                                <Euro className="mx-auto text-primary h-6 w-6 mb-2"/>
-                                <p className="text-xs text-muted-foreground">Price</p>
-                                <p className="font-bold text-lg">€{quote.price.toFixed(2)}</p>
-                            </div>
-                             <div className="p-4 bg-muted rounded-lg">
-                                <Milestone className="mx-auto text-primary h-6 w-6 mb-2"/>
-                                <p className="text-xs text-muted-foreground">Distance</p>
-                                <p className="font-bold text-lg">{quote.distance}</p>
-                            </div>
-                             <div className="p-4 bg-muted rounded-lg">
-                                <Timer className="mx-auto text-primary h-6 w-6 mb-2"/>
-                                <p className="text-xs text-muted-foreground">ETA</p>
-                                <p className="font-bold text-lg">{quote.eta}</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                            <Button type="button" variant="outline" size="lg" onClick={handleScheduleForLater}>
-                                <Clock className="mr-2 h-4 w-4" />
-                                Schedule for Later
-                            </Button>
-                            <Button type="button" onClick={handleConfirmDispatch} size="lg" disabled={isDispatchLoading}>
-                                {isCheckingFraud && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isFindingDriver && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {!isDispatchLoading && <Truck className="mr-2 h-4 w-4" />}
-                                {isCheckingFraud ? 'Analyzing Risk...' : isFindingDriver ? 'Finding Driver...' : 'Dispatch Now'}
-                            </Button>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Button type="button" variant="outline" size="lg" onClick={handleScheduleForLater}>
+                            <Clock className="mr-2 h-4 w-4" />
+                            Schedule for Later
+                        </Button>
+                        <Button type="button" onClick={handleConfirmDispatch} size="lg" disabled={isDispatchLoading}>
+                            {isCheckingFraud && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isFindingDriver && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {!isDispatchLoading && <Truck className="mr-2 h-4 w-4" />}
+                            {isCheckingFraud ? 'Analyzing Risk...' : isFindingDriver ? 'Finding Driver...' : 'Dispatch Now'}
+                        </Button>
                     </div>
                 </div>
               )}
@@ -577,5 +556,3 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     </>
   );
 }
-
-    

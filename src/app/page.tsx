@@ -6,7 +6,7 @@ import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks, Repeat, Shuffle } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks, Repeat, Shuffle, Leaf, Euro, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion } from 'framer-motion';
@@ -15,6 +15,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import SupportChat from '@/components/dunlivrer/support-chat';
 import { useLanguage } from '@/context/language-context';
 import { translations } from '@/lib/translations';
+import type { GetQuoteOutput } from '@/ai/flows/get-quote';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 
 const sectionVariants = {
@@ -51,14 +55,94 @@ const staggeredContainer = {
   },
 };
 
+const EstimatorBox = ({ quote, isGettingQuote }: { quote: GetQuoteOutput | null; isGettingQuote: boolean }) => {
+    const cardBaseClass = "w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg";
+    
+    if (isGettingQuote) {
+        return (
+            <Card className={cn(cardBaseClass, "min-h-[295px]")}>
+                <CardContent className="p-8 text-center flex flex-col items-center justify-center h-full">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                    <p className="mt-4 font-semibold text-white">Calculating Estimate...</p>
+                    <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                        Our AI is analyzing the route, traffic, and real-time conditions.
+                    </p>
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    if (!quote) {
+        return (
+            <Card className={cn(cardBaseClass, "min-h-[295px]")}>
+                <CardContent className="p-8 text-center flex flex-col items-center justify-center h-full">
+                    <span className="text-4xl">⚡️</span>
+                    <p className="mt-4 font-semibold text-white">Powered by AI</p>
+                    <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                        Estimated delivery time & cost appear here in real-time after route input.
+                    </p>
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full"
+        >
+            <Card className={cardBaseClass}>
+                <CardHeader>
+                    <CardTitle className="font-headline text-3xl flex items-center gap-2">
+                        <BrainCircuit className="w-7 h-7 text-primary" /> AI Estimate
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">Estimated Arrival</p>
+                        <p className="text-4xl font-bold text-primary">{quote.etaConfidenceRange}</p>
+                        <Badge variant="outline" className="mt-2">
+                            {quote.etaConfidencePercentage}% confidence
+                        </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                        <div className="p-3 bg-muted rounded-lg">
+                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"><Euro className="w-3 h-3"/> Cost</p>
+                            <p className="font-bold text-lg">€{quote.price.toFixed(2)}</p>
+                        </div>
+                        <div className="p-3 bg-muted rounded-lg">
+                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"><Leaf className="w-3 h-3"/> CO₂ Impact</p>
+                            <p className="font-bold text-lg">{quote.co2Emission}</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </motion.div>
+    );
+};
+
+
 export default function DunlivrerPage() {
   const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
+  const [quote, setQuote] = useState<GetQuoteOutput | null>(null);
+  const [isReviewed, setIsReviewed] = useState(false);
+  const [isGettingQuote, setIsGettingQuote] = useState(false);
+  
   const { language } = useLanguage();
   const content = translations[language as keyof typeof translations] || translations.en;
 
   const handleAddressChange = useCallback((addresses: { pickup: string | null; destinations: string[] }) => {
     setPreviewAddresses(addresses);
+    setQuote(null);
+    setIsReviewed(false);
   }, []);
+
+  const handleQuoteChange = (newQuote: GetQuoteOutput | null) => {
+    setQuote(newQuote);
+    setIsReviewed(!!newQuote);
+  };
   
   const investorFeatures = [
     {
@@ -331,7 +415,14 @@ export default function DunlivrerPage() {
                 </p>
               </div>
               <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
-                <DeliveryForm onAddressChange={handleAddressChange} />
+                <DeliveryForm 
+                  onAddressChange={handleAddressChange}
+                  onQuoteChange={handleQuoteChange}
+                  quote={quote}
+                  isReviewed={isReviewed}
+                  isGettingQuote={isGettingQuote}
+                  setIsGettingQuote={setIsGettingQuote}
+                />
               </motion.div>
               <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
                   <div className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
@@ -361,13 +452,14 @@ export default function DunlivrerPage() {
                   </div>
               </motion.div>
             </div>
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 flex flex-col gap-8">
                 <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
                     <LiveTrackingPreview 
                         pickupAddress={previewAddresses.pickup} 
                         destinationAddresses={previewAddresses.destinations} 
                     />
                 </motion.div>
+                 <EstimatorBox quote={quote} isGettingQuote={isGettingQuote} />
             </div>
         </div>
       </motion.section>
