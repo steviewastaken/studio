@@ -10,13 +10,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion, CheckCircle2, Star, Briefcase, Home } from 'lucide-react';
-import { handleFindDriver, handleGetQuote, handleDetectFraud, getSavedAddresses, addSavedAddress, handleGetInsuranceQuote } from '@/lib/actions';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldQuestion, CheckCircle2, Star, Briefcase, Home } from 'lucide-react';
+import { handleFindDriver, handleGetQuote, handleDetectFraud, getSavedAddresses, addSavedAddress } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { FindDriverOutput } from '@/ai/flows/find-driver';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import type { DetectFraudOutput, DetectFraudInput } from '@/ai/flows/detect-fraud';
-import type { GetInsuranceQuoteOutput } from '@/ai/flows/get-insurance-quote';
 import type { SavedAddress } from './types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -36,11 +35,6 @@ const formSchema = z.object({
   ).min(1, "Please add at least one destination."),
   packageSize: z.enum(['small', 'medium', 'large']),
   deliveryType: z.enum(['standard', 'express', 'night']),
-  itemValue: z.preprocess(
-    (a) => (a === '' ? undefined : parseFloat(String(a))),
-    z.number({invalid_type_error: "Please enter a valid number."}).positive("Value must be positive.").optional()
-  ),
-  itemCategory: z.string().optional(),
 });
 
 
@@ -75,8 +69,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
   const [addressToSave, setAddressToSave] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isGettingInsurance, setIsGettingInsurance] = useState(false);
-  const [insuranceResult, setInsuranceResult] = useState<GetInsuranceQuoteOutput | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -86,8 +78,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
       destinationAddresses: [{ value: "" }],
       packageSize: "medium",
       deliveryType: "standard",
-      itemValue: undefined,
-      itemCategory: "",
     },
   });
 
@@ -128,7 +118,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
   async function onGetQuote(values: z.infer<typeof formSchema>) {
     setIsGettingQuote(true);
     onQuoteChange(null);
-    setInsuranceResult(null);
 
     const result = await handleGetQuote({
         pickupAddress: values.pickupAddress,
@@ -174,7 +163,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
   const resetFormState = () => {
     setDriverDetails(null);
     onQuoteChange(null);
-    setInsuranceResult(null);
     form.reset();
   }
 
@@ -218,24 +206,12 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
     if (fraudCheckResult.data.isSuspicious) {
         setShowFraudDialog(true);
     } else {
-        if (insuranceResult) {
-            toast({
-                title: 'Insurance Added!',
-                description: `A premium of €${insuranceResult.premium.toFixed(2)} will be added to your total.`,
-            });
-        }
         findDriver(values.pickupAddress);
     }
   };
   
     const handleProceedAnyway = () => {
         setShowFraudDialog(false);
-        if (insuranceResult) {
-            toast({
-                title: 'Insurance Added!',
-                description: `A premium of €${insuranceResult.premium.toFixed(2)} will be added to your total.`,
-            });
-        }
         findDriver(form.getValues('pickupAddress'));
     };
 
@@ -299,41 +275,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
   });
 
   const isDispatchLoading = isCheckingFraud || isFindingDriver;
-
-  const handleGetInsurance = async () => {
-    const values = form.getValues();
-    if (!values.itemValue || !values.itemCategory || !values.pickupAddress) {
-      toast({
-        variant: 'destructive',
-        title: "Missing Information",
-        description: "Please provide the item's value and category.",
-      });
-      return;
-    }
-    
-    setIsGettingInsurance(true);
-    setInsuranceResult(null);
-
-    const result = await handleGetInsuranceQuote({
-        deliveryValue: values.itemValue,
-        packageCategory: values.itemCategory,
-        pickupAddress: values.pickupAddress,
-        destinationAddress: values.destinationAddresses[0].value,
-        courierTrustScore: Math.floor(Math.random() * (100 - 70 + 1) + 70), // Simulate a score between 70-100
-    });
-
-    if (result.success && result.data) {
-        setInsuranceResult(result.data);
-    } else {
-        toast({
-            variant: 'destructive',
-            title: "Insurance Quote Failed",
-            description: result.error,
-        });
-    }
-    setIsGettingInsurance(false);
-  };
-
 
   const renderAddressField = (field: any, fieldName: 'pickupAddress' | `destinationAddresses.${number}.value`, placeholder: string, label: string) => {
       const fieldValue = watch(fieldName);
@@ -482,90 +423,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
                             {isCheckingFraud ? 'Analyzing Risk...' : isFindingDriver ? 'Finding Driver...' : 'Dispatch Now'}
                         </Button>
                     </div>
-
-                    <div className="w-full pt-4 mt-4 border-t border-white/10">
-                        <h4 className="font-headline text-lg text-white mb-2">Insure Your Parcel? (Optional)</h4>
-                        <p className="text-sm text-muted-foreground mb-4">Protect your high-value items with our AI-powered insurance.</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="itemValue"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Item Value (€)</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g., 500" {...field} value={field.value ?? ""} type="number" onChange={e => {
-                                        field.onChange(e.target.value);
-                                        setInsuranceResult(null); // Reset on change
-                                        }} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="itemCategory"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Item Category</FormLabel>
-                                    <Select onValueChange={value => {
-                                        field.onChange(value);
-                                        setInsuranceResult(null); // Reset on change
-                                    }} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a category" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="Electronics">Electronics</SelectItem>
-                                            <SelectItem value="Jewelry">Jewelry</SelectItem>
-                                            <SelectItem value="Art">Art</SelectItem>
-                                            <SelectItem value="Luxury Goods">Luxury Goods</SelectItem>
-                                            <SelectItem value="Documents">Documents</SelectItem>
-                                            <SelectItem value="Clothing">Clothing</SelectItem>
-                                            <SelectItem value="Books">Books</SelectItem>
-                                            <SelectItem value="Other">Other</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                        </div>
-                        <Button type="button" onClick={handleGetInsurance} disabled={isGettingInsurance || !watch('itemValue') || !watch('itemCategory')} className="w-full mt-4">
-                            {isGettingInsurance ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4"/>}
-                            Get Insurance Quote
-                        </Button>
-
-                        {insuranceResult && (
-                        <div className="mt-4 p-4 border rounded-lg bg-muted animate-in fade-in-0 space-y-3">
-                            <h5 className="font-semibold flex items-center gap-2">
-                                <ShieldCheck className="text-primary"/> Insurance Proposal
-                            </h5>
-                            <p className="text-sm text-muted-foreground">{insuranceResult.riskAnalysis}</p>
-                            <div className="grid grid-cols-2 gap-4 pt-2">
-                                <div className="p-3 bg-background rounded-md text-center">
-                                    <p className="text-xs text-muted-foreground">Premium Cost</p>
-                                    <p className="text-lg font-bold flex items-center justify-center gap-1">
-                                        <Euro className="w-4 h-4"/> {insuranceResult.premium.toFixed(2)}
-                                    </p>
-                                </div>
-                                <div className="p-3 bg-background rounded-md text-center">
-                                    <p className="text-xs text-muted-foreground">Total Coverage</p>
-                                    <p className="text-lg font-bold flex items-center justify-center gap-1">
-                                        <Euro className="w-4 h-4"/> {insuranceResult.coverageAmount.toFixed(2)}
-                                    </p>
-                                </div>
-                            </div>
-                            <Badge variant={insuranceResult.isHighRisk ? "destructive" : "secondary"}>
-                                {insuranceResult.isHighRisk ? "High-Risk Delivery" : "Standard Risk"}
-                            </Badge>
-                        </div>
-                        )}
-                    </div>
-
                 </div>
               )}
             </CardFooter>
