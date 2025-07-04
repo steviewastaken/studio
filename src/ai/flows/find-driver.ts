@@ -34,11 +34,11 @@ const prompt = ai.definePrompt({
 
 A new delivery has been requested for pickup at the following address: {{{pickupAddress}}}.
 
-Your task is to find the closest available DunGuy. Invent a cool, memorable, and friendly-sounding name for the driver.
+Your task is to find the closest available DunGuy. Invent a cool, memorable, and friendly-sounding name for the driver (e.g., "Funky Fred", "Captain Comet", "Velocity Val").
 
-Then, estimate their arrival time in minutes to the pickup location. The ETA should be short and believable, between 3 and 15 minutes.
+Then, estimate their arrival time in minutes to the pickup location. The ETA should be a single number representing minutes, between 3 and 15.
 
-Return the driver's name and their ETA.`,
+Return the driver's name and their ETA as a string (e.g., "8").`,
 });
 
 const findDriverFlow = ai.defineFlow(

@@ -27,6 +27,7 @@ const navLinks = [
   { href: '/tracking', label: 'Order Tracking' },
   { href: '/feedback', label: 'Feedback' },
   { href: '/contact', label: 'Contact Us' },
+  { href: '/driver', label: 'Driver App' },
 ];
 
 const languages = [
