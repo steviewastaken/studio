@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useForm } from 'react-hook-form';
@@ -11,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
+import { useState } from 'react';
+import { MailCheck } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -21,6 +24,7 @@ const formSchema = z.object({
 export default function SignUpPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,13 +51,45 @@ export default function SignUpPage() {
         description: error.message,
       });
     } else {
+      if (data.user && !data.session) {
+        setShowConfirmationMessage(true);
+      } else {
         toast({
             title: "Account Created!",
-            description: "Please check your email to confirm your account.",
+            description: "You have been signed in successfully.",
         });
-        form.reset();
-        router.push('/signin');
+        router.push('/');
+        router.refresh();
+      }
     }
+  }
+
+  if (showConfirmationMessage) {
+    return (
+        <div className="flex items-center justify-center min-h-screen pt-20">
+            <Card className="w-full max-w-md bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg text-center">
+                <CardHeader>
+                    <div className="mx-auto bg-primary/20 p-3 rounded-full w-fit">
+                        <MailCheck className="w-10 h-10 text-primary" />
+                    </div>
+                    <CardTitle className="font-headline text-3xl mt-4">Confirm your email</CardTitle>
+                    <CardDescription>
+                        We've sent a confirmation link to your email address. Please click the link to complete your registration.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                       Once confirmed, you will be able to sign in.
+                    </p>
+                </CardContent>
+                <CardFooter className="justify-center">
+                    <Button asChild>
+                        <Link href="/signin">Go to Sign In</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
   }
 
   return (
