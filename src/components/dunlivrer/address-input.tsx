@@ -96,7 +96,7 @@ export default function AddressInput({ value, onChange, placeholder, className }
                 types: ['address'],
                 componentRestrictions: { country: 'fr' },
                 bounds: parisBounds,
-                strictBounds: true, // This enforces that only results within the bounds are returned
+                strictBounds: false,
                 fields: ['formatted_address'],
             });
         }
