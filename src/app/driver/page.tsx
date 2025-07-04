@@ -133,6 +133,53 @@ const DriverDashboard = () => {
                 </Label>
             </div>
         </motion.div>
+        
+        <motion.div
+            className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
+        >
+            <Card className="bg-card/80 border-white/10">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Today's Earnings</CardTitle>
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">€145.80</div>
+                    <p className="text-xs text-muted-foreground">+12% from yesterday</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-card/80 border-white/10">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Time</CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">6h 24m</div>
+                    <p className="text-xs text-muted-foreground">Currently Online</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-card/80 border-white/10">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Deliveries Today</CardTitle>
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">+12</div>
+                    <p className="text-xs text-muted-foreground">3 pending</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-card/80 border-white/10">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Rating</CardTitle>
+                    <Star className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">4.9/5.0</div>
+                    <p className="text-xs text-muted-foreground">Based on 25 ratings</p>
+                </CardContent>
+            </Card>
+        </motion.div>
 
         <Tabs defaultValue="jobs" className="mt-8">
             <TabsList className="grid w-full grid-cols-2">
@@ -254,6 +301,14 @@ const LoadingSkeleton = () => (
             </div>
             <Skeleton className="h-10 w-32" />
         </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+        </div>
+
         <Skeleton className="h-12 w-full mt-8" />
         <div className="mt-6">
             <div className="space-y-8">
