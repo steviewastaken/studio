@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useJsApiLoader } from '@react-google-maps/api';
 import React, { createContext, useContext, ReactNode } from 'react';
 
-const GOOGLE_MAPS_LIBRARIES = ['places'];
+const GOOGLE_MAPS_LIBRARIES = ['places'] as const;
 
 type GoogleMapsContextType = {
   isLoaded: boolean;
@@ -16,7 +15,7 @@ const GoogleMapsContext = createContext<GoogleMapsContextType | undefined>(undef
 export function GoogleMapsProvider({ children }: { children: ReactNode }) {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: GOOGLE_MAPS_LIBRARIES as any,
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   return (

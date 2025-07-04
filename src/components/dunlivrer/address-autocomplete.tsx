@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Autocomplete } from "@react-google-maps/api";
@@ -39,6 +38,7 @@ const AddressAutocomplete = forwardRef<HTMLInputElement, Props>(
         options={{
           componentRestrictions: { country: "fr" },
           fields: ["formatted_address", "name", "geometry"],
+          types: ["address"],
         }}
       >
         <Input ref={ref} {...props} type="text" />
