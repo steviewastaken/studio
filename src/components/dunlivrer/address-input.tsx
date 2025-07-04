@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -10,6 +9,7 @@ import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { handleCorrectAddress } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { loadGoogleMapsApi, apiError as googleApiError } from '@/lib/maps-loader';
 
 
 type AddressInputProps = {
@@ -19,38 +19,6 @@ type AddressInputProps = {
     className?: string;
 };
 
-let apiLoaded: Promise<void> | null = null;
-let apiError: string | null = null;
-
-function loadGoogleMapsApi() {
-    if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY) {
-        apiError = "Google Maps API key is missing. Please add NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY to your .env file.";
-        console.error(apiError);
-        return Promise.reject(new Error(apiError));
-    }
-
-    if (!apiLoaded) {
-        const loader = new Loader({
-            apiKey: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY,
-            version: 'weekly',
-            libraries: ['places'],
-        });
-
-        apiLoaded = new Promise((resolve, reject) => {
-            loader.load()
-                .then(() => {
-                    apiError = null;
-                    resolve();
-                })
-                .catch(e => {
-                    console.error("Failed to load Google Maps API", e);
-                    apiError = "Could not load Google Maps Places API. Please check your API key and network connection.";
-                    reject(new Error(apiError));
-                });
-        });
-    }
-    return apiLoaded;
-}
 
 export default function AddressInput({ value, onChange, placeholder, className }: AddressInputProps) {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +37,7 @@ export default function AddressInput({ value, onChange, placeholder, className }
                 setStatus('ready');
             })
             .catch(() => {
-                setErrorMessage(apiError);
+                setErrorMessage(googleApiError);
                 setStatus('error');
             });
     }, []);
