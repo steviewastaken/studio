@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Bot, User, Loader2, Volume2, VolumeX } from "lucide-react";
+import { Send, Bot, User, Loader2, Volume2, VolumeX, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { handleSupportQuestion, handleTextToSpeech } from "@/lib/actions";
 import type { DeliveryDetails } from "./types";
@@ -22,6 +23,14 @@ type SupportChatProps = {
   deliveryDetails: DeliveryDetails | null;
 };
 
+// For SpeechRecognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 export default function SupportChat({ deliveryDetails }: SupportChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -32,6 +41,9 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
 
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
   useEffect(() => {
     // Autoplay audio when src changes
     if (currentAudioSrc && audioRef.current) {
@@ -39,6 +51,34 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
         audioRef.current.play().catch(error => console.error("Audio playback failed:", error));
     }
   }, [currentAudioSrc]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            recognitionRef.current = new SpeechRecognition();
+            recognitionRef.current.continuous = false;
+            recognitionRef.current.lang = 'en-US';
+            recognitionRef.current.interimResults = false;
+
+            recognitionRef.current.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                sendQuery(transcript);
+                setIsListening(false);
+            };
+            recognitionRef.current.onerror = (event: any) => {
+                console.error('Speech recognition error', event.error);
+                toast({ variant: "destructive", title: "Voice Error", description: "Couldn't recognize audio. Please try again or type."});
+                setIsListening(false);
+            };
+             recognitionRef.current.onend = () => {
+                if (isListening) {
+                  setIsListening(false);
+                }
+            };
+        }
+    }
+  }, [toast, isListening]); // Dependencies
 
   const generateAndPlayAudio = async (text: string) => {
       const audioResult = await handleTextToSpeech(text);
@@ -63,6 +103,20 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
           }
       }
   };
+  
+  const toggleListening = () => {
+      if (!recognitionRef.current) {
+          toast({ variant: "destructive", title: "Not Supported", description: "Your browser does not support speech recognition."});
+          return;
+      }
+      if (isListening) {
+          recognitionRef.current.stop();
+          setIsListening(false);
+      } else {
+          recognitionRef.current.start();
+          setIsListening(true);
+      }
+  };
 
   useEffect(() => {
     if (deliveryDetails) {
@@ -85,21 +139,18 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
     }
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const sendQuery = async (query: string) => {
+    if (!query.trim() || isLoading) return;
 
     setIsLoading(true);
-    const userMessage: Message = { id: Date.now(), role: "user", content: input };
+    const userMessage: Message = { id: Date.now(), role: "user", content: query };
     setMessages(prev => [...prev, userMessage]);
-    const currentInput = input;
-    setInput("");
-
+    
     const deliveryDetailsString = deliveryDetails
       ? `From: ${deliveryDetails.pickupAddress}, To: ${deliveryDetails.destinationAddresses.join('; ')}, Size: ${deliveryDetails.packageSize}`
       : undefined;
     
-    const result = await handleSupportQuestion({ question: currentInput, deliveryDetails: deliveryDetailsString });
+    const result = await handleSupportQuestion({ question: query, deliveryDetails: deliveryDetailsString });
     
     if (result.success && result.data) {
         const aiMessage: Message = { id: Date.now() + 1, role: "ai", content: result.data.answer };
@@ -124,6 +175,12 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
     }
     
     setIsLoading(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendQuery(input);
+    setInput("");
   };
 
   return (
@@ -180,11 +237,22 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything..."
+              placeholder={isListening ? "Listening..." : "Ask anything..."}
               className="flex-1 h-12 bg-transparent"
-              disabled={isLoading}
+              disabled={isLoading || isListening}
             />
-            <Button type="submit" size="icon" className="h-12 w-12 shrink-0" disabled={isLoading}>
+            <Button
+                type="button"
+                onClick={toggleListening}
+                variant={isListening ? "destructive" : "outline"}
+                size="icon"
+                className="h-12 w-12 shrink-0"
+                disabled={isLoading || !recognitionRef.current}
+                aria-label={isListening ? "Stop listening" : "Use voice"}
+            >
+                {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </Button>
+            <Button type="submit" size="icon" className="h-12 w-12 shrink-0" disabled={isLoading || !input.trim()}>
               <Send className="h-5 w-5" />
             </Button>
           </form>
