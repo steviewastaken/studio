@@ -33,6 +33,10 @@ import {
   correctAddress as correctAddressFlow,
   type CorrectAddressInput,
 } from '@/ai/flows/correct-address';
+import {
+  createIncidentReport as createIncidentReportFlow,
+  type CreateIncidentReportInput,
+} from '@/ai/flows/create-incident-report';
 
 export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   try {
@@ -112,4 +116,14 @@ export async function handleCorrectAddress(data: CorrectAddressInput) {
     console.error("handleCorrectAddress Error:", error.message);
     return { success: false, error: error.message || 'Failed to verify the address.' };
   }
+}
+
+export async function handleCreateIncidentReport(data: CreateIncidentReportInput) {
+    try {
+        const result = await createIncidentReportFlow(data);
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("handleCreateIncidentReport Error:", error.message);
+        return { success: false, error: error.message || 'Failed to generate incident report.' };
+    }
 }

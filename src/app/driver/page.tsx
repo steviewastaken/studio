@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered } from "lucide-react";
+import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered, AlertTriangle } from "lucide-react";
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -126,11 +126,16 @@ const DriverDashboard = () => {
                 <h1 className="text-4xl font-bold font-headline text-white">Driver Dashboard</h1>
                 <p className="mt-1 text-lg text-muted-foreground">Welcome back, let's get rolling.</p>
             </div>
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-card/80 border-white/10">
-                <Switch id="online-status" checked={isOnline} onCheckedChange={setIsOnline} />
-                <Label htmlFor="online-status" className={cn("font-medium", isOnline ? "text-green-400" : "text-muted-foreground")}>
-                    {isOnline ? "You are Online" : "You are Offline"}
-                </Label>
+            <div className="flex items-center gap-4">
+                <Button variant="outline" asChild>
+                    <Link href="/driver/report"><AlertTriangle className="mr-2"/> Report Incident</Link>
+                </Button>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-card/80 border-white/10">
+                    <Switch id="online-status" checked={isOnline} onCheckedChange={setIsOnline} />
+                    <Label htmlFor="online-status" className={cn("font-medium", isOnline ? "text-green-400" : "text-muted-foreground")}>
+                        {isOnline ? "You are Online" : "You are Offline"}
+                    </Label>
+                </div>
             </div>
         </motion.div>
         
