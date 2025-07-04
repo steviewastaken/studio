@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
@@ -105,39 +104,33 @@ export default function MapComponent({ pickup, destinations = [] }: MapComponent
       if (status === 'OK' && result && directionsRendererRef.current) {
         directionsRendererRef.current.setDirections(result);
         
-        const pickupIcon = {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: 'hsl(var(--primary))',
-          fillOpacity: 1,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2,
-        };
-
-        const destinationIcon = {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: 'hsl(var(--accent))',
-          fillOpacity: 1,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2,
-        };
-
+        // Add marker for pickup location (A)
         const pickupMarker = new google.maps.Marker({
             position: result.routes[0].legs[0].start_location,
             map: map,
-            icon: pickupIcon,
+            label: {
+                text: 'A',
+                color: 'white',
+                fontWeight: 'bold'
+            },
             title: 'Pickup',
         });
-        
-        const lastLeg = result.routes[0].legs[result.routes[0].legs.length - 1];
-        const destMarker = new google.maps.Marker({
-            position: lastLeg.end_location,
-            map: map,
-            icon: destinationIcon,
-            title: 'Destination',
+        markersRef.current.push(pickupMarker);
+
+        // Add markers for each destination (B, C, ...)
+        result.routes[0].legs.forEach((leg, index) => {
+            const destinationMarker = new google.maps.Marker({
+                position: leg.end_location,
+                map: map,
+                label: {
+                    text: String.fromCharCode(66 + index), // B, C, D...
+                    color: 'white',
+                    fontWeight: 'bold'
+                },
+                title: `Destination ${index + 1}`,
+            });
+            markersRef.current.push(destinationMarker);
         });
-        markersRef.current.push(pickupMarker, destMarker);
 
       } else {
         console.error(`Directions request failed due to ${status}`);
