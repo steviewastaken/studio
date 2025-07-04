@@ -6,7 +6,7 @@ import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks, Repeat, Shuffle, Leaf, Euro, Loader2 } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion } from 'framer-motion';
@@ -107,10 +107,14 @@ const EstimatorBox = ({ quote, isGettingQuote }: { quote: GetQuoteOutput | null;
                             {quote.etaConfidencePercentage}% confidence
                         </Badge>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="grid grid-cols-3 gap-4 text-center">
                         <div className="p-3 bg-muted rounded-lg">
                             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"><Euro className="w-3 h-3"/> Cost</p>
                             <p className="font-bold text-lg">€{quote.price.toFixed(2)}</p>
+                        </div>
+                        <div className="p-3 bg-muted rounded-lg">
+                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"><Milestone className="w-3 h-3"/> Distance</p>
+                            <p className="font-bold text-lg">{quote.distance}</p>
                         </div>
                         <div className="p-3 bg-muted rounded-lg">
                             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"><Leaf className="w-3 h-3"/> CO₂ Impact</p>
