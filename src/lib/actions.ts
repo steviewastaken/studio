@@ -24,6 +24,10 @@ import {
   detectEmotion as detectEmotionFlow,
   type DetectEmotionInput,
 } from '@/ai/flows/detect-emotion';
+import {
+  getInsuranceQuote as getInsuranceQuoteFlow,
+  type GetInsuranceQuoteInput,
+} from '@/ai/flows/get-insurance-quote';
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 
@@ -86,6 +90,17 @@ export async function handleDetectEmotion(data: DetectEmotionInput) {
     return { success: false, error: error.message || 'Failed to analyze emotion. Please try again.' };
   }
 }
+
+export async function handleGetInsuranceQuote(data: GetInsuranceQuoteInput) {
+  try {
+    const result = await getInsuranceQuoteFlow(data);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error("handleGetInsuranceQuote Error:", error.message);
+    return { success: false, error: error.message || 'Failed to generate an insurance quote. Please try again.' };
+  }
+}
+
 
 // --- Address Book Actions ---
 
