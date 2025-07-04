@@ -18,6 +18,7 @@ import AddressAutocomplete from '@/components/dunlivrer/address-autocomplete';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { GoogleMapsProvider } from '@/context/google-maps-context';
 
 const mockDelivery: DeliveryDetails = {
     pickupAddress: 'Rue de Rivoli, 75001 Paris, France', // Louvre Museum
@@ -47,7 +48,7 @@ const itemVariants = {
 
 export type DeliveryStatus = 'IDLE' | 'SEARCHING' | 'FOUND' | 'IN_TRANSIT' | 'DELIVERED';
 
-export default function TrackingPage() {
+function TrackingPageContent() {
   const { toast } = useToast();
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
@@ -297,4 +298,12 @@ export default function TrackingPage() {
       </Dialog>
     </>
   );
+}
+
+export default function TrackingPage() {
+  return (
+    <GoogleMapsProvider>
+      <TrackingPageContent />
+    </GoogleMapsProvider>
+  )
 }

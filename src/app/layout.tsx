@@ -4,7 +4,6 @@ import { Toaster } from "@/components/ui/toaster"
 import Header from '@/components/dunlivrer/header';
 import Footer from '@/components/dunlivrer/footer';
 import { AuthProvider } from '@/context/auth-context';
-import { GoogleMapsProvider } from '@/context/google-maps-context';
 import { LanguageProvider } from '@/context/language-context';
 
 export const metadata: Metadata = {
@@ -28,16 +27,14 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <LanguageProvider>
           <AuthProvider>
-            <GoogleMapsProvider>
-              <div className="flex flex-col min-h-screen bg-transparent text-foreground">
-                <Header />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-              <Toaster />
-            </GoogleMapsProvider>
+            <div className="flex flex-col min-h-screen bg-transparent text-foreground">
+              <Header />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </div>
+            <Toaster />
           </AuthProvider>
         </LanguageProvider>
       </body>
