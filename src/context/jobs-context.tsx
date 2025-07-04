@@ -11,6 +11,10 @@ export type Job = {
   time: string;
   suggestion: string;
   suggestionType: 'accept' | 'neutral';
+  safetyAlert?: {
+    type: 'warning' | 'critical';
+    message: string;
+  };
 };
 
 type JobsContextType = {
@@ -22,15 +26,19 @@ type JobsContextType = {
 // Start with some initial mock jobs for demonstration
 const initialJobs: Job[] = [
     {
-    id: 'job-init-1',
-    pickup: 'Louvre Museum, 75001 Paris',
-    dropoff: 'Eiffel Tower, Champ de Mars, 75007 Paris',
-    distance: '5.2 km',
-    payout: '12.50',
-    time: '25 min',
-    suggestion: "High payout for a short distance. Fits your peak hour strategy.",
-    suggestionType: 'accept'
-  },
+        id: 'job-init-1',
+        pickup: 'Louvre Museum, 75001 Paris',
+        dropoff: 'Place de la République, 75003 Paris',
+        distance: '2.5 km',
+        payout: '8.50',
+        time: '15 min',
+        suggestion: "Standard payout for this route. Proceed with caution.",
+        suggestionType: 'neutral',
+        safetyAlert: {
+            type: 'critical',
+            message: '🛑 Traffic disruption detected near République due to an event. An alternate route will be automatically suggested upon acceptance.'
+        }
+    },
   {
     id: 'job-init-2',
     pickup: 'Gare du Nord, 75010 Paris',
@@ -38,8 +46,8 @@ const initialJobs: Job[] = [
     distance: '10.8 km',
     payout: '18.75',
     time: '45 min',
-    suggestion: "Standard rate for this distance. Good to keep momentum.",
-    suggestionType: 'neutral'
+    suggestion: "High payout for a cross-city trip. No alerts on this route.",
+    suggestionType: 'accept'
   },
 ];
 
