@@ -103,10 +103,10 @@ const mapOptions = {
 type MapComponentProps = {
   pickupAddress: string | null;
   destinationAddresses: string[];
-  deliveryStatus?: DeliveryStatus;
+  deliveryStatus: DeliveryStatus;
 };
 
-export default function MapComponent({ pickupAddress, destinationAddresses, deliveryStatus = 'IDLE' }: MapComponentProps) {
+export default function MapComponent({ pickupAddress, destinationAddresses, deliveryStatus }: MapComponentProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const { isLoaded, loadError } = useGoogleMaps();
 
@@ -236,9 +236,8 @@ export default function MapComponent({ pickupAddress, destinationAddresses, deli
             center={center}
             zoom={12}
             options={mapOptions}
-            key={JSON.stringify(destinationAddresses) + pickupAddress}
         >
-            {hasAddresses && directionsServiceOptions && !directions && (
+            {hasAddresses && directionsServiceOptions && (
                 <DirectionsService
                     options={directionsServiceOptions}
                     callback={directionsCallback}
@@ -277,3 +276,5 @@ export default function MapComponent({ pickupAddress, destinationAddresses, deli
     </div>
   );
 }
+
+    

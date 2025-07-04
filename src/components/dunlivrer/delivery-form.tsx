@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion, CheckCircle2, Star, Briefcase, Home, MapPin, Search } from 'lucide-react';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion, CheckCircle2, Star, Briefcase, Home } from 'lucide-react';
 import { handleFindDriver, handleGetQuote, handleDetectFraud, getSavedAddresses, addSavedAddress } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { FindDriverOutput, FindDriverInput } from '@/ai/flows/find-driver';
@@ -61,7 +61,7 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   const [isCheckingFraud, setIsCheckingFraud] = useState(false);
   const [fraudResult, setFraudResult] = useState<DetectFraudOutput | null>(null);
   const [showFraudDialog, setShowFraudDialog] = useState(false);
-  const [validatedFields, setValidatedFields] = useState(new Set<string>());
+
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [addressToSave, setAddressToSave] = useState<string | null>(null);
@@ -99,24 +99,11 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   }, [fetchSavedAddresses]);
 
   const handleAddressChangeCallback = useCallback((value: z.infer<typeof formSchema>) => {
-    const { pickupAddress, destinationAddresses } = value;
-
-    // Only include pickup if it's validated
-    const validPickup = validatedFields.has('pickupAddress') ? pickupAddress : null;
-
-    // Only include destinations that are validated
-    const validDestinations = destinationAddresses
-        .map((dest, index) => {
-            const fieldName = `destinationAddresses.${index}.value`;
-            return validatedFields.has(fieldName) ? dest.value : null;
-        })
-        .filter((d): d is string => !!d);
-
     onAddressChange({
-      pickup: validPickup,
-      destinations: validDestinations,
+      pickup: value.pickupAddress,
+      destinations: value.destinationAddresses.map(d => d.value),
     });
-  }, [onAddressChange, validatedFields]);
+  }, [onAddressChange]);
 
   useEffect(() => {
     const subscription = watch((value) => {
@@ -177,7 +164,6 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     setDriverDetails(null);
     setIsReviewed(false);
     setQuote(null);
-    setValidatedFields(new Set());
     form.reset();
   }
 
@@ -274,9 +260,8 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     setIsSaving(false);
   }
 
-  const handleSelectSavedAddress = (fieldName: any, address: string) => {
+  const handleSelectSavedAddress = (fieldName: 'pickupAddress' | `destinationAddresses.${number}.value`, address: string) => {
     setValue(fieldName, address, { shouldValidate: true, shouldDirty: true });
-    setValidatedFields(prev => new Set(prev).add(fieldName));
   };
     
   const timeSlots = Array.from({ length: 10 }, (_, i) => {
@@ -286,48 +271,26 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
 
   const isDispatchLoading = isCheckingFraud || isFindingDriver;
 
-  const renderAddressField = (field: any, fieldName: any, placeholder: string, label: string) => {
-      const isVerified = validatedFields.has(fieldName);
+  const renderAddressField = (field: any, fieldName: 'pickupAddress' | `destinationAddresses.${number}.value`, placeholder: string, label: string) => {
       const fieldValue = watch(fieldName);
       const isAlreadySaved = savedAddresses.some(addr => addr.address === fieldValue);
       
-      const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-          field.onChange(e); // Propagate change to RHF
-          setValidatedFields(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(fieldName);
-              return newSet;
-          });
-      };
-
       return (
-        <FormItem className="space-y-2">
+        <FormItem>
             <FormLabel>{label}</FormLabel>
-            <div className="flex items-center gap-2">
-              <div className="w-10 shrink-0">
-                  <Badge variant={isVerified ? "default" : "outline"} className="w-10 h-10 flex items-center justify-center">
-                    { isVerified ? <CheckCircle className="h-5 w-5"/> : <MapPin className="h-5 w-5"/>}
-                  </Badge>
-              </div>
-              <div className="grow">
-                <FormControl>
-                    <AddressAutocomplete
-                        {...field}
-                        onChange={handleInputChange}
-                        placeholder={placeholder}
-                        onPlaceChanged={(place) => {
-                            if (place.formatted_address) {
-                                setValue(fieldName, place.formatted_address, { shouldValidate: true, shouldDirty: true });
-                                setValidatedFields(prev => new Set(prev).add(fieldName));
-                            }
-                        }}
-                        className="h-10"
-                    />
-                </FormControl>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 pl-12 min-h-[26px]">
-                {isVerified && user && !isAlreadySaved && (
+            <FormControl>
+                <AddressAutocomplete
+                    {...field}
+                    placeholder={placeholder}
+                    onPlaceChanged={(place) => {
+                        if (place.formatted_address) {
+                            setValue(fieldName, place.formatted_address, { shouldValidate: true, shouldDirty: true });
+                        }
+                    }}
+                />
+            </FormControl>
+            <div className="flex flex-wrap items-center gap-2 min-h-[26px]">
+                {fieldValue && user && !isAlreadySaved && (
                     <Button
                         type="button"
                         variant="ghost"
@@ -338,8 +301,18 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                         <Star className="w-3 h-3 mr-1.5"/> Save for later
                     </Button>
                 )}
+                 {user && (
+                    <>
+                        {savedAddresses.map(addr => (
+                            <Badge key={addr.id} variant="outline" className="cursor-pointer hover:border-primary/80 hover:bg-primary/10" onClick={() => handleSelectSavedAddress(fieldName, addr.address)}>
+                                {addressIcons[addr.label.toLowerCase()] || <Star className="w-3 h-3"/>}
+                                <span className="ml-1.5">{addr.label}</span>
+                            </Badge>
+                        ))}
+                    </>
+                )}
             </div>
-            <FormMessage className="pl-12"/>
+            <FormMessage/>
         </FormItem>
       )
   };
@@ -359,55 +332,22 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                   name="pickupAddress"
                   render={({ field }) => renderAddressField(field, 'pickupAddress', 'Enter pickup address...', 'Pickup Location')}
               />
-              {user && savedAddresses.length > 0 && (
-                <div className="pl-12">
-                    <FormLabel className="text-xs text-muted-foreground">Or select a saved address:</FormLabel>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                        {savedAddresses.map(addr => (
-                            <Badge key={addr.id} variant="outline" className="cursor-pointer hover:border-primary/80 hover:bg-primary/10" onClick={() => handleSelectSavedAddress('pickupAddress', addr.address)}>
-                                {addressIcons[addr.label.toLowerCase()] || <Star className="w-3 h-3"/>}
-                                <span className="ml-1.5">{addr.label}</span>
-                            </Badge>
-                        ))}
-                    </div>
-                </div>
-              )}
-
 
                 <div className="space-y-4">
-                  {fields.map((field, index) => {
-                    const fieldName = `destinationAddresses.${index}.value` as const;
-                    return (
-                        <div key={field.id} className="relative space-y-2">
-                            <div className="flex items-start gap-2">
-                                <div className="flex-grow">
-                                    <FormField
-                                        control={form.control}
-                                        name={fieldName}
-                                        render={({ field: renderField }) => renderAddressField(renderField, fieldName, `Destination #${index + 1}`, `Destination ${index + 1}`)}
-                                    />
-                                </div>
-                                {fields.length > 1 && (
-                                    <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0 mt-8">
-                                        <Trash2 className="w-4 h-4 text-destructive"/>
-                                    </Button>
-                                )}
-                            </div>
-                             {user && savedAddresses.length > 0 && (
-                                <div className="pl-12">
-                                     <div className="flex flex-wrap gap-2 pt-1">
-                                        {savedAddresses.map(addr => (
-                                            <Badge key={addr.id} variant="outline" className="cursor-pointer hover:border-primary/80 hover:bg-primary/10" onClick={() => handleSelectSavedAddress(fieldName, addr.address)}>
-                                                {addressIcons[addr.label.toLowerCase()] || <Star className="w-3 h-3"/>}
-                                                <span className="ml-1.5">{addr.label}</span>
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                </div>
-                              )}
-                        </div>
-                    )
-                  })}
+                  {fields.map((field, index) => (
+                    <div key={field.id} className="relative">
+                        <FormField
+                            control={form.control}
+                            name={`destinationAddresses.${index}.value`}
+                            render={({ field: renderField }) => renderAddressField(renderField, `destinationAddresses.${index}.value`, `Destination #${index + 1}`, `Destination ${index + 1}`)}
+                        />
+                         {fields.length > 1 && (
+                            <Button variant="ghost" size="icon" onClick={() => remove(index)} className="absolute right-0 top-0 mt-6">
+                                <Trash2 className="w-4 h-4 text-destructive"/>
+                            </Button>
+                        )}
+                    </div>
+                  ))}
                   <Button type="button" variant="outline" size="sm" onClick={() => append({ value: "" })}>
                       <PlusCircle className="mr-2"/> Add another destination
                   </Button>
@@ -637,3 +577,5 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
     </>
   );
 }
+
+    

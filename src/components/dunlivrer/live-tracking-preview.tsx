@@ -11,9 +11,7 @@ type LiveTrackingPreviewProps = {
 };
 
 export default function LiveTrackingPreview({ pickupAddress, destinationAddresses }: LiveTrackingPreviewProps) {
-  const hasAddresses = pickupAddress && destinationAddresses.length > 0 && destinationAddresses.some(d => d);
-  
-  const pickupName = pickupAddress;
+  const hasAddresses = pickupAddress && destinationAddresses.length > 0 && destinationAddresses[0];
 
   return (
     <Card className="w-full h-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
@@ -31,19 +29,16 @@ export default function LiveTrackingPreview({ pickupAddress, destinationAddresse
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2 truncate">
                         <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                        <span className="font-medium truncate">{pickupName}</span>
+                        <span className="font-medium truncate">{pickupAddress}</span>
                     </div>
                     <ArrowRight className="w-5 h-5 text-muted-foreground mx-2 shrink-0" />
                     <div className="flex flex-col items-end gap-1 truncate text-right">
-                        {destinationAddresses.filter(d => d).map((dest, i) => {
-                            const destName = dest;
-                            return (
-                                <div key={i} className="flex items-center gap-2">
-                                    <span className="font-medium truncate">{destName}</span>
-                                    <MapPin className="w-4 h-4 text-accent shrink-0" />
-                                </div>
-                            );
-                        })}
+                        {destinationAddresses.map((dest, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                                <span className="font-medium truncate">{dest}</span>
+                                <MapPin className="w-4 h-4 text-accent shrink-0" />
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -61,3 +56,5 @@ export default function LiveTrackingPreview({ pickupAddress, destinationAddresse
     </Card>
   );
 }
+
+    
