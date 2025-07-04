@@ -47,12 +47,14 @@ const etaPredictionPrompt = ai.definePrompt({
     input: { schema: z.object({
         baseDurationMinutes: z.number(),
         distanceKm: z.number(),
+        numberOfDestinations: z.number(),
         timeOfDay: z.string(),
         dayOfWeek: z.string(),
         packageSize: z.enum(['small', 'medium', 'large']),
         deliveryType: z.enum(['standard', 'express', 'night']),
         hasBadWeather: z.boolean(),
         isHighDemand: z.boolean(),
+        hasMajorEvent: z.boolean(),
     })},
     output: { schema: z.object({
         predictedEtaMinutes: z.number().describe('The final predicted ETA in total minutes, including all factors.'),
@@ -60,34 +62,46 @@ const etaPredictionPrompt = ai.definePrompt({
         maxEtaMinutes: z.number().describe('The upper bound of the estimated time of arrival in minutes. This should be a few minutes more than the predicted ETA.'),
         confidencePercentage: z.number().min(85).max(98).describe('Your confidence level in this ETA prediction, as an integer percentage (e.g., 94).'),
     })},
-    prompt: `You are an expert logistics AI specializing in hyper-accurate delivery time estimation for a service called Dunlivrer.
-Your task is to predict the final Estimated Time of Arrival (ETA) in minutes by adjusting a base travel time from a mapping service.
+    prompt: `You are a master logistics AI for Dunlivrer, going beyond standard mapping services.
+Your task is to provide a hyper-accurate Estimated Time of Arrival (ETA) by analyzing a base route calculation and layering on real-world, dynamic factors that other systems miss.
 
-You must consider the following factors and adjust the base ETA accordingly:
+You must consider the following factors to adjust the base ETA:
 
-- **Base ETA:** The initial travel time is {{{baseDurationMinutes}}} minutes for a distance of {{{distanceKm}}} km. This is your starting point.
-- **Time of Day:** It is currently {{{timeOfDay}}} on a {{{dayOfWeek}}}.
-  - **Peak Hours (8-10am, 5-7pm):** Add 5-15 minutes for traffic congestion.
-  - **Night Delivery (for 'night' type):** Night deliveries are often faster due to less traffic, but might have a small delay for finding addresses in the dark. Adjust by -5 to +5 minutes.
-- **Delivery Type:** The requested service is '{{{deliveryType}}}'.
-  - **'express':** This is a priority delivery. Reduce the final ETA by 10-20% compared to standard, but don't go below the base mapping service time. The driver will be rushed.
-  - **'standard' / 'night':** No special adjustment for speed.
-- **Package Size:** The package size is '{{{packageSize}}}'.
-  - **'large':** Add 3-5 minutes for extra handling time at pickup and dropoff.
-  - **'medium' / 'small':** No significant adjustment.
-- **Real-World Conditions:**
-  - **Bad Weather:** {{{hasBadWeather}}}. If true, add 5-10 minutes for slower travel speeds.
-  - **High Demand:** {{{isHighDemand}}}. If true, add 2-5 minutes as the network is busier.
+- **Base ETA:** The initial travel time from a standard mapping service is {{{baseDurationMinutes}}} minutes for a {{{distanceKm}}} km route. This is your starting point.
 
-**Pickup/Dropoff Buffer:** ALWAYS add a base buffer of 10 minutes to the travel time to account for parking, finding the exact door, and handover. This should be added ON TOP of the base duration *before* other adjustments.
+- **Drop Density & Route Complexity:**
+  - The delivery has {{{numberOfDestinations}}} drop-off points.
+  - Multi-stop routes require careful sequencing. While we optimize the path, each stop adds handling time. Add 5-7 minutes per stop *after the first one*.
+
+- **Time of Day & Traffic Patterns:**
+  - The request is for {{{timeOfDay}}} on a {{{dayOfWeek}}}.
+  - **Paris Peak Hours (8-10h, 17-19h):** Add 8-20 minutes for traffic congestion. Your adjustment should be more aggressive for longer distances.
+  - **Night Delivery ('night' type):** These are faster due to less traffic, but add a 3-minute buffer for locating addresses in the dark. Net effect is often a slight time reduction.
+
+- **Service Level:**
+  - The service is '{{{deliveryType}}}'.
+  - **'express':** This is a top priority. The driver will take the most direct path. Reduce final travel time by 15%, but never go below the base mapping ETA.
+  - **'standard' / 'night':** No special speed adjustment.
+
+- **Package Size:**
+  - The package is '{{{packageSize}}}'.
+  - **'large':** Add 3-5 minutes for extra handling and loading/unloading time.
+
+- **Real-World Conditions (Proprietary Data):**
+  - **Bad Weather Alert:** {{{hasBadWeather}}}. If true, add 5-10 minutes for caution and slower speeds.
+  - **High Network Demand:** {{{isHighDemand}}}. If true, it means courier availability is low. Add 2-5 minutes as dispatch may take longer.
+  - **Major Local Event:** {{{hasMajorEvent}}}. If true (e.g., strike, parade, marathon), this is a major disruption. Add 15-30 minutes to the ETA and lower your confidence score significantly.
+
+**Pickup/Dropoff Buffer:**
+ALWAYS add a base buffer of 10 minutes to the travel time to account for parking, finding the exact door, and handover. This should be added ON TOP of the base duration *before* other adjustments.
 
 **Analysis and Output:**
-Based on all factors, provide:
-1.  **predictedEtaMinutes:** Your best single-point estimate for the total delivery time in minutes.
-2.  **minEtaMinutes & maxEtaMinutes:** A realistic time range for the delivery. The range should be reasonable, reflecting the potential for minor, common variations.
-3.  **confidencePercentage:** Your confidence in the \`predictedEtaMinutes\` estimate, as an integer percentage between 85 and 98. Higher confidence for shorter, simpler routes during off-peak hours; lower confidence for complex routes in bad weather or peak traffic.
+Based on all these proprietary factors, provide:
+1.  **predictedEtaMinutes:** Your best single-point estimate.
+2.  **minEtaMinutes & maxEtaMinutes:** A realistic time range reflecting potential variations. This range should widen if you have low confidence (e.g., during a major event).
+3.  **confidencePercentage:** Your confidence in the \`predictedEtaMinutes\` estimate (85-98). Lower confidence for complex routes in bad weather or during events.
 
-Analyze all these factors and provide your final results in the required JSON format.
+Now, perform your advanced analysis and return the results in the required JSON format.
 `,
 });
 
@@ -176,16 +190,19 @@ const getQuoteFlow = ai.defineFlow(
     const dayOfWeek = now.toLocaleString('en-US', { weekday: 'long' }); // e.g., "Monday"
     const timeOfDay = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }); // e.g., "14:30"
     const baseDurationMinutes = Math.round(totalDurationSeconds / 60);
+    const hasMajorEvent = Math.random() < 0.1; // 10% chance of a major event
 
     const etaPredictionInput = {
         baseDurationMinutes,
         distanceKm: distanceInKm,
+        numberOfDestinations: input.destinationAddresses.length,
         timeOfDay,
         dayOfWeek,
         packageSize: input.packageSize,
         deliveryType: input.deliveryType,
         hasBadWeather: weatherSurcharge > 0,
         isHighDemand: supplySurcharge > 0,
+        hasMajorEvent,
     };
 
     const { output: etaOutput } = await etaPredictionPrompt(etaPredictionInput);
