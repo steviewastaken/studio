@@ -10,10 +10,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldQuestion, CheckCircle2, Star, Briefcase, Home } from 'lucide-react';
-import { handleFindDriver, handleGetQuote, handleDetectFraud, getSavedAddresses, addSavedAddress } from '@/lib/actions';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, ShieldAlert, ShieldQuestion, Star, Briefcase, Home } from 'lucide-react';
+import { handleGetQuote, handleDetectFraud, getSavedAddresses, addSavedAddress } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { FindDriverOutput } from '@/ai/flows/find-driver';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import type { DetectFraudOutput, DetectFraudInput } from '@/ai/flows/detect-fraud';
 import type { SavedAddress } from './types';
@@ -57,8 +56,6 @@ const addressIcons: { [key: string]: React.ReactNode } = {
 export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, isReviewed, isGettingQuote, setIsGettingQuote }: DeliveryFormProps) {
   const { user } = useAuth();
   const { addJob } = useJobs();
-  const [isFindingDriver, setIsFindingDriver] = useState(false);
-  const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
   const [scheduledTime, setScheduledTime] = useState('');
@@ -88,7 +85,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
     name: "destinationAddresses"
   });
 
-  const { watch, setValue, trigger } = form;
+  const { watch, setValue } = form;
 
   const fetchSavedAddresses = useCallback(async () => {
     if (!user) return;
@@ -146,38 +143,38 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
     setIsGettingQuote(false);
   }
 
-  const findDriver = async (pickupAddress: string): Promise<boolean> => {
-    setIsFindingDriver(true);
-    setDriverDetails(null);
-    const driverResult = await handleFindDriver({ pickupAddress });
-    if (driverResult.success && driverResult.data) {
-        setDriverDetails(driverResult.data);
-        setIsFindingDriver(false);
-        return true;
-    } else {
-        toast({
-            variant: 'destructive',
-            title: "Driver Search Failed",
-            description: driverResult.error,
-        });
-        setIsFindingDriver(false);
-        return false;
+  const postDeliveryJob = () => {
+    const values = form.getValues();
+    if (quote) {
+      const newJob = {
+        id: `job-${Date.now()}`,
+        pickup: values.pickupAddress,
+        dropoff: values.destinationAddresses[values.destinationAddresses.length - 1].value,
+        distance: quote.distance,
+        payout: (quote.price * 0.8).toFixed(2),
+        time: quote.eta,
+      };
+      addJob(newJob);
+      toast({
+        title: "Delivery Posted!",
+        description: "Your delivery request has been sent to nearby DunGuys.",
+      });
+      resetFormState();
     }
   };
 
   const resetFormState = () => {
-    setDriverDetails(null);
     onQuoteChange(null);
     form.reset();
   }
 
   const handleConfirmDispatch = async () => {
     const values = form.getValues();
-    if (!values.pickupAddress) {
+    if (!values.pickupAddress || !quote) {
         toast({
             variant: 'destructive',
-            title: "Missing Pickup Address",
-            description: 'Please select a pickup address before scheduling.',
+            title: "Missing Information",
+            description: 'Please select a pickup address and get a quote before dispatching.',
         });
         return;
     }
@@ -211,44 +208,13 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
     if (fraudCheckResult.data.isSuspicious) {
         setShowFraudDialog(true);
     } else {
-        const driverFound = await findDriver(values.pickupAddress);
-        if (driverFound && quote) {
-             const newJob = {
-                id: `job-${Date.now()}`,
-                pickup: values.pickupAddress,
-                dropoff: values.destinationAddresses[values.destinationAddresses.length - 1].value,
-                distance: quote.distance,
-                payout: (quote.price * 0.8).toFixed(2),
-                time: quote.eta,
-            };
-            addJob(newJob);
-            toast({
-                title: "Delivery Dispatched!",
-                description: "Nearby DunGuys have been notified of the new job."
-            });
-        }
+        postDeliveryJob();
     }
   };
   
-  const handleProceedAnyway = async () => {
+  const handleProceedAnyway = () => {
       setShowFraudDialog(false);
-      const values = form.getValues();
-      const driverFound = await findDriver(values.pickupAddress);
-      if (driverFound && quote) {
-          const newJob = {
-              id: `job-${Date.now()}`,
-              pickup: values.pickupAddress,
-              dropoff: values.destinationAddresses[values.destinationAddresses.length - 1].value,
-              distance: quote.distance,
-              payout: (quote.price * 0.8).toFixed(2),
-              time: quote.eta,
-          };
-          addJob(newJob);
-          toast({
-              title: "Delivery Dispatched!",
-              description: "Nearby DunGuys have been notified of the new job."
-          });
-      }
+      postDeliveryJob();
   };
 
   const handleScheduleForLater = () => {
@@ -309,7 +275,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
     return `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
   });
 
-  const isDispatchLoading = isCheckingFraud || isFindingDriver;
+  const isDispatchLoading = isCheckingFraud;
 
   const renderAddressField = (field: any, fieldName: 'pickupAddress' | `destinationAddresses.${number}.value`, placeholder: string, label: string) => {
       const fieldValue = watch(fieldName);
@@ -453,9 +419,8 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
                         </Button>
                         <Button type="button" onClick={handleConfirmDispatch} size="lg" disabled={isDispatchLoading}>
                             {isCheckingFraud && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isFindingDriver && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {!isDispatchLoading && <Truck className="mr-2 h-4 w-4" />}
-                            {isCheckingFraud ? 'Analyzing Risk...' : isFindingDriver ? 'Finding Driver...' : 'Dispatch Now'}
+                            {isCheckingFraud ? 'Analyzing Risk...' : 'Dispatch Now'}
                         </Button>
                     </div>
                 </div>
@@ -464,36 +429,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
           </form>
         </Form>
       </Card>
-
-      <Dialog open={!!driverDetails} onOpenChange={(open) => !open && setDriverDetails(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-headline text-2xl">
-              <CheckCircle2 className="text-green-500"/>
-              DunGuy Assigned!
-            </DialogTitle>
-            <DialogDescription>
-              Your delivery has been assigned. Get ready for pickup!
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 text-center">
-              <div className="flex flex-col items-center gap-4 text-foreground">
-                  <div className="p-4 bg-primary/20 rounded-full">
-                      <Truck className="w-16 h-16 text-primary"/>
-                  </div>
-                  <p className="text-lg">
-                      <span className="font-bold text-primary">{driverDetails?.driverName}</span> is on the way!
-                  </p>
-                  <div className="text-sm text-muted-foreground">
-                      Estimated arrival for pickup: <span className="font-bold text-foreground">{driverDetails?.driverEta}</span>.
-                  </div>
-              </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => resetFormState()}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       
       <Dialog open={isScheduling} onOpenChange={setIsScheduling}>
         <DialogContent className="sm:max-w-[425px]">
