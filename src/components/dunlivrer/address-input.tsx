@@ -84,10 +84,18 @@ export default function AddressInput({ value, onChange, placeholder, className }
         if (status !== 'ready' || !inputRef.current) return;
 
         if (!autocompleteRef.current) {
+            // Define approximate bounds for the Paris region to bias search results
+            const parisBounds = new google.maps.LatLngBounds(
+                new google.maps.LatLng(48.815573, 2.224199), // Southwest
+                new google.maps.LatLng(48.9021449, 2.4699208)  // Northeast
+            );
+
             autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
                 types: ['address'],
                 componentRestrictions: { country: 'fr' },
                 fields: ['formatted_address'],
+                bounds: parisBounds,
+                strictBounds: false, // Allow addresses outside Paris, but prioritize those within.
             });
         }
 
