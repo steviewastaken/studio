@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -33,11 +34,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 
-export default function PerformanceDashboard() {
+export default function PerformanceDashboard({ isActive }: { isActive: boolean }) {
   const { user } = useAuth();
   const [report, setReport] = useState<GetDriverPerformanceReportOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasFetched, setHasFetched] = useState(false);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -57,10 +59,13 @@ export default function PerformanceDashboard() {
         setError(result.error || "An unknown error occurred.");
       }
       setIsLoading(false);
+      setHasFetched(true);
     };
-
-    fetchReport();
-  }, [user]);
+    
+    if (isActive && !hasFetched) {
+        fetchReport();
+    }
+  }, [user, isActive, hasFetched]);
 
   if (isLoading) {
     return (
@@ -82,7 +87,13 @@ export default function PerformanceDashboard() {
   }
   
   if (!report) {
-      return null;
+      return (
+        <div className="flex flex-col items-center justify-center text-center p-12 text-muted-foreground">
+            <BarChart className="w-10 h-10 mb-4"/>
+            <p className="font-semibold">Performance data is loaded when you open this tab.</p>
+            <p className="text-sm">This prevents slowing down the app.</p>
+        </div>
+      );
   }
 
   const comparisonData = [

@@ -114,6 +114,7 @@ const AvailableJobs = () => {
 
 const DriverDashboard = () => {
     const [isOnline, setIsOnline] = useState(true);
+    const [activeTab, setActiveTab] = useState("jobs");
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
@@ -186,7 +187,7 @@ const DriverDashboard = () => {
             </Card>
         </motion.div>
 
-        <Tabs defaultValue="jobs" className="mt-8">
+        <Tabs defaultValue="jobs" className="mt-8" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="jobs"><ListOrdered className="mr-2"/>Available Jobs</TabsTrigger>
                 <TabsTrigger value="performance"><BarChart className="mr-2"/>Performance</TabsTrigger>
@@ -201,7 +202,7 @@ const DriverDashboard = () => {
                         <CardDescription>Review your stats and get AI-powered tips to improve.</CardDescription>
                     </CardHeader>
                     <CardContent className="px-0">
-                        <PerformanceDashboard />
+                        <PerformanceDashboard isActive={activeTab === 'performance'} />
                     </CardContent>
                 </Card>
             </TabsContent>
