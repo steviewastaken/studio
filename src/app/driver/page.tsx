@@ -16,45 +16,11 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PerformanceDashboard from "@/components/dunlivrer/performance-dashboard";
+import { useJobs, type Job } from "@/context/jobs-context";
 
 // --- Components for Driver View ---
 
-const availableJobs = [
-  {
-    id: 'job1',
-    pickup: '123 Rue de Rivoli, 75001 Paris',
-    dropoff: 'Eiffel Tower, Champ de Mars, 75007 Paris',
-    distance: '5.2 km',
-    payout: '12.50',
-    time: '25 min',
-  },
-  {
-    id: 'job2',
-    pickup: 'Gare du Nord, 75010 Paris',
-    dropoff: 'La Défense, 92800 Puteaux',
-    distance: '10.8 km',
-    payout: '18.75',
-    time: '45 min',
-  },
-  {
-    id: 'job3',
-    pickup: 'Montmartre, 75018 Paris',
-    dropoff: 'Louvre Museum, 75001 Paris',
-    distance: '4.1 km',
-    payout: '10.00',
-    time: '20 min',
-  },
-   {
-    id: 'job4',
-    pickup: 'Opéra Garnier, 75009 Paris',
-    dropoff: 'Place des Vosges, 75004 Paris',
-    distance: '3.5 km',
-    payout: '9.50',
-    time: '18 min',
-  }
-];
-
-const JobCard = ({ job, onAccept, onDecline }: { job: typeof availableJobs[0], onAccept: (id: string) => void, onDecline: (id: string) => void }) => {
+const JobCard = ({ job, onAccept, onDecline }: { job: Job, onAccept: (id: string) => void, onDecline: (id: string) => void }) => {
     return (
         <motion.div
             layout
@@ -113,10 +79,10 @@ const JobCard = ({ job, onAccept, onDecline }: { job: typeof availableJobs[0], o
 
 const AvailableJobs = () => {
   const { toast } = useToast();
-  const [jobs, setJobs] = useState(availableJobs);
+  const { jobs, removeJob } = useJobs();
   
   const handleAccept = (id: string) => {
-      setJobs(prev => prev.filter(job => job.id !== id));
+      removeJob(id);
       toast({
           title: "Job Accepted!",
           description: "The delivery details have been added to your route."
@@ -124,7 +90,7 @@ const AvailableJobs = () => {
   }
 
   const handleDecline = (id: string) => {
-      setJobs(prev => prev.filter(job => job.id !== id));
+      removeJob(id);
       toast({
           variant: "destructive",
           title: "Job Declined",

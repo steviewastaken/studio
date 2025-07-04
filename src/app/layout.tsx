@@ -5,6 +5,7 @@ import Header from '@/components/dunlivrer/header';
 import Footer from '@/components/dunlivrer/footer';
 import { AuthProvider } from '@/context/auth-context';
 import { LanguageProvider } from '@/context/language-context';
+import { JobsProvider } from '@/context/jobs-context';
 
 export const metadata: Metadata = {
   title: 'Dunlivrer',
@@ -27,14 +28,16 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <LanguageProvider>
           <AuthProvider>
-            <div className="flex flex-col min-h-screen bg-transparent text-foreground">
-              <Header />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-            </div>
-            <Toaster />
+            <JobsProvider>
+              <div className="flex flex-col min-h-screen bg-transparent text-foreground">
+                <Header />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+              <Toaster />
+            </JobsProvider>
           </AuthProvider>
         </LanguageProvider>
       </body>

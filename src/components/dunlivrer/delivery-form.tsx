@@ -25,6 +25,7 @@ import AddressAutocomplete from './address-autocomplete';
 import { useAuth } from '@/context/auth-context';
 import { Badge } from '../ui/badge';
 import { Label } from '@/components/ui/label';
+import { useJobs } from '@/context/jobs-context';
 
 const formSchema = z.object({
   pickupAddress: z.string({ required_error: "Please select a pickup location."}).min(1, "Please select a pickup location."),
@@ -55,6 +56,7 @@ const addressIcons: { [key: string]: React.ReactNode } = {
 
 export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, isReviewed, isGettingQuote, setIsGettingQuote }: DeliveryFormProps) {
   const { user } = useAuth();
+  const { addJob } = useJobs();
   const [isFindingDriver, setIsFindingDriver] = useState(false);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
   const [isScheduling, setIsScheduling] = useState(false);
@@ -144,20 +146,23 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
     setIsGettingQuote(false);
   }
 
-  const findDriver = async (pickupAddress: string) => {
+  const findDriver = async (pickupAddress: string): Promise<boolean> => {
     setIsFindingDriver(true);
     setDriverDetails(null);
     const driverResult = await handleFindDriver({ pickupAddress });
     if (driverResult.success && driverResult.data) {
         setDriverDetails(driverResult.data);
+        setIsFindingDriver(false);
+        return true;
     } else {
         toast({
             variant: 'destructive',
             title: "Driver Search Failed",
             description: driverResult.error,
         });
+        setIsFindingDriver(false);
+        return false;
     }
-    setIsFindingDriver(false);
   };
 
   const resetFormState = () => {
@@ -206,15 +211,45 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
     if (fraudCheckResult.data.isSuspicious) {
         setShowFraudDialog(true);
     } else {
-        findDriver(values.pickupAddress);
+        const driverFound = await findDriver(values.pickupAddress);
+        if (driverFound && quote) {
+             const newJob = {
+                id: `job-${Date.now()}`,
+                pickup: values.pickupAddress,
+                dropoff: values.destinationAddresses[values.destinationAddresses.length - 1].value,
+                distance: quote.distance,
+                payout: (quote.price * 0.8).toFixed(2),
+                time: quote.eta,
+            };
+            addJob(newJob);
+            toast({
+                title: "Delivery Dispatched!",
+                description: "Nearby DunGuys have been notified of the new job."
+            });
+        }
     }
   };
   
-    const handleProceedAnyway = () => {
-        setShowFraudDialog(false);
-        findDriver(form.getValues('pickupAddress'));
-    };
-
+  const handleProceedAnyway = async () => {
+      setShowFraudDialog(false);
+      const values = form.getValues();
+      const driverFound = await findDriver(values.pickupAddress);
+      if (driverFound && quote) {
+          const newJob = {
+              id: `job-${Date.now()}`,
+              pickup: values.pickupAddress,
+              dropoff: values.destinationAddresses[values.destinationAddresses.length - 1].value,
+              distance: quote.distance,
+              payout: (quote.price * 0.8).toFixed(2),
+              time: quote.eta,
+          };
+          addJob(newJob);
+          toast({
+              title: "Delivery Dispatched!",
+              description: "Nearby DunGuys have been notified of the new job."
+          });
+      }
+  };
 
   const handleScheduleForLater = () => {
     setIsScheduling(true);
