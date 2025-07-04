@@ -110,9 +110,9 @@ export default function Header() {
       animate={isVisible ? "visible" : "hidden"}
       transition={{ duration: 0.35, ease: "easeInOut" }}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="max-w-7xl mx-auto flex items-center justify-between relative">
         <DunlivrerLogo />
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               {link.label}
