@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle } from "lucide-react";
+import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered } from "lucide-react";
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -14,6 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PerformanceDashboard from "@/components/dunlivrer/performance-dashboard";
 
 // --- Components for Driver View ---
 
@@ -109,53 +111,43 @@ const JobCard = ({ job, onAccept, onDecline }: { job: typeof availableJobs[0], o
     )
 }
 
-const DriverStats = () => {
-    const stats = [
-        { label: "Today's Earnings", value: "€78.50", icon: <Euro className="w-6 h-6 text-green-500" /> },
-        { label: "Active Time", value: "4h 12m", icon: <Clock className="w-6 h-6 text-blue-500" /> },
-        { label: "Deliveries Today", value: "7", icon: <CheckCircle className="w-6 h-6 text-primary" /> },
-        { label: "Rating", value: "4.92", icon: <Star className="w-6 h-6 text-yellow-500" /> }
-    ];
+const AvailableJobs = () => {
+  const { toast } = useToast();
+  const [jobs, setJobs] = useState(availableJobs);
+  
+  const handleAccept = (id: string) => {
+      setJobs(prev => prev.filter(job => job.id !== id));
+      toast({
+          title: "Job Accepted!",
+          description: "The delivery details have been added to your route."
+      })
+  }
 
-    return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stats.map(stat => (
-                <Card key={stat.label} className="bg-card/80 border-white/10">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-                        {stat.icon}
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stat.value}</div>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
-    );
-};
+  const handleDecline = (id: string) => {
+      setJobs(prev => prev.filter(job => job.id !== id));
+      toast({
+          variant: "destructive",
+          title: "Job Declined",
+          description: "You will not be shown this request again."
+      })
+  }
 
+  return (
+    <div className="mt-6 space-y-8">
+      {jobs.length > 0 ? jobs.map(job => (
+          <JobCard key={job.id} job={job} onAccept={handleAccept} onDecline={handleDecline} />
+      )) : (
+          <Card className="text-center p-12 bg-card/50 border-white/10">
+              <CardTitle className="font-headline text-2xl">All Clear!</CardTitle>
+              <CardDescription className="mt-2">There are no available jobs right now. We'll notify you when a new one comes in.</CardDescription>
+          </Card>
+      )}
+    </div>
+  )
+}
 
 const DriverDashboard = () => {
-    const { toast } = useToast();
-    const [jobs, setJobs] = useState(availableJobs);
     const [isOnline, setIsOnline] = useState(true);
-
-    const handleAccept = (id: string) => {
-        setJobs(prev => prev.filter(job => job.id !== id));
-        toast({
-            title: "Job Accepted!",
-            description: "The delivery details have been added to your route."
-        })
-    }
-
-    const handleDecline = (id: string) => {
-        setJobs(prev => prev.filter(job => job.id !== id));
-        toast({
-            variant: "destructive",
-            title: "Job Declined",
-            description: "You will not be shown this request again."
-        })
-    }
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
@@ -176,27 +168,26 @@ const DriverDashboard = () => {
             </div>
         </motion.div>
 
-        <motion.div 
-            className="mt-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
-        >
-            <DriverStats />
-        </motion.div>
-
-        <div className="mt-12">
-            <h2 className="text-2xl font-bold font-headline text-white">Available Jobs ({jobs.length})</h2>
-            <div className="mt-6 space-y-8">
-                {jobs.length > 0 ? jobs.map(job => (
-                    <JobCard key={job.id} job={job} onAccept={handleAccept} onDecline={handleDecline} />
-                )) : (
-                    <Card className="text-center p-12 bg-card/50 border-white/10">
-                        <CardTitle className="font-headline text-2xl">All Clear!</CardTitle>
-                        <CardDescription className="mt-2">There are no available jobs right now. We'll notify you when a new one comes in.</CardDescription>
-                    </Card>
-                )}
-            </div>
-        </div>
+        <Tabs defaultValue="jobs" className="mt-8">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="jobs"><ListOrdered className="mr-2"/>Available Jobs</TabsTrigger>
+                <TabsTrigger value="performance"><BarChart className="mr-2"/>Performance</TabsTrigger>
+            </TabsList>
+            <TabsContent value="jobs" className="focus-visible:ring-0 focus-visible:ring-offset-0">
+                <AvailableJobs />
+            </TabsContent>
+            <TabsContent value="performance" className="focus-visible:ring-0 focus-visible:ring-offset-0">
+                <Card className="mt-6 bg-transparent border-none shadow-none">
+                    <CardHeader className="px-0">
+                        <CardTitle className="font-headline text-2xl">End-of-Day Performance</CardTitle>
+                        <CardDescription>Review your stats and get AI-powered tips to improve.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="px-0">
+                        <PerformanceDashboard />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
     </div>
   );
 };
@@ -297,14 +288,8 @@ const LoadingSkeleton = () => (
             </div>
             <Skeleton className="h-10 w-32" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-        </div>
-        <div className="mt-12">
-            <Skeleton className="h-8 w-40 mb-6" />
+        <Skeleton className="h-12 w-full mt-8" />
+        <div className="mt-6">
             <div className="space-y-8">
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-64 w-full" />

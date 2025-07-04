@@ -24,6 +24,10 @@ import {
   detectEmotion as detectEmotionFlow,
   type DetectEmotionInput,
 } from '@/ai/flows/detect-emotion';
+import {
+  getDriverPerformanceReport as getDriverPerformanceReportFlow,
+  type GetDriverPerformanceReportInput,
+} from '@/ai/flows/get-driver-performance-report';
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 
@@ -85,6 +89,16 @@ export async function handleDetectEmotion(data: DetectEmotionInput) {
     console.error("handleDetectEmotion Error:", error.message);
     return { success: false, error: error.message || 'Failed to analyze emotion. Please try again.' };
   }
+}
+
+export async function handleGetDriverPerformanceReport(data: GetDriverPerformanceReportInput) {
+    try {
+        const result = await getDriverPerformanceReportFlow(data);
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("handleGetDriverPerformanceReport Error:", error.message);
+        return { success: false, error: error.message || 'Failed to generate performance report.' };
+    }
 }
 
 // --- Address Book Actions ---
