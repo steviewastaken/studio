@@ -48,7 +48,6 @@ export default function AddressInput({ value, onChange, placeholder, className }
 
         if (!autocompleteRef.current) {
             autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-                types: ['address'],
                 componentRestrictions: { country: 'fr' },
                 bounds: parisBounds,
                 strictBounds: false, // Bias search to Paris but allow results outside
