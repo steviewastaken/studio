@@ -143,5 +143,3 @@ export default function TrackingMap({ deliveryDetails, driverDetails, deliverySt
     </Card>
   );
 }
-
-    
