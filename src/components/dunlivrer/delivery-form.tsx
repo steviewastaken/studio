@@ -10,20 +10,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, ShieldAlert, ShieldQuestion, Star, Briefcase, Home } from 'lucide-react';
-import { handleGetQuote, handleDetectFraud, getSavedAddresses, addSavedAddress } from '@/lib/actions';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, ShieldAlert, ShieldQuestion } from 'lucide-react';
+import { handleGetQuote, handleDetectFraud } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import type { DetectFraudOutput, DetectFraudInput } from '@/ai/flows/detect-fraud';
-import type { SavedAddress } from './types';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { format } from 'date-fns';
-import AddressAutocomplete from './address-autocomplete';
 import { useAuth } from '@/context/auth-context';
-import { Badge } from '../ui/badge';
-import { Label } from '@/components/ui/label';
 import { useJobs } from '@/context/jobs-context';
 
 const formSchema = z.object({
@@ -47,12 +43,6 @@ type DeliveryFormProps = {
   setIsGettingQuote: (loading: boolean) => void;
 };
 
-const addressIcons: { [key: string]: React.ReactNode } = {
-    'home': <Home className="w-3 h-3" />,
-    'work': <Briefcase className="w-3 h-3" />,
-    'office': <Briefcase className="w-3 h-3" />,
-};
-
 export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, isReviewed, isGettingQuote, setIsGettingQuote }: DeliveryFormProps) {
   const { user } = useAuth();
   const { addJob } = useJobs();
@@ -62,12 +52,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
   const [isCheckingFraud, setIsCheckingFraud] = useState(false);
   const [fraudResult, setFraudResult] = useState<DetectFraudOutput | null>(null);
   const [showFraudDialog, setShowFraudDialog] = useState(false);
-
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [addressToSave, setAddressToSave] = useState<string | null>(null);
-  const [newLabel, setNewLabel] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -85,19 +69,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
     name: "destinationAddresses"
   });
 
-  const { watch, setValue } = form;
-
-  const fetchSavedAddresses = useCallback(async () => {
-    if (!user) return;
-    const result = await getSavedAddresses();
-    if (result.success && result.data) {
-        setSavedAddresses(result.data);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchSavedAddresses();
-  }, [fetchSavedAddresses]);
+  const { watch } = form;
 
   const handleAddressChangeCallback = useCallback((value: z.infer<typeof formSchema>) => {
     onAddressChange({
@@ -237,38 +209,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
       description: `Your delivery is scheduled for ${format(scheduledDate, 'PPP')} between ${scheduledTime}.`,
     });
   };
-  
-  const handleOpenSaveDialog = (address: string) => {
-    setAddressToSave(address);
-    setIsSaveDialogOpen(true);
-  };
-
-  const handleSaveAddress = async () => {
-    if (!newLabel.trim() || !addressToSave) return;
-    setIsSaving(true);
-    const result = await addSavedAddress(addressToSave, newLabel);
-    if (result.success) {
-        toast({
-            title: "Address Saved!",
-            description: `Saved "${addressToSave}" as "${newLabel}".`
-        });
-        setIsSaveDialogOpen(false);
-        setNewLabel("");
-        setAddressToSave(null);
-        fetchSavedAddresses();
-    } else {
-        toast({
-            variant: 'destructive',
-            title: "Failed to Save",
-            description: result.error,
-        });
-    }
-    setIsSaving(false);
-  }
-
-  const handleSelectSavedAddress = (fieldName: 'pickupAddress' | `destinationAddresses.${number}.value`, address: string) => {
-    setValue(fieldName, address, { shouldValidate: true, shouldDirty: true });
-  };
     
   const timeSlots = Array.from({ length: 10 }, (_, i) => {
     const hour = i + 9;
@@ -276,52 +216,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
   });
 
   const isDispatchLoading = isCheckingFraud;
-
-  const renderAddressField = (field: any, fieldName: 'pickupAddress' | `destinationAddresses.${number}.value`, placeholder: string, label: string) => {
-      const fieldValue = watch(fieldName);
-      const isAlreadySaved = savedAddresses.some(addr => addr.address === fieldValue);
-      
-      return (
-        <FormItem>
-            <FormLabel>{label}</FormLabel>
-            <FormControl>
-                <AddressAutocomplete
-                    {...field}
-                    placeholder={placeholder}
-                    onPlaceChanged={(place) => {
-                        if (place.formatted_address) {
-                            setValue(fieldName, place.formatted_address, { shouldValidate: true, shouldDirty: true });
-                        }
-                    }}
-                />
-            </FormControl>
-            <div className="flex flex-wrap items-center gap-2 min-h-[26px]">
-                {fieldValue && user && !isAlreadySaved && (
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs h-auto py-0.5 px-2 text-primary hover:bg-primary/10"
-                        onClick={() => handleOpenSaveDialog(fieldValue)}
-                    >
-                        <Star className="w-3 h-3 mr-1.5"/> Save for later
-                    </Button>
-                )}
-                 {user && (
-                    <>
-                        {savedAddresses.map(addr => (
-                            <Badge key={addr.id} variant="outline" className="cursor-pointer hover:border-primary/80 hover:bg-primary/10" onClick={() => handleSelectSavedAddress(fieldName, addr.address)}>
-                                {addressIcons[addr.label.toLowerCase()] || <Star className="w-3 h-3"/>}
-                                <span className="ml-1.5">{addr.label}</span>
-                            </Badge>
-                        ))}
-                    </>
-                )}
-            </div>
-            <FormMessage/>
-        </FormItem>
-      )
-  };
 
   return (
     <>
@@ -336,7 +230,15 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
               <FormField
                   control={form.control}
                   name="pickupAddress"
-                  render={({ field }) => renderAddressField(field, 'pickupAddress', 'Enter pickup address...', 'Pickup Location')}
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel>Pickup Location</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Enter pickup address..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                  )}
               />
 
                 <div className="space-y-4">
@@ -345,7 +247,15 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
                         <FormField
                             control={form.control}
                             name={`destinationAddresses.${index}.value`}
-                            render={({ field: renderField }) => renderAddressField(renderField, `destinationAddresses.${index}.value`, `Destination #${index + 1}`, `Destination ${index + 1}`)}
+                            render={({ field }) => (
+                               <FormItem>
+                                    <FormLabel>Destination {index + 1}</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder={`Destination #${index + 1}`} {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
                          {fields.length > 1 && (
                             <Button variant="ghost" size="icon" onClick={() => remove(index)} className="absolute right-0 top-0 mt-6">
@@ -465,35 +375,6 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
         </DialogContent>
       </Dialog>
       
-      <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                  <DialogTitle>Save Address</DialogTitle>
-                  <DialogDescription>
-                      Give this address a short label (e.g., Home, Work, Gym) for easy access next time.
-                  </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="address-to-save">Address</Label>
-                    <Input id="address-to-save" value={addressToSave || ""} readOnly disabled />
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="address-label">Label</Label>
-                    <Input id="address-label" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="e.g., Home" />
-                  </div>
-              </div>
-              <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleSaveAddress} disabled={isSaving || !newLabel.trim()}>
-                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Save Address
-                  </Button>
-              </DialogFooter>
-          </DialogContent>
-      </Dialog>
-
-
       <AlertDialog open={showFraudDialog} onOpenChange={setShowFraudDialog}>
         <AlertDialogContent>
             <AlertDialogHeader>

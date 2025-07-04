@@ -10,10 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase-client';
-import { useState } from 'react';
-import { MailCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/auth-context';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -24,9 +22,7 @@ const formSchema = z.object({
 export default function SignUpPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/';
-  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
+  const { login, loading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,65 +32,14 @@ export default function SignUpPage() {
   const { isSubmitting } = form.formState;
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const { data, error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-      options: {
-        data: {
-          full_name: values.name,
-        },
-      },
+    // This is a mock signup that just logs the user in
+    login();
+    toast({
+        title: "Account Created!",
+        description: "You have been signed in successfully.",
     });
-
-    if (error) {
-      toast({
-        variant: 'destructive',
-        title: "Sign Up Failed",
-        description: error.message,
-      });
-    } else {
-      if (data.user && !data.session) {
-        setShowConfirmationMessage(true);
-      } else {
-        toast({
-            title: "Account Created!",
-            description: "You have been signed in successfully.",
-        });
-        router.push(redirectPath);
-        router.refresh();
-      }
-    }
+    router.push('/driver');
   }
-
-  if (showConfirmationMessage) {
-    return (
-        <div className="flex items-center justify-center min-h-screen pt-20">
-            <Card className="w-full max-w-md bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg text-center">
-                <CardHeader>
-                    <div className="mx-auto bg-primary/20 p-3 rounded-full w-fit">
-                        <MailCheck className="w-10 h-10 text-primary" />
-                    </div>
-                    <CardTitle className="font-headline text-3xl mt-4">Confirm your email</CardTitle>
-                    <CardDescription>
-                        We've sent a confirmation link to your email address. Please click the link to complete your registration.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                       Once confirmed, you will be able to sign in.
-                    </p>
-                </CardContent>
-                <CardFooter className="justify-center">
-                    <Button asChild>
-                        <Link href="/signin">Go to Sign In</Link>
-                    </Button>
-                </CardFooter>
-            </Card>
-        </div>
-    );
-  }
-
-  const signInHref = redirectPath !== '/' ? `/signin?redirect=${redirectPath}` : '/signin';
 
   return (
     <div className="flex items-center justify-center min-h-screen pt-20">
@@ -133,15 +78,15 @@ export default function SignUpPage() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating Account...' : 'Sign Up'}
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || loading}>
+                {isSubmitting || loading ? 'Creating Account...' : 'Sign Up'}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="justify-center">
             <p className="text-sm text-muted-foreground">
-                Already have an account? <Link href={signInHref} className="text-primary hover:underline font-medium">Sign In</Link>
+                Already have an account? <Link href="/signin" className="text-primary hover:underline font-medium">Sign In</Link>
             </p>
         </CardFooter>
       </Card>

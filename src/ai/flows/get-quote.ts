@@ -100,59 +100,13 @@ const getQuoteFlow = ai.defineFlow(
     outputSchema: GetQuoteOutputSchema,
   },
   async (input) => {
-    const apiKey = process.env.GOOGLE_SERVER_API_KEY;
-    if (!apiKey) {
-      throw new Error('The API key is not configured on the server. Please contact support.');
-    }
+    // This is a simulation. In a real app, you would use a mapping service
+    // like Google Maps Directions API to get the real distance and duration.
+    const MOCK_KM_PER_DESTINATION = 7.5;
+    const MOCK_MINUTES_PER_KM = 2.5;
 
-    const origin = input.pickupAddress;
-    const destination = input.destinationAddresses[input.destinationAddresses.length - 1];
-    const waypoints = input.destinationAddresses.slice(0, -1).join('|');
-
-    const params = new URLSearchParams({
-        origin,
-        destination,
-        key: apiKey,
-    });
-
-    if (waypoints) {
-        params.append('waypoints', `optimize:true|${waypoints}`);
-    }
-
-    const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
-
-    let totalDistanceMeters = 0;
-    let totalDurationSeconds = 0;
-
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.status !== 'OK') {
-            const errorMessage = data.error_message || `API Error: ${data.status}`;
-            
-            if (data.status === 'NOT_FOUND' || data.status === 'ZERO_RESULTS') {
-                throw new Error('No route could be found. Please check that the addresses are correct and try again.');
-            }
-            if (data.status === 'REQUEST_DENIED') {
-                throw new Error('The request was denied by Google Maps. This may be an issue with the API key configuration. Please ensure the "Directions API" is enabled for your key in the Google Cloud Console.');
-            }
-            throw new Error(`Failed to get directions: ${errorMessage}. Please try again later.`);
-        }
-
-        if (!data.routes || data.routes.length === 0 || !data.routes[0].legs || data.routes[0].legs.length === 0) {
-            throw new Error('No valid route could be found between the specified addresses. They may be too far apart or on disconnected road networks.');
-        }
-
-        data.routes[0].legs.forEach((leg: any) => {
-            totalDistanceMeters += leg.distance.value;
-            totalDurationSeconds += leg.duration.value;
-        });
-
-    } catch (e: any) {
-        // Re-throw specific, user-friendly messages
-        throw new Error(e.message || 'An unknown error occurred while calculating the route.');
-    }
+    let totalDistanceMeters = (MOCK_KM_PER_DESTINATION * input.destinationAddresses.length * 1000);
+    let totalDurationSeconds = (totalDistanceMeters / 1000) * MOCK_MINUTES_PER_KM * 60;
     
     if (totalDistanceMeters === 0) {
         throw new Error('Could not calculate a valid route for the given addresses. The distance is zero.');

@@ -19,7 +19,6 @@ import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { GoogleMapsProvider } from '@/context/google-maps-context';
 
 
 const sectionVariants = {
@@ -129,7 +128,7 @@ const EstimatorBox = ({ quote, isGettingQuote }: { quote: GetQuoteOutput | null;
 };
 
 
-function DunlivrerPageContent() {
+export default function DunlivrerPage() {
   const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
   const [quote, setQuote] = useState<GetQuoteOutput | null>(null);
   const [isReviewed, setIsReviewed] = useState(false);
@@ -502,12 +501,4 @@ function DunlivrerPageContent() {
       <FloatingSupportButton />
     </div>
   );
-}
-
-export default function DunlivrerPage() {
-  return (
-    <GoogleMapsProvider>
-      <DunlivrerPageContent />
-    </GoogleMapsProvider>
-  )
 }

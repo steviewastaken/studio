@@ -19,7 +19,6 @@ import DunlivrerLogo from './logo';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/context/language-context';
-import { supabase } from '@/lib/supabase-client';
 import { Skeleton } from '../ui/skeleton';
 
 const navLinks = [
@@ -69,13 +68,9 @@ function LanguageSwitcher() {
 }
 
 export default function Header() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  }
 
   useEffect(() => {
     const controlNavbar = () => {
@@ -146,7 +141,7 @@ export default function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -203,7 +198,7 @@ export default function Header() {
                           <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
                       </div>
-                       <Button variant="outline" onClick={handleLogout}>
+                       <Button variant="outline" onClick={logout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         Sign Out
                       </Button>

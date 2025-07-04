@@ -9,8 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase-client';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/auth-context';
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -20,8 +20,7 @@ const formSchema = z.object({
 export default function SignInPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/';
+  const { login, loading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -30,26 +29,14 @@ export default function SignInPage() {
 
   const { isSubmitting } = form.formState;
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    const { error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    // This is a mock login
+    login();
+    toast({
+        title: "Signed In!",
+        description: "Welcome back!",
     });
-
-    if (error) {
-        toast({
-            variant: "destructive",
-            title: "Sign In Failed",
-            description: error.message,
-        });
-    } else {
-        toast({
-            title: "Signed In!",
-            description: "Welcome back!",
-        });
-        router.push(redirectPath);
-        router.refresh();
-    }
+    router.push('/driver');
   }
 
   return (
@@ -66,7 +53,7 @@ export default function SignInPage() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" {...field} type="email" />
+                    <Input placeholder="demo@dunlivrer.com" {...field} type="email" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -83,8 +70,8 @@ export default function SignInPage() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Signing In...' : 'Sign In'}
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || loading}>
+                {isSubmitting || loading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
           </Form>

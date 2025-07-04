@@ -20,10 +20,7 @@ export default function LiveTrackingPreview({ pickupAddress, destinationAddresse
       </CardHeader>
       <CardContent>
         <div className="relative mt-4 aspect-[16/10] bg-muted/50 rounded-lg overflow-hidden border border-white/10">
-          <MapComponent 
-            pickupAddress={pickupAddress}
-            destinationAddresses={destinationAddresses}
-          />
+          <MapComponent />
           {hasAddresses ? (
               <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10 pointer-events-none">
                 <div className="flex items-start justify-between">
@@ -56,5 +53,3 @@ export default function LiveTrackingPreview({ pickupAddress, destinationAddresse
     </Card>
   );
 }
-
-    

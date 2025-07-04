@@ -1,8 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/lib/supabase-client';
-import type { AuthSession } from '@supabase/supabase-js';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
 type UserProfile = {
   id: string;
@@ -10,56 +8,39 @@ type UserProfile = {
   email: string;
 };
 
+// A mock user for demonstration
+const mockUser: UserProfile = {
+    id: 'user-123',
+    name: 'Demo DunGuy',
+    email: 'demo@dunlivrer.com'
+};
+
 type AuthContextType = {
   user: UserProfile | null;
   loading: boolean;
+  login: () => void;
+  logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Set to false as it's a mock
 
-  useEffect(() => {
-    const getSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            setUser({ 
-                id: session.user.id,
-                name: session.user.user_metadata.full_name || session.user.email,
-                email: session.user.email!,
-            });
-        }
+  const login = useCallback(() => {
+    setLoading(true);
+    setTimeout(() => {
+        setUser(mockUser);
         setLoading(false);
-    }
-
-    getSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session) {
-            setUser({
-                id: session.user.id,
-                name: session.user.user_metadata.full_name || session.user.email,
-                email: session.user.email!,
-            });
-        } else {
-            setUser(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    }, 500);
   }, []);
 
-  const value = {
-    user,
-    loading,
-  };
+  const logout = useCallback(() => {
+    setUser(null);
+  }, []);
+
+  const value = { user, loading, login, logout };
 
   return (
     <AuthContext.Provider value={value}>

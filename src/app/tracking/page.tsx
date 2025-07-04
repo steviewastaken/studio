@@ -14,11 +14,10 @@ import type { FindDriverOutput } from '@/ai/flows/find-driver';
 import type { RerouteDeliveryOutput } from '@/ai/flows/reroute-delivery';
 import { handleFindDriver, handleRerouteDelivery } from '@/lib/actions';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import AddressAutocomplete from '@/components/dunlivrer/address-autocomplete';
+import { Input as AddressInput } from '@/components/ui/input'; // Using regular input
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { GoogleMapsProvider } from '@/context/google-maps-context';
 
 const mockDelivery: DeliveryDetails = {
     pickupAddress: 'Rue de Rivoli, 75001 Paris, France', // Louvre Museum
@@ -237,15 +236,11 @@ function TrackingPageContent() {
             <div className="py-4 space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="new-destination">New Destination Address</Label>
-                    <AddressAutocomplete
+                    <AddressInput
                         id="new-destination"
                         placeholder="Enter new address..."
-                        onPlaceChanged={(place) => {
-                            if (place.formatted_address) {
-                                setNewDestination(place.formatted_address);
-                                setRerouteResult(null); // Reset previous result on new address
-                            }
-                        }}
+                        value={newDestination}
+                        onChange={(e) => setNewDestination(e.target.value)}
                         disabled={isCheckingReroute}
                     />
                 </div>
@@ -301,9 +296,5 @@ function TrackingPageContent() {
 }
 
 export default function TrackingPage() {
-  return (
-    <GoogleMapsProvider>
-      <TrackingPageContent />
-    </GoogleMapsProvider>
-  )
+  return <TrackingPageContent />
 }
