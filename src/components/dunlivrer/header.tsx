@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -16,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import DunlivrerLogo from './logo';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '../ui/skeleton';
@@ -70,31 +69,32 @@ function LanguageSwitcher() {
 export default function Header() {
   const { user, loading, logout } = useAuth();
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
     const controlNavbar = () => {
+      const currentScrollY = window.scrollY;
       if (typeof window !== 'undefined') {
         // Hide header on scroll down, but only after a certain point
         // Show header on scroll up
-        if (window.scrollY > lastScrollY && window.scrollY > 100) { 
+        if (currentScrollY > lastScrollY.current && currentScrollY > 100) { 
           setIsVisible(false);
         } else {
           setIsVisible(true);
         }
-        setLastScrollY(window.scrollY);
+        lastScrollY.current = currentScrollY;
       }
     };
 
     if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', controlNavbar);
+      window.addEventListener('scroll', controlNavbar, { passive: true });
 
       // cleanup function
       return () => {
         window.removeEventListener('scroll', controlNavbar);
       };
     }
-  }, [lastScrollY]);
+  }, []);
 
   return (
     <motion.header 
@@ -110,7 +110,7 @@ export default function Header() {
         <DunlivrerLogo />
         <nav className="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <Link key={link.href} href={link.href} prefetch={false} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               {link.label}
             </Link>
           ))}
