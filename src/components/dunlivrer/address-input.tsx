@@ -19,6 +19,14 @@ type AddressInputProps = {
     className?: string;
 };
 
+// Define the geographic bounds for Paris
+const parisBounds = {
+    north: 48.9021,
+    south: 48.8156,
+    east: 2.4699,
+    west: 2.2241,
+};
+
 
 export default function AddressInput({ value, onChange, placeholder, className }: AddressInputProps) {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +95,8 @@ export default function AddressInput({ value, onChange, placeholder, className }
             autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
                 types: ['address'],
                 componentRestrictions: { country: 'fr' },
+                bounds: parisBounds,
+                strictBounds: true, // This enforces that only results within the bounds are returned
                 fields: ['formatted_address'],
             });
         }
