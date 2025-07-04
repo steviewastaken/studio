@@ -44,7 +44,7 @@ export type DeliveryStatus = 'IDLE' | 'SEARCHING' | 'FOUND' | 'IN_TRANSIT' | 'DE
 export default function TrackingPage() {
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
-  const [trackingId, setTrackingId] = useState('');
+  const [trackingId, setTrackingId] = useState('DUN12345XYZ');
   const [isLoading, setIsLoading] = useState(false);
   const [deliveryStatus, setDeliveryStatus] = useState<DeliveryStatus>('IDLE');
 
@@ -126,7 +126,7 @@ export default function TrackingPage() {
                  <Card className="bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
                     <CardHeader>
                         <CardTitle>Track your package</CardTitle>
-                        <CardDescription>Enter the tracking ID provided in your confirmation.</CardDescription>
+                        <CardDescription>Enter the demo tracking ID below to see the feature in action.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSearch} className="flex gap-2">
