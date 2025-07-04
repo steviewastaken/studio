@@ -208,12 +208,12 @@ const DriverLandingPage = () => {
                     Join the future of delivery. Earn money by delivering packages for local businesses and people in your city.
                 </motion.p>
                 <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-4">
-                    <Button size="lg" asChild>
-                        <Link href="/signup">Sign Up to Drive</Link>
-                    </Button>
-                    <Button size="lg" variant="outline" asChild>
-                        <Link href="/signin">Already have an account? Sign In</Link>
-                    </Button>
+                    <Link href="/signup">
+                        <Button size="lg">Sign Up to Drive</Button>
+                    </Link>
+                    <Link href="/signin">
+                        <Button size="lg" variant="outline">Already have an account? Sign In</Button>
+                    </Link>
                 </motion.div>
             </motion.section>
 
