@@ -4,6 +4,7 @@ import { Autocomplete } from "@react-google-maps/api";
 import { Input, type InputProps } from "@/components/ui/input";
 import { useGoogleMaps } from "@/context/google-maps-context";
 import { forwardRef, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 interface Props extends Omit<InputProps, "type"> {
   onPlaceChanged: (place: google.maps.places.PlaceResult) => void;
@@ -11,11 +12,15 @@ interface Props extends Omit<InputProps, "type"> {
 
 const AddressAutocomplete = forwardRef<HTMLInputElement, Props>(
   ({ onPlaceChanged, ...props }, ref) => {
-    const { isLoaded } = useGoogleMaps();
+    const { isLoaded, loadError } = useGoogleMaps();
     const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
+    if (loadError) {
+        return <Input {...props} placeholder="Map Error: Check API Key Config" disabled type="text" className="border-destructive" />;
+    }
+
     if (!isLoaded) {
-      return <Input {...props} placeholder="Loading..." disabled type="text" />;
+      return <Input {...props} placeholder="Loading Address Search..." disabled type="text" />;
     }
 
     const handleLoad = (autocomplete: google.maps.places.Autocomplete) => {
