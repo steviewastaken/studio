@@ -20,6 +20,10 @@ import {
   rerouteDelivery as rerouteDeliveryFlow,
   type RerouteDeliveryInput,
 } from '@/ai/flows/reroute-delivery';
+import {
+  detectEmotion as detectEmotionFlow,
+  type DetectEmotionInput,
+} from '@/ai/flows/detect-emotion';
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 
@@ -70,6 +74,16 @@ export async function handleRerouteDelivery(data: RerouteDeliveryInput) {
   } catch (error: any) {
     console.error("handleRerouteDelivery Error:", error.message);
     return { success: false, error: error.message || 'Failed to check rerouting feasibility. Please try again later.' };
+  }
+}
+
+export async function handleDetectEmotion(data: DetectEmotionInput) {
+  try {
+    const result = await detectEmotionFlow(data);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error("handleDetectEmotion Error:", error.message);
+    return { success: false, error: error.message || 'Failed to analyze emotion. Please try again.' };
   }
 }
 

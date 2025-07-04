@@ -25,6 +25,7 @@ import { Skeleton } from '../ui/skeleton';
 const navLinks = [
   { href: '/services', label: 'Services' },
   { href: '/tracking', label: 'Order Tracking' },
+  { href: '/feedback', label: 'Feedback' },
   { href: '/contact', label: 'Contact Us' },
 ];
 
