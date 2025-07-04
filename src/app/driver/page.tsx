@@ -1,12 +1,18 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, X, MapPin, Milestone, Euro } from "lucide-react";
+import { Check, X, MapPin, Euro, Clock, Wallet, Route } from "lucide-react";
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useAuth } from "@/context/auth-context";
+import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// --- Components for Driver View ---
 
 const availableJobs = [
   {
@@ -100,8 +106,7 @@ const JobCard = ({ job, onAccept, onDecline }: { job: typeof availableJobs[0], o
     )
 }
 
-
-export default function DriverPage() {
+const DriverDashboard = () => {
     const { toast } = useToast();
     const [jobs, setJobs] = useState(availableJobs);
 
@@ -148,4 +153,115 @@ export default function DriverPage() {
         </div>
     </div>
   );
+};
+
+
+// --- Component for Public/Logged-out View ---
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut",
+      staggerChildren: 0.2
+    } 
+  },
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' }}
+};
+
+const DriverLandingPage = () => {
+    const features = [
+        {
+            icon: <Clock className="w-8 h-8 text-primary"/>,
+            title: "Drive on Your Schedule",
+            description: "You're the boss. Choose when you want to drive and for how long. Work part-time, full-time, or just for a few hours."
+        },
+        {
+            icon: <Wallet className="w-8 h-8 text-primary"/>,
+            title: "Earn Competitive Rates",
+            description: "Get paid weekly for your deliveries. Our transparent pay structure means you always know how much you'll make."
+        },
+        {
+            icon: <Route className="w-8 h-8 text-primary"/>,
+            title: "Smart, Efficient Routes",
+            description: "Our AI-powered system optimizes your routes, helping you complete more deliveries in less time and maximize your earnings."
+        }
+    ];
+
+    return (
+        <div className="w-full pt-24 md:pt-32">
+            <motion.section 
+                className="text-center w-full max-w-4xl mx-auto px-4 md:px-8"
+                initial="hidden"
+                animate="visible"
+                variants={sectionVariants}
+            >
+                <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-bold font-headline text-white">Become a DunGuy</motion.h1>
+                <motion.p variants={itemVariants} className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+                    Join the future of delivery. Earn money by delivering packages for local businesses and people in your city.
+                </motion.p>
+                <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-4">
+                    <Button size="lg" asChild>
+                        <Link href="/signup">Sign Up to Drive</Link>
+                    </Button>
+                    <Button size="lg" variant="outline" asChild>
+                        <Link href="/signin">Already have an account? Sign In</Link>
+                    </Button>
+                </motion.div>
+            </motion.section>
+
+            <motion.section 
+                className="py-16 mt-12 bg-background/20"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                variants={sectionVariants}
+            >
+                <div className="w-full max-w-7xl mx-auto px-4 md:px-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {features.map(feature => (
+                            <motion.div key={feature.title} variants={itemVariants} className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-lg flex flex-col items-start gap-4 text-left">
+                                {feature.icon}
+                                <h3 className="text-xl font-bold font-headline text-white">{feature.title}</h3>
+                                <p className="text-muted-foreground">{feature.description}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </motion.section>
+        </div>
+    );
+}
+
+// --- Main Page Component ---
+
+const LoadingSkeleton = () => (
+    <div className="w-full max-w-2xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
+        <div className="text-center">
+            <Skeleton className="h-12 w-3/4 mx-auto" />
+            <Skeleton className="h-6 w-1/2 mx-auto mt-4" />
+        </div>
+        <div className="mt-12 space-y-8">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+        </div>
+    </div>
+);
+
+
+export default function DriverPage() {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return <LoadingSkeleton />;
+    }
+
+    return user ? <DriverDashboard /> : <DriverLandingPage />;
 }
