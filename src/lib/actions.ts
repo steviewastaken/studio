@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -63,7 +64,7 @@ export async function handleGetQuote(data: GetQuoteInput) {
   try {
     const result = await getQuoteFlow(data);
     return { success: true, data: result };
-  } catch (error: any)
+  } catch (error: any) {
     console.error("handleGetQuote Error:", error.message);
     return { success: false, error: error.message || 'An unknown error occurred while generating the quote.' };
   }
