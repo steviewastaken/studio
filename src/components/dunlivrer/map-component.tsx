@@ -1,13 +1,14 @@
 
 "use client";
 
-import { useState, useMemo, useCallback } from 'react';
-import { GoogleMap, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { GoogleMap, DirectionsService, DirectionsRenderer, Marker } from '@react-google-maps/api';
 import { Skeleton } from '../ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Button } from '../ui/button';
 import { ExternalLink } from 'lucide-react';
 import { useGoogleMaps } from '@/context/google-maps-context';
+import type { DeliveryStatus } from '@/app/tracking/page';
 
 const containerStyle = {
   width: '100%',
@@ -102,15 +103,18 @@ const mapOptions = {
 type MapComponentProps = {
   pickupAddress: string | null;
   destinationAddresses: string[];
+  deliveryStatus: DeliveryStatus;
 };
 
-export default function MapComponent({ pickupAddress, destinationAddresses }: MapComponentProps) {
+export default function MapComponent({ pickupAddress, destinationAddresses, deliveryStatus }: MapComponentProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const { isLoaded, loadError } = useGoogleMaps();
 
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [center, setCenter] = useState({ lat: 48.8566, lng: 2.3522 }); // Default to Paris
+  const [driverPosition, setDriverPosition] = useState<google.maps.LatLngLiteral | null>(null);
+  const animationIntervalRef = useRef<NodeJS.Timeout>();
 
   const validDestinations = useMemo(() => destinationAddresses.filter(d => d), [destinationAddresses]);
   const hasAddresses = pickupAddress && validDestinations.length > 0;
@@ -127,12 +131,54 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
       if (status === 'NOT_FOUND' || status === 'ZERO_RESULTS') {
         setError("Could not find a route for the addresses provided. Please check for typos and ensure they are valid locations.");
       } else {
-        // A request will only be made if there are addresses, so we don't need to worry about empty requests.
-        // For other statuses (e.g., OVER_QUERY_LIMIT), we show a generic error.
         setError(`Map service error: ${status}. Please try again later.`);
       }
     }
   }, []);
+
+  useEffect(() => {
+    const cleanup = () => {
+        if (animationIntervalRef.current) {
+            clearInterval(animationIntervalRef.current);
+            animationIntervalRef.current = undefined;
+        }
+    };
+
+    if (deliveryStatus === 'IN_TRANSIT' && directions) {
+        const route = directions.routes[0];
+        if (!route || !route.overview_path) return;
+
+        const path = route.overview_path;
+        const totalSteps = path.length;
+        if (totalSteps === 0) return;
+
+        let step = 0;
+        const duration = 5000; // 5 seconds for transit animation
+        const intervalTime = duration / totalSteps;
+
+        setDriverPosition(path[0].toJSON());
+
+        animationIntervalRef.current = setInterval(() => {
+            step++;
+            if (step >= totalSteps) {
+                cleanup();
+                setDriverPosition(path[totalSteps - 1].toJSON());
+                return;
+            }
+            setDriverPosition(path[step].toJSON());
+        }, intervalTime);
+    } else if (deliveryStatus === 'DELIVERED' && directions) {
+        const route = directions.routes[0];
+        if (!route || !route.overview_path || route.overview_path.length === 0) return;
+        setDriverPosition(route.overview_path[route.overview_path.length - 1].toJSON());
+        cleanup();
+    } else {
+        cleanup();
+        setDriverPosition(null);
+    }
+
+    return cleanup;
+  }, [deliveryStatus, directions]);
 
   const directionsServiceOptions = useMemo(() => {
       if (!hasAddresses) return null;
@@ -190,10 +236,8 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
             center={center}
             zoom={12}
             options={mapOptions}
-            // Reset directions when addresses change by changing the key
             key={JSON.stringify(destinationAddresses) + pickupAddress}
         >
-            {/* Use the DirectionsService component */}
             {hasAddresses && directionsServiceOptions && (
                 <DirectionsService
                     options={directionsServiceOptions}
@@ -203,6 +247,21 @@ export default function MapComponent({ pickupAddress, destinationAddresses }: Ma
 
             {directions && (
                 <DirectionsRenderer directions={directions} options={{ suppressMarkers: false, polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5 } }} />
+            )}
+            
+            {driverPosition && (
+              <Marker
+                  position={driverPosition}
+                  icon={{
+                      path: google.maps.SymbolPath.CIRCLE,
+                      scale: 7,
+                      fillColor: "hsl(var(--primary))",
+                      fillOpacity: 1,
+                      strokeColor: "white",
+                      strokeWeight: 2,
+                  }}
+                  zIndex={100}
+              />
             )}
         </GoogleMap>
         {error && (
