@@ -26,7 +26,7 @@ export default function LiveTrackingPreview({ pickupAddress, destinationAddresse
             pickupAddress={pickupAddress}
             destinationAddresses={destinationAddresses}
           />
-          {hasAddresses && (
+          {hasAddresses ? (
               <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10 pointer-events-none">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2 truncate">
@@ -45,6 +45,14 @@ export default function LiveTrackingPreview({ pickupAddress, destinationAddresse
                             );
                         })}
                     </div>
+                </div>
+            </div>
+          ) : (
+             <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center p-8 bg-black/30 backdrop-blur-sm rounded-lg">
+                    <MapPin className="mx-auto w-12 h-12 text-primary/50" />
+                    <p className="font-semibold mt-4 text-lg">Enter Addresses</p>
+                    <p className="text-sm text-muted-foreground">Select pickup & destination to see the route.</p>
                 </div>
             </div>
           )}
