@@ -100,7 +100,7 @@ const getQuoteFlow = ai.defineFlow(
     outputSchema: GetQuoteOutputSchema,
   },
   async (input) => {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GOOGLE_SERVER_API_KEY;
     if (!apiKey) {
       throw new Error('The API key is not configured on the server. Please contact support.');
     }
@@ -135,7 +135,7 @@ const getQuoteFlow = ai.defineFlow(
                 throw new Error('No route could be found. Please check that the addresses are correct and try again.');
             }
             if (data.status === 'REQUEST_DENIED') {
-                throw new Error('The request was denied. This may be an issue with the API key configuration.');
+                throw new Error('The request was denied by Google Maps. This may be an issue with the API key configuration. Please ensure the "Directions API" is enabled for your key in the Google Cloud Console.');
             }
             throw new Error(`Failed to get directions: ${errorMessage}. Please try again later.`);
         }
