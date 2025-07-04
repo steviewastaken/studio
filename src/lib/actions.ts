@@ -29,6 +29,10 @@ import {
   getDriverPerformanceReport as getDriverPerformanceReportFlow,
   type GetDriverPerformanceReportInput,
 } from '@/ai/flows/get-driver-performance-report';
+import {
+  correctAddress as correctAddressFlow,
+  type CorrectAddressInput,
+} from '@/ai/flows/correct-address';
 
 export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   try {
@@ -98,4 +102,14 @@ export async function handleGetDriverPerformanceReport(data: GetDriverPerformanc
         console.error("handleGetDriverPerformanceReport Error:", error.message);
         return { success: false, error: error.message || 'Failed to generate performance report.' };
     }
+}
+
+export async function handleCorrectAddress(data: CorrectAddressInput) {
+  try {
+    const result = await correctAddressFlow(data);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error("handleCorrectAddress Error:", error.message);
+    return { success: false, error: error.message || 'Failed to verify the address.' };
+  }
 }
