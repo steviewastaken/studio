@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import SupportChat from '@/components/dunlivrer/support-chat';
 import TrackingMap from '@/components/dunlivrer/tracking-map';
@@ -12,7 +13,6 @@ import { motion } from 'framer-motion';
 import type { FindDriverOutput } from '@/ai/flows/find-driver';
 import { handleFindDriver } from '@/lib/actions';
 
-// Mock data until we have a backend. Using realistic French addresses for consistency.
 const mockDelivery: DeliveryDetails = {
     pickupAddress: 'Rue de Rivoli, 75001 Paris, France', // Louvre Museum
     destinationAddresses: ['Champ de Mars, 5 Av. Anatole France, 75007 Paris, France'], // Eiffel Tower
@@ -39,17 +39,38 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' }}
 }
 
+export type DeliveryStatus = 'IDLE' | 'SEARCHING' | 'FOUND' | 'IN_TRANSIT' | 'DELIVERED';
 
 export default function TrackingPage() {
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
   const [trackingId, setTrackingId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState<DeliveryStatus>('IDLE');
 
+  const progressTimeoutRefs = useRef<NodeJS.Timeout[]>([]);
+
+  // Clear any pending simulations when component unmounts
+  useEffect(() => {
+    return () => {
+      progressTimeoutRefs.current.forEach(clearTimeout);
+    };
+  }, []);
+  
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!trackingId) return;
+
+    // Clear previous simulation timeouts
+    progressTimeoutRefs.current.forEach(clearTimeout);
+    progressTimeoutRefs.current = [];
+
     setIsLoading(true);
+    setDeliveryStatus('SEARCHING');
+    
+    // Reset state for new search
+    setDeliveryDetails(null);
+    setDriverDetails(null);
     
     // Simulate API call to get delivery details
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -57,11 +78,21 @@ export default function TrackingPage() {
 
     // Find a driver for the mock delivery
     const driverResult = await handleFindDriver({ pickupAddress: mockDelivery.pickupAddress });
+    setIsLoading(false);
+
     if (driverResult.success && driverResult.data) {
         setDriverDetails(driverResult.data);
-    }
+        setDeliveryStatus('FOUND');
 
-    setIsLoading(false);
+        // Simulate further progress
+        const inTransitTimeout = setTimeout(() => setDeliveryStatus('IN_TRANSIT'), 4000);
+        const deliveredTimeout = setTimeout(() => setDeliveryStatus('DELIVERED'), 9000);
+        progressTimeoutRefs.current = [inTransitTimeout, deliveredTimeout];
+
+    } else {
+        // Handle error: Reset status if driver not found
+        setDeliveryStatus('IDLE');
+    }
   };
 
   return (
@@ -85,7 +116,11 @@ export default function TrackingPage() {
             variants={sectionVariants}
         >
             <motion.div className="lg:col-span-3 flex flex-col gap-8" variants={itemVariants}>
-                <TrackingMap deliveryDetails={deliveryDetails} driverDetails={driverDetails} />
+                <TrackingMap 
+                    deliveryDetails={deliveryDetails} 
+                    driverDetails={driverDetails} 
+                    deliveryStatus={deliveryStatus} 
+                />
             </motion.div>
             <motion.div className="lg:col-span-2 flex flex-col gap-8" variants={itemVariants}>
                  <Card className="bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">

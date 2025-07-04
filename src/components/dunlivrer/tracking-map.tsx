@@ -2,30 +2,58 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { DeliveryDetails } from "./types";
-import { MapPin, Package, Clock, CheckCircle2, Truck, Home, ArrowRight } from "lucide-react";
+import { MapPin, Package, Clock, CheckCircle2, Truck, Home, UserRoundCheck, ArrowRight } from "lucide-react";
 import MapComponent from "./map-component";
 import type { FindDriverOutput } from "@/ai/flows/find-driver";
+import type { DeliveryStatus } from "@/app/tracking/page";
+import { cn } from "@/lib/utils";
 
 type TrackingMapProps = {
   deliveryDetails: DeliveryDetails | null;
   driverDetails: FindDriverOutput | null;
+  deliveryStatus: DeliveryStatus;
 };
 
 function StatusStep({ icon, label, isCompleted, isCurrent }: { icon: React.ReactNode, label: string, isCompleted: boolean, isCurrent: boolean }) {
   return (
     <div className="flex flex-col items-center gap-2 flex-1 z-10">
-      <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${isCompleted || isCurrent ? 'bg-primary border-primary/50 text-primary-foreground' : 'bg-muted border-transparent text-muted-foreground'}`}>
+      <div className={cn(
+        "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-4",
+        isCompleted ? 'bg-primary border-primary/50 text-primary-foreground' :
+        isCurrent ? 'bg-primary border-primary/50 text-primary-foreground scale-110 shadow-lg shadow-primary/40' :
+        'bg-muted border-transparent text-muted-foreground'
+      )}>
         {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : icon}
       </div>
-      <p className={`text-sm font-medium ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`}>{label}</p>
+      <p className={cn(
+        "text-xs md:text-sm font-medium transition-colors",
+        isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+      )}>{label}</p>
     </div>
   );
 }
 
-export default function TrackingMap({ deliveryDetails, driverDetails }: TrackingMapProps) {
+const steps = [
+    { id: 'SCHEDULED', label: 'Scheduled', icon: <Package className="w-6 h-6" /> },
+    { id: 'FOUND', label: 'Driver Assigned', icon: <UserRoundCheck className="w-6 h-6" /> },
+    { id: 'IN_TRANSIT', label: 'In Transit', icon: <Truck className="w-6 h-6" /> },
+    { id: 'DELIVERED', label: 'Delivered', icon: <Home className="w-6 h-6" /> }
+];
+
+const statusMap: { [key in DeliveryStatus]: number } = {
+    IDLE: -1,
+    SEARCHING: 0,
+    FOUND: 1,
+    IN_TRANSIT: 2,
+    DELIVERED: 3
+};
+
+export default function TrackingMap({ deliveryDetails, driverDetails, deliveryStatus }: TrackingMapProps) {
   const pickup = deliveryDetails?.pickupAddress ?? null;
   const destinations = deliveryDetails?.destinationAddresses ?? [];
-  const progressPercentage = deliveryDetails ? (driverDetails ? 50 : 25) : 0;
+
+  const currentStepIndex = statusMap[deliveryStatus];
+  const progressPercentage = currentStepIndex >= 0 ? (currentStepIndex / (steps.length - 1)) * 100 : 0;
   
   return (
     <Card className="w-full h-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
@@ -70,23 +98,33 @@ export default function TrackingMap({ deliveryDetails, driverDetails }: Tracking
         {deliveryDetails && (
           <Card className="bg-transparent border-none shadow-none">
             <CardContent className="p-0">
-              <div className="flex items-center justify-between relative">
-                <div className="absolute top-6 left-0 w-full h-0.5 bg-muted-foreground/20">
-                    <div className="h-0.5 bg-primary transition-all duration-1000" style={{width: `${progressPercentage}%`}}></div>
+              <div className="flex items-center justify-between relative px-2 md:px-4">
+                <div className="absolute top-6 left-0 w-full h-1 bg-muted-foreground/20">
+                    <div className="h-1 bg-primary transition-all duration-1000 ease-in-out" style={{width: `${progressPercentage}%`}}></div>
                 </div>
-                {/* For this demo, we'll show a static progress state once an order is tracked. */}
-                <StatusStep icon={<Package className="w-6 h-6" />} label="Scheduled" isCompleted={true} isCurrent={false} />
-                <StatusStep icon={<Truck className="w-6 h-6" />} label="In Transit" isCompleted={false} isCurrent={true} />
-                <StatusStep icon={<Home className="w-6 h-6" />} label="Delivered" isCompleted={false} isCurrent={false} />
+                {steps.map((step, index) => (
+                  <StatusStep
+                    key={step.id}
+                    icon={step.icon}
+                    label={step.label}
+                    isCompleted={index < currentStepIndex}
+                    isCurrent={index === currentStepIndex}
+                  />
+                ))}
               </div>
               <Separator className="my-6" />
               <div className="flex justify-between items-center text-foreground">
                   <div className="flex items-center gap-2 text-sm">
                       <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span>Estimated Arrival:</span>
+                      <span>{deliveryStatus === 'DELIVERED' ? 'Status' : 'Estimated Arrival:'}</span>
                   </div>
                   <span className="font-bold text-xl text-primary">
-                    {driverDetails ? driverDetails.driverEta : 'Calculating...'}
+                    {deliveryStatus === 'DELIVERED'
+                        ? 'Package Delivered'
+                        : driverDetails
+                        ? driverDetails.driverEta
+                        : 'Calculating...'
+                    }
                   </span>
               </div>
             </CardContent>
