@@ -108,20 +108,13 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
   }, [onAddressChange]);
 
   useEffect(() => {
-    const subscription = watch((value, { name }) => {
+    const subscription = watch((value) => {
         handleAddressChangeCallback(value as z.infer<typeof formSchema>);
         setIsReviewed(false);
         setQuote(null);
-        if (name && validatedFields.has(name)) {
-            setValidatedFields(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(name);
-                return newSet;
-            });
-        }
     });
     return () => subscription.unsubscribe();
-  }, [watch, handleAddressChangeCallback, validatedFields]);
+  }, [watch, handleAddressChangeCallback]);
 
 
   async function onGetQuote(values: z.infer<typeof formSchema>) {
@@ -286,12 +279,26 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
       const isVerified = validatedFields.has(fieldName);
       const fieldValue = watch(fieldName);
       const isAlreadySaved = savedAddresses.some(addr => addr.address === fieldValue);
+      
+      const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          field.onChange(e); // Propagate change to RHF
+          // User is typing manually, so un-verify the address
+          setValidatedFields(prev => {
+              if (prev.has(fieldName)) {
+                  const newSet = new Set(prev);
+                  newSet.delete(fieldName);
+                  return newSet;
+              }
+              return prev;
+          });
+      };
 
       return (
         <FormItem className="flex flex-col">
             <FormControl>
                 <AddressAutocomplete
                     {...field}
+                    onChange={handleInputChange}
                     placeholder={placeholder}
                     onPlaceChanged={(place) => {
                         if (place.formatted_address) {
@@ -357,16 +364,6 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
 
                 <div className="space-y-4">
                   <FormLabel>Destination Addresses</FormLabel>
-                   {user && savedAddresses.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                        {savedAddresses.map(addr => (
-                            <Badge key={addr.id} variant="outline" className="cursor-pointer hover:border-primary/80 hover:bg-primary/10" onClick={() => handleSelectSavedAddress(`destinationAddresses.0.value`, addr.address)}>
-                                 {addressIcons[addr.label.toLowerCase()] || <Star className="w-3 h-3"/>}
-                                <span className="ml-1.5">{addr.label}</span>
-                            </Badge>
-                        ))}
-                    </div>
-                )}
                   {fields.map((field, index) => {
                     const fieldName = `destinationAddresses.${index}.value`;
                     return (
