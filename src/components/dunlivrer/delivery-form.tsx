@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion, CheckCircle2, Star, Briefcase, Home } from 'lucide-react';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, CheckCircle, Euro, Milestone, Timer, ShieldAlert, ShieldCheck, ShieldQuestion, CheckCircle2, Star, Briefcase, Home, MapPin, Search } from 'lucide-react';
 import { handleFindDriver, handleGetQuote, handleDetectFraud, getSavedAddresses, addSavedAddress } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { FindDriverOutput, FindDriverInput } from '@/ai/flows/find-driver';
@@ -100,12 +100,23 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
 
   const handleAddressChangeCallback = useCallback((value: z.infer<typeof formSchema>) => {
     const { pickupAddress, destinationAddresses } = value;
-    const destinations = destinationAddresses?.map(d => d.value).filter(Boolean) || [];
+
+    // Only include pickup if it's validated
+    const validPickup = validatedFields.has('pickupAddress') ? pickupAddress : null;
+
+    // Only include destinations that are validated
+    const validDestinations = destinationAddresses
+        .map((dest, index) => {
+            const fieldName = `destinationAddresses.${index}.value`;
+            return validatedFields.has(fieldName) ? dest.value : null;
+        })
+        .filter((d): d is string => !!d);
+
     onAddressChange({
-      pickup: pickupAddress || null,
-      destinations: destinations,
+      pickup: validPickup,
+      destinations: validDestinations,
     });
-  }, [onAddressChange]);
+  }, [onAddressChange, validatedFields]);
 
   useEffect(() => {
     const subscription = watch((value) => {
@@ -275,48 +286,47 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
 
   const isDispatchLoading = isCheckingFraud || isFindingDriver;
 
-  const renderAddressField = (field: any, fieldName: any, placeholder: string) => {
+  const renderAddressField = (field: any, fieldName: any, placeholder: string, label: string) => {
       const isVerified = validatedFields.has(fieldName);
       const fieldValue = watch(fieldName);
       const isAlreadySaved = savedAddresses.some(addr => addr.address === fieldValue);
       
       const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           field.onChange(e); // Propagate change to RHF
-          // User is typing manually, so un-verify the address
           setValidatedFields(prev => {
-              if (prev.has(fieldName)) {
-                  const newSet = new Set(prev);
-                  newSet.delete(fieldName);
-                  return newSet;
-              }
-              return prev;
+              const newSet = new Set(prev);
+              newSet.delete(fieldName);
+              return newSet;
           });
       };
 
       return (
-        <FormItem className="flex flex-col">
-            <FormControl>
-                <AddressAutocomplete
-                    {...field}
-                    onChange={handleInputChange}
-                    placeholder={placeholder}
-                    onPlaceChanged={(place) => {
-                        if (place.formatted_address) {
-                            setValue(fieldName, place.formatted_address, { shouldValidate: true, shouldDirty: true });
-                            setValidatedFields(prev => new Set(prev).add(fieldName));
-                        }
-                    }}
-                    className="h-12"
-                />
-            </FormControl>
-            <FormMessage />
-            <div className="flex flex-wrap items-center gap-2 pt-1 min-h-[26px]">
-                {isVerified && (
-                    <div className="flex items-center gap-1.5 text-xs text-green-500 mt-1 animate-in fade-in-0">
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        <span>Address Verified</span>
-                    </div>
-                )}
+        <FormItem className="space-y-2">
+            <FormLabel>{label}</FormLabel>
+            <div className="flex items-center gap-2">
+              <div className="w-10 shrink-0">
+                  <Badge variant={isVerified ? "default" : "outline"} className="w-10 h-10 flex items-center justify-center">
+                    { isVerified ? <CheckCircle className="h-5 w-5"/> : <MapPin className="h-5 w-5"/>}
+                  </Badge>
+              </div>
+              <div className="grow">
+                <FormControl>
+                    <AddressAutocomplete
+                        {...field}
+                        onChange={handleInputChange}
+                        placeholder={placeholder}
+                        onPlaceChanged={(place) => {
+                            if (place.formatted_address) {
+                                setValue(fieldName, place.formatted_address, { shouldValidate: true, shouldDirty: true });
+                                setValidatedFields(prev => new Set(prev).add(fieldName));
+                            }
+                        }}
+                        className="h-10"
+                    />
+                </FormControl>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 pl-12 min-h-[26px]">
                 {isVerified && user && !isAlreadySaved && (
                     <Button
                         type="button"
@@ -325,10 +335,11 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                         className="text-xs h-auto py-0.5 px-2 text-primary hover:bg-primary/10"
                         onClick={() => handleOpenSaveDialog(fieldValue)}
                     >
-                        <Star className="w-3 h-3 mr-1.5"/> Save
+                        <Star className="w-3 h-3 mr-1.5"/> Save for later
                     </Button>
                 )}
             </div>
+            <FormMessage className="pl-12"/>
         </FormItem>
       )
   };
@@ -343,10 +354,15 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
               <CardDescription>Fill in your delivery details. Add multiple destinations for a smart route.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <FormLabel>Pickup Address</FormLabel>
-                {user && savedAddresses.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+              <FormField
+                  control={form.control}
+                  name="pickupAddress"
+                  render={({ field }) => renderAddressField(field, 'pickupAddress', 'Enter pickup address...', 'Pickup Location')}
+              />
+              {user && savedAddresses.length > 0 && (
+                <div className="pl-12">
+                    <FormLabel className="text-xs text-muted-foreground">Or select a saved address:</FormLabel>
+                    <div className="flex flex-wrap gap-2 pt-2">
                         {savedAddresses.map(addr => (
                             <Badge key={addr.id} variant="outline" className="cursor-pointer hover:border-primary/80 hover:bg-primary/10" onClick={() => handleSelectSavedAddress('pickupAddress', addr.address)}>
                                 {addressIcons[addr.label.toLowerCase()] || <Star className="w-3 h-3"/>}
@@ -354,18 +370,13 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                             </Badge>
                         ))}
                     </div>
-                )}
-                <FormField
-                    control={form.control}
-                    name="pickupAddress"
-                    render={({ field }) => renderAddressField(field, 'pickupAddress', 'Enter pickup address...')}
-                />
-              </div>
+                </div>
+              )}
+
 
                 <div className="space-y-4">
-                  <FormLabel>Destination Addresses</FormLabel>
                   {fields.map((field, index) => {
-                    const fieldName = `destinationAddresses.${index}.value`;
+                    const fieldName = `destinationAddresses.${index}.value` as const;
                     return (
                         <div key={field.id} className="relative space-y-2">
                             <div className="flex items-start gap-2">
@@ -373,15 +384,27 @@ export default function DeliveryForm({ onAddressChange }: DeliveryFormProps) {
                                     <FormField
                                         control={form.control}
                                         name={fieldName}
-                                        render={({ field: renderField }) => renderAddressField(renderField, fieldName, `Destination #${index + 1}`)}
+                                        render={({ field: renderField }) => renderAddressField(renderField, fieldName, `Destination #${index + 1}`, `Destination ${index + 1}`)}
                                     />
                                 </div>
                                 {fields.length > 1 && (
-                                    <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0 mt-2">
+                                    <Button variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0 mt-8">
                                         <Trash2 className="w-4 h-4 text-destructive"/>
                                     </Button>
                                 )}
                             </div>
+                             {user && savedAddresses.length > 0 && (
+                                <div className="pl-12">
+                                     <div className="flex flex-wrap gap-2 pt-1">
+                                        {savedAddresses.map(addr => (
+                                            <Badge key={addr.id} variant="outline" className="cursor-pointer hover:border-primary/80 hover:bg-primary/10" onClick={() => handleSelectSavedAddress(fieldName, addr.address)}>
+                                                {addressIcons[addr.label.toLowerCase()] || <Star className="w-3 h-3"/>}
+                                                <span className="ml-1.5">{addr.label}</span>
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                              )}
                         </div>
                     )
                   })}
