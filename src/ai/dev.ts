@@ -10,3 +10,4 @@ import '@/ai/flows/reroute-delivery.ts';
 import '@/ai/flows/detect-emotion.ts';
 import '@/ai/flows/get-driver-performance-report.ts';
 import '@/ai/flows/create-incident-report.ts';
+import '@/ai/flows/text-to-speech.ts';

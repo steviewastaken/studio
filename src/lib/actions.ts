@@ -37,6 +37,10 @@ import {
   createIncidentReport as createIncidentReportFlow,
   type CreateIncidentReportInput,
 } from '@/ai/flows/create-incident-report';
+import {
+  textToSpeech as textToSpeechFlow,
+  type TextToSpeechInput,
+} from '@/ai/flows/text-to-speech';
 
 export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   try {
@@ -125,5 +129,15 @@ export async function handleCreateIncidentReport(data: CreateIncidentReportInput
     } catch (error: any) {
         console.error("handleCreateIncidentReport Error:", error.message);
         return { success: false, error: error.message || 'Failed to generate incident report.' };
+    }
+}
+
+export async function handleTextToSpeech(data: TextToSpeechInput) {
+    try {
+        const result = await textToSpeechFlow(data);
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("handleTextToSpeech Error:", error.message);
+        return { success: false, error: error.message || 'Failed to generate audio.' };
     }
 }
