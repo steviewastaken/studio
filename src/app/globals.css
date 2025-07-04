@@ -70,3 +70,8 @@
                       radial-gradient(circle at 75% 75%, hsl(var(--accent) / 0.1), transparent 40%);
   }
 }
+
+/* Fix for Google Places Autocomplete dropdown appearing behind other elements */
+.pac-container {
+    z-index: 9999 !important;
+}
