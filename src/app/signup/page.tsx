@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
 import { useState } from 'react';
 import { MailCheck } from 'lucide-react';
@@ -24,6 +24,8 @@ const formSchema = z.object({
 export default function SignUpPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/';
   const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -58,7 +60,7 @@ export default function SignUpPage() {
             title: "Account Created!",
             description: "You have been signed in successfully.",
         });
-        router.push('/');
+        router.push(redirectPath);
         router.refresh();
       }
     }
@@ -91,6 +93,8 @@ export default function SignUpPage() {
         </div>
     );
   }
+
+  const signInHref = redirectPath !== '/' ? `/signin?redirect=${redirectPath}` : '/signin';
 
   return (
     <div className="flex items-center justify-center min-h-screen pt-20">
@@ -137,7 +141,7 @@ export default function SignUpPage() {
         </CardContent>
         <CardFooter className="justify-center">
             <p className="text-sm text-muted-foreground">
-                Already have an account? <Link href="/signin" className="text-primary hover:underline font-medium">Sign In</Link>
+                Already have an account? <Link href={signInHref} className="text-primary hover:underline font-medium">Sign In</Link>
             </p>
         </CardFooter>
       </Card>

@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
 
 const formSchema = z.object({
@@ -20,6 +20,8 @@ const formSchema = z.object({
 export default function SignInPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/';
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,7 +47,8 @@ export default function SignInPage() {
             title: "Signed In!",
             description: "Welcome back!",
         });
-        router.push('/');
+        router.push(redirectPath);
+        router.refresh();
     }
   }
 
