@@ -17,6 +17,7 @@ type Message = {
   id: number;
   role: "user" | "ai";
   content: string;
+  language?: string;
 };
 
 type SupportChatProps = {
@@ -58,7 +59,6 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
         if (SpeechRecognition) {
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = false;
-            recognitionRef.current.lang = 'en-US';
             recognitionRef.current.interimResults = false;
 
             recognitionRef.current.onresult = (event: any) => {
@@ -80,8 +80,8 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
     }
   }, [toast, isListening]); // Dependencies
 
-  const generateAndPlayAudio = async (text: string) => {
-      const audioResult = await handleTextToSpeech(text);
+  const generateAndPlayAudio = async (text: string, language?: string) => {
+      const audioResult = await handleTextToSpeech({ text, language });
       if (audioResult.success && audioResult.data) {
           setCurrentAudioSrc(audioResult.data.audioDataUri);
       } else {
@@ -99,7 +99,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
       if (newAudioState && messages.length > 0) {
           const lastMessage = messages[messages.length - 1];
           if (lastMessage.role === 'ai') {
-             await generateAndPlayAudio(lastMessage.content);
+             await generateAndPlayAudio(lastMessage.content, lastMessage.language);
           }
       }
   };
@@ -121,11 +121,11 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
   useEffect(() => {
     if (deliveryDetails) {
         setMessages([
-            { id: 1, role: "ai", content: `Hello! I can help with questions about your delivery from ${deliveryDetails.pickupAddress}. How can I assist?` }
+            { id: 1, role: "ai", content: `Hello! I can help with questions about your delivery from ${deliveryDetails.pickupAddress}. How can I assist?`, language: 'en-US' }
         ]);
     } else {
         setMessages([
-            { id: 1, role: "ai", content: "Hello! I'm the Dunlivrer AI assistant. Feel free to ask me any general questions about our services." }
+            { id: 1, role: "ai", content: "Hello! I'm the Dunlivrer AI assistant. Feel free to ask me any general questions about our services.", language: 'en-US' }
         ]);
     }
   }, [deliveryDetails]);
@@ -153,11 +153,11 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
     const result = await handleSupportQuestion({ question: query, deliveryDetails: deliveryDetailsString });
     
     if (result.success && result.data) {
-        const aiMessage: Message = { id: Date.now() + 1, role: "ai", content: result.data.answer };
+        const aiMessage: Message = { id: Date.now() + 1, role: "ai", content: result.data.answer, language: result.data.language };
         setMessages(prev => [...prev, aiMessage]);
         
         if (isAudioEnabled) {
-            await generateAndPlayAudio(result.data.answer);
+            await generateAndPlayAudio(result.data.answer, result.data.language);
         }
     } else {
         toast({
@@ -166,11 +166,11 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
             description: result.error
         });
         const errorMessageText = "Sorry, I couldn't process that. Please try again.";
-        const errorMessage: Message = { id: Date.now() + 1, role: "ai", content: errorMessageText };
+        const errorMessage: Message = { id: Date.now() + 1, role: "ai", content: errorMessageText, language: 'en-US' };
         setMessages(prev => [...prev, errorMessage]);
 
         if (isAudioEnabled) {
-             await generateAndPlayAudio(errorMessageText);
+             await generateAndPlayAudio(errorMessageText, 'en-US');
         }
     }
     

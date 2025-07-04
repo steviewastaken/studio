@@ -11,7 +11,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import wav from 'wav';
 
-const TextToSpeechInputSchema = z.string().describe('The text to be converted to speech.');
+const TextToSpeechInputSchema = z.object({
+  text: z.string().describe('The text to be converted to speech.'),
+  language: z.string().optional().describe('The BCP-47 language code for the text (e.g., "en-US", "fr-FR", "es-ES"). Defaults to English if not provided.'),
+});
 export type TextToSpeechInput = z.infer<typeof TextToSpeechInputSchema>;
 
 const TextToSpeechOutputSchema = z.object({
@@ -58,18 +61,27 @@ const textToSpeechFlow = ai.defineFlow(
     inputSchema: TextToSpeechInputSchema,
     outputSchema: TextToSpeechOutputSchema,
   },
-  async (query) => {
+  async (input) => {
+    let voiceName = 'Algenib'; // Default English voice
+    if (input.language) {
+      if (input.language.startsWith('fr')) {
+        voiceName = 'Caph'; // French voice
+      } else if (input.language.startsWith('es')) {
+        voiceName = 'Electra'; // Spanish voice
+      }
+    }
+
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Algenib' },
+            prebuiltVoiceConfig: { voiceName },
           },
         },
       },
-      prompt: query,
+      prompt: input.text,
     });
 
     if (!media) {
