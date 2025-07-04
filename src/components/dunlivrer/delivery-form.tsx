@@ -8,7 +8,6 @@ import * as z from 'zod';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, ShieldAlert, ShieldQuestion } from 'lucide-react';
 import { handleGetQuote, handleDetectFraud } from '@/lib/actions';
@@ -21,6 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useJobs } from '@/context/jobs-context';
+import AddressInput from './address-input';
 
 const formSchema = z.object({
   pickupAddress: z.string({ required_error: "Please select a pickup location."}).min(1, "Please select a pickup location."),
@@ -234,7 +234,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
                      <FormItem>
                         <FormLabel>Pickup Location</FormLabel>
                         <FormControl>
-                            <Input placeholder="Enter pickup address..." {...field} />
+                            <AddressInput placeholder="Enter pickup address..." {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -251,7 +251,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
                                <FormItem>
                                     <FormLabel>Destination {index + 1}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={`Destination #${index + 1}`} {...field} />
+                                        <AddressInput placeholder={`Destination #${index + 1}`} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
