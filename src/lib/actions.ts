@@ -148,7 +148,7 @@ export async function handleTextToSpeech(data: TextToSpeechInput) {
 
 export async function handleGetDemandForecast(data?: GetDemandForecastInput) {
     try {
-        const result = await getDemandForecastFlow(data);
+        const result = await getDemandForecastFlow(data || {});
         return { success: true, data: result };
     } catch (error: any) {
         console.error("handleGetDemandForecast Error:", error.message);

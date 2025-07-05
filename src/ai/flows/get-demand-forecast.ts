@@ -20,7 +20,7 @@ const ForecastSchema = z.object({
 
 const GetDemandForecastInputSchema = z.object({
   // No input needed for this demo, it will generate a forecast for the current time.
-}).optional();
+});
 export type GetDemandForecastInput = z.infer<typeof GetDemandForecastInputSchema>;
 
 const GetDemandForecastOutputSchema = z.object({
@@ -29,7 +29,7 @@ const GetDemandForecastOutputSchema = z.object({
 });
 export type GetDemandForecastOutput = z.infer<typeof GetDemandForecastOutputSchema>;
 
-export async function getDemandForecast(input?: GetDemandForecastInput): Promise<GetDemandForecastOutput> {
+export async function getDemandForecast(input: GetDemandForecastInput): Promise<GetDemandForecastOutput> {
   return getDemandForecastFlow(input);
 }
 
@@ -73,7 +73,7 @@ const getDemandForecastFlow = ai.defineFlow(
     outputSchema: GetDemandForecastOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input || {});
+    const {output} = await prompt(input);
     if (!output) {
       throw new Error('The AI model failed to generate a demand forecast.');
     }
