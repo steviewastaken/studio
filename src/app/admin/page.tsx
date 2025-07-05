@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, AlertTriangle, UserPlus } from "lucide-react";
+import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, AlertTriangle, UserPlus, Headset } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -50,6 +50,7 @@ const recentActivities = [
   { icon: <UserPlus className="text-green-500" />, text: "New courier 'Speedy Gonzalez' just signed up.", time: "2m ago" },
   { icon: <CheckCircle className="text-primary" />, text: "Delivery #DNLVR-789 successfully completed.", time: "5m ago" },
   { icon: <AlertTriangle className="text-yellow-500" />, text: "Fraud alert triggered for transaction #FT-9912.", time: "8m ago" },
+  { icon: <Headset className="text-blue-500" />, text: "Support AI escalated chat #chat-2 to human review.", time: "12m ago" },
   { icon: <Euro className="text-green-500" />, text: "High-value delivery of €550 scheduled.", time: "15m ago" },
 ];
 
@@ -122,7 +123,7 @@ export default function AdminPage() {
     const router = useRouter();
 
     useEffect(() => {
-        if (!loading && !user) {
+        if (!loading && user?.role !== 'admin') {
             router.push('/signin?redirect=/admin');
         }
     }, [loading, user, router]);
@@ -146,7 +147,7 @@ export default function AdminPage() {
             </motion.div>
             
              <motion.div
-                className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+                className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 0.2, staggerChildren: 0.1 } }}
             >
@@ -195,6 +196,18 @@ export default function AdminPage() {
                         <CardContent>
                             <div className="text-2xl font-bold">3</div>
                             <p className="text-xs text-muted-foreground">Awaiting manual review</p>
+                        </CardContent>
+                    </Card>
+                 </Link>
+                 <Link href="/admin/support">
+                    <Card className="bg-card/80 border-white/10 hover:border-primary/50 transition-colors h-full">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Live Support</CardTitle>
+                            <Headset className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">1</div>
+                            <p className="text-xs text-muted-foreground">Chat requires attention</p>
                         </CardContent>
                     </Card>
                  </Link>
