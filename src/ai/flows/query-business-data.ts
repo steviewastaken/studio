@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI assistant for querying business intelligence data.
@@ -32,17 +33,17 @@ const getDeliveryStats = ai.defineTool(
     name: 'getDeliveryStats',
     description: 'Returns the number of deliveries based on status, zone, and date range.',
     inputSchema: z.object({
-      status: z.enum(['completed', 'failed', 'pending']).describe('The delivery status to count.'),
+      status: z.enum(['completed', 'failed', 'pending', 'refunded']).describe('The delivery status to count.'),
       zone: z.string().optional().describe('The specific city zone to filter by.'),
       date: z.string().describe('The date to query in YYYY-MM-DD format.'),
     }),
     outputSchema: z.number().describe('The total count of matching deliveries.'),
   },
-  async ({ status, zone, date }) => {
+  async (input) => {
     return MOCK_DATA.deliveries.filter(d => 
-        d.date === date && 
-        d.status === status &&
-        (!zone || d.zone === zone)
+        d.date === input.date && 
+        d.status === input.status &&
+        (!input.zone || d.zone === input.zone)
     ).length;
   }
 );
@@ -59,8 +60,8 @@ const getRefundRate = ai.defineTool(
     }),
     outputSchema: z.number().describe('The refund rate as a percentage (e.g., 15.5 for 15.5%).'),
   },
-  async ({ zone }) => {
-    if (zone === 'Zone 13') {
+  async (input) => {
+    if (input.zone === 'Zone 13') {
         // 1 refund out of 2 total deliveries for Zone 13 in the mock data
         return 50.0;
     }
@@ -79,9 +80,9 @@ const getCancellationInsights = ai.defineTool(
     }),
     outputSchema: z.string().describe('A summary explaining the cancellation data for that day.'),
   },
-  async ({ date }) => {
-      if (MOCK_DATA.cancellations[date as keyof typeof MOCK_DATA.cancellations]) {
-          return MOCK_DATA.cancellations[date as keyof typeof MOCK_DATA.cancellations].reason;
+  async (input) => {
+      if (MOCK_DATA.cancellations[input.date as keyof typeof MOCK_DATA.cancellations]) {
+          return MOCK_DATA.cancellations[input.date as keyof typeof MOCK_DATA.cancellations].reason;
       }
       return "No significant cancellation events were recorded on this day. The cancellation rate was nominal.";
   }
