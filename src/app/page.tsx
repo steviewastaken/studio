@@ -6,7 +6,7 @@ import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion } from 'framer-motion';
@@ -16,9 +16,11 @@ import SupportChat from '@/components/dunlivrer/support-chat';
 import { useLanguage } from '@/context/language-context';
 import { translations } from '@/lib/translations';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { GetInsuranceQuoteOutput } from '@/ai/flows/get-insurance-quote';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 
 const sectionVariants = {
@@ -55,7 +57,7 @@ const staggeredContainer = {
   },
 };
 
-const EstimatorBox = ({ quote, isGettingQuote }: { quote: GetQuoteOutput | null; isGettingQuote: boolean }) => {
+const EstimatorBox = ({ quote, insuranceQuote, isGettingQuote }: { quote: GetQuoteOutput | null; insuranceQuote: GetInsuranceQuoteOutput | null; isGettingQuote: boolean }) => {
     const cardBaseClass = "w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg";
     
     if (isGettingQuote) {
@@ -86,6 +88,8 @@ const EstimatorBox = ({ quote, isGettingQuote }: { quote: GetQuoteOutput | null;
         );
     }
     
+    const totalCost = quote.price + (insuranceQuote?.premium || 0);
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -95,23 +99,21 @@ const EstimatorBox = ({ quote, isGettingQuote }: { quote: GetQuoteOutput | null;
         >
             <Card className={cardBaseClass}>
                 <CardHeader>
-                    <CardTitle className="font-headline text-3xl flex items-center gap-2">
-                        <BrainCircuit className="w-7 h-7 text-primary" /> AI Estimate
+                    <CardTitle className="font-headline text-3xl flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                           <BrainCircuit className="w-7 h-7 text-primary" /> AI Estimate
+                        </span>
+                        <Badge variant="outline" className="text-base">
+                            {quote.etaConfidencePercentage}% Conf.
+                        </Badge>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="text-center">
+                <CardContent className="space-y-4">
+                     <div className="p-4 bg-muted rounded-lg text-center">
                         <p className="text-sm text-muted-foreground">Estimated Arrival</p>
                         <p className="text-4xl font-bold text-primary">{quote.etaConfidenceRange}</p>
-                        <Badge variant="outline" className="mt-2">
-                            {quote.etaConfidencePercentage}% confidence
-                        </Badge>
                     </div>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                        <div className="p-3 bg-muted rounded-lg">
-                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"><Euro className="w-3 h-3"/> Cost</p>
-                            <p className="font-bold text-lg">€{quote.price.toFixed(2)}</p>
-                        </div>
+                    <div className="grid grid-cols-2 gap-4 text-center">
                         <div className="p-3 bg-muted rounded-lg">
                             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"><Milestone className="w-3 h-3"/> Distance</p>
                             <p className="font-bold text-lg">{quote.distance}</p>
@@ -121,6 +123,26 @@ const EstimatorBox = ({ quote, isGettingQuote }: { quote: GetQuoteOutput | null;
                             <p className="font-bold text-lg">{quote.co2Emission}</p>
                         </div>
                     </div>
+                    
+                    <Separator className="my-4"/>
+
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Delivery Cost</span>
+                            <span className="font-medium">€{quote.price.toFixed(2)}</span>
+                        </div>
+                        {insuranceQuote && (
+                            <div className="flex justify-between items-center text-primary">
+                                <span className="flex items-center gap-1.5"><Plus className="w-3 h-3"/> Insurance Premium</span>
+                                <span className="font-medium">€{insuranceQuote.premium.toFixed(2)}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-center font-bold text-lg pt-2 border-t border-dashed">
+                            <span>Total</span>
+                            <span>€{totalCost.toFixed(2)}</span>
+                        </div>
+                    </div>
+
                 </CardContent>
             </Card>
         </motion.div>
@@ -131,6 +153,7 @@ const EstimatorBox = ({ quote, isGettingQuote }: { quote: GetQuoteOutput | null;
 export default function DunlivrerPage() {
   const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
   const [quote, setQuote] = useState<GetQuoteOutput | null>(null);
+  const [insuranceQuote, setInsuranceQuote] = useState<GetInsuranceQuoteOutput | null>(null);
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   
@@ -140,12 +163,14 @@ export default function DunlivrerPage() {
   const handleAddressChange = useCallback((addresses: { pickup: string | null; destinations: string[] }) => {
     setPreviewAddresses(addresses);
     setQuote(null);
+    setInsuranceQuote(null);
     setIsReviewed(false);
   }, []);
 
   const handleQuoteChange = (newQuote: GetQuoteOutput | null) => {
     setQuote(newQuote);
     setIsReviewed(!!newQuote);
+    setInsuranceQuote(null); // Reset insurance when base quote changes
   };
   
   const investorFeatures = [
@@ -422,7 +447,9 @@ export default function DunlivrerPage() {
                 <DeliveryForm 
                   onAddressChange={handleAddressChange}
                   onQuoteChange={handleQuoteChange}
+                  onInsuranceChange={setInsuranceQuote}
                   quote={quote}
+                  insuranceQuote={insuranceQuote}
                   isReviewed={isReviewed}
                   isGettingQuote={isGettingQuote}
                   setIsGettingQuote={setIsGettingQuote}
@@ -463,7 +490,7 @@ export default function DunlivrerPage() {
                         destinationAddresses={previewAddresses.destinations} 
                     />
                 </motion.div>
-                 <EstimatorBox quote={quote} isGettingQuote={isGettingQuote} />
+                 <EstimatorBox quote={quote} insuranceQuote={insuranceQuote} isGettingQuote={isGettingQuote} />
             </div>
         </div>
       </motion.section>

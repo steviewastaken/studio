@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, ShieldAlert, ShieldQuestion } from 'lucide-react';
-import { handleGetQuote, handleDetectFraud } from '@/lib/actions';
+import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, ShieldAlert, ShieldQuestion, Shield } from 'lucide-react';
+import { handleGetQuote, handleDetectFraud, handleGetInsuranceQuote } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import type { DetectFraudOutput, DetectFraudInput } from '@/ai/flows/detect-fraud';
+import type { GetInsuranceQuoteOutput } from '@/ai/flows/get-insurance-quote';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -21,6 +22,8 @@ import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useJobs } from '@/context/jobs-context';
 import AddressInput from './address-input';
+import { Input } from '../ui/input';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const formSchema = z.object({
   pickupAddress: z.string({ required_error: "Please select a pickup location."}).min(1, "Please select a pickup location."),
@@ -37,13 +40,15 @@ const formSchema = z.object({
 type DeliveryFormProps = {
   onAddressChange: (addresses: { pickup: string | null; destinations: string[] }) => void;
   onQuoteChange: (quote: GetQuoteOutput | null) => void;
+  onInsuranceChange: (quote: GetInsuranceQuoteOutput | null) => void;
   quote: GetQuoteOutput | null;
+  insuranceQuote: GetInsuranceQuoteOutput | null;
   isReviewed: boolean;
   isGettingQuote: boolean;
   setIsGettingQuote: (loading: boolean) => void;
 };
 
-export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, isReviewed, isGettingQuote, setIsGettingQuote }: DeliveryFormProps) {
+export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuranceChange, quote, insuranceQuote, isReviewed, isGettingQuote, setIsGettingQuote }: DeliveryFormProps) {
   const { user } = useAuth();
   const { addJob } = useJobs();
   const [isScheduling, setIsScheduling] = useState(false);
@@ -52,6 +57,14 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
   const [isCheckingFraud, setIsCheckingFraud] = useState(false);
   const [fraudResult, setFraudResult] = useState<DetectFraudOutput | null>(null);
   const [showFraudDialog, setShowFraudDialog] = useState(false);
+
+  // Insurance Dialog State
+  const [showInsuranceDialog, setShowInsuranceDialog] = useState(false);
+  const [declaredValue, setDeclaredValue] = useState('');
+  const [packageCategory, setPackageCategory] = useState('');
+  const [isCheckingInsurance, setIsCheckingInsurance] = useState(false);
+  const [localInsuranceQuote, setLocalInsuranceQuote] = useState<GetInsuranceQuoteOutput | null>(null);
+
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -89,6 +102,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
   async function onGetQuote(values: z.infer<typeof formSchema>) {
     setIsGettingQuote(true);
     onQuoteChange(null);
+    onInsuranceChange(null);
 
     const result = await handleGetQuote({
         pickupAddress: values.pickupAddress,
@@ -123,7 +137,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
         pickup: values.pickupAddress,
         dropoff: values.destinationAddresses[values.destinationAddresses.length - 1].value,
         distance: quote.distance,
-        payout: (quote.price * 0.8).toFixed(2),
+        payout: ((quote.price + (insuranceQuote?.premium || 0)) * 0.8).toFixed(2),
         time: quote.eta,
       };
       addJob(newJob);
@@ -137,6 +151,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
 
   const resetFormState = () => {
     onQuoteChange(null);
+    onInsuranceChange(null);
     form.reset();
   }
 
@@ -208,6 +223,32 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
       title: 'Delivery Scheduled!',
       description: `Your delivery is scheduled for ${format(scheduledDate, 'PPP')} between ${scheduledTime}.`,
     });
+  };
+
+  const handleCalculateInsurance = async () => {
+    if (!declaredValue || !packageCategory || !quote) return;
+    setIsCheckingInsurance(true);
+    setLocalInsuranceQuote(null);
+
+    const result = await handleGetInsuranceQuote({
+        deliveryValue: parseFloat(declaredValue),
+        packageCategory,
+        pickupAddress: form.getValues('pickupAddress'),
+        destinationAddress: form.getValues('destinationAddresses')[0].value,
+        courierTrustScore: Math.floor(Math.random() * 25) + 75, // Random score between 75-100
+    });
+
+    if (result.success && result.data) {
+        setLocalInsuranceQuote(result.data);
+    } else {
+        toast({ variant: 'destructive', title: 'Insurance Quote Failed', description: result.error });
+    }
+    setIsCheckingInsurance(false);
+  };
+  
+  const handleAddInsurance = () => {
+    onInsuranceChange(localInsuranceQuote);
+    setShowInsuranceDialog(false);
   };
     
   const timeSlots = Array.from({ length: 10 }, (_, i) => {
@@ -322,15 +363,19 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
               </Button>
               {isReviewed && quote && (
                 <div className="w-full pt-4 mt-4 border-t border-white/10 border-dashed animate-in fade-in-0 slide-in-from-bottom-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Button type="button" variant="outline" size="lg" onClick={handleScheduleForLater}>
                             <Clock className="mr-2 h-4 w-4" />
-                            Schedule for Later
+                            Schedule
+                        </Button>
+                        <Button type="button" variant="outline" size="lg" onClick={() => setShowInsuranceDialog(true)}>
+                            <Shield className="mr-2 h-4 w-4"/>
+                            Add Insurance
                         </Button>
                         <Button type="button" onClick={handleConfirmDispatch} size="lg" disabled={isDispatchLoading}>
                             {isCheckingFraud && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {!isDispatchLoading && <Truck className="mr-2 h-4 w-4" />}
-                            {isCheckingFraud ? 'Analyzing Risk...' : 'Dispatch Now'}
+                            {isCheckingFraud ? 'Analyzing...' : 'Dispatch Now'}
                         </Button>
                     </div>
                 </div>
@@ -407,6 +452,68 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, quote, is
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showInsuranceDialog} onOpenChange={setShowInsuranceDialog}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle className="font-headline text-2xl">Protect Your Delivery</DialogTitle>
+                <DialogDescription>Add insurance to cover the declared value of your item.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <FormItem>
+                        <FormLabel>Declared Value (€)</FormLabel>
+                        <Input 
+                            type="number"
+                            placeholder="e.g., 500"
+                            value={declaredValue}
+                            onChange={e => setDeclaredValue(e.target.value)}
+                        />
+                    </FormItem>
+                    <FormItem>
+                        <FormLabel>Package Category</FormLabel>
+                        <Select onValueChange={setPackageCategory} value={packageCategory}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Electronics">Electronics</SelectItem>
+                                <SelectItem value="Jewelry">Jewelry</SelectItem>
+                                <SelectItem value="Documents">Documents</SelectItem>
+                                <SelectItem value="Clothing">Clothing</SelectItem>
+                                <SelectItem value="Art">Art</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
+                </div>
+                <Button onClick={handleCalculateInsurance} disabled={isCheckingInsurance || !declaredValue || !packageCategory} className="w-full">
+                    {isCheckingInsurance && <Loader2 className="mr-2 animate-spin" />}
+                    Calculate Premium
+                </Button>
+
+                {localInsuranceQuote && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <Alert className="mt-4">
+                            <Shield className="h-4 w-4"/>
+                            <AlertTitle>Insurance Quote</AlertTitle>
+                            <AlertDescription>
+                                <div className="flex justify-between items-center font-bold">
+                                    <span>Premium:</span>
+                                    <span>€{localInsuranceQuote.premium.toFixed(2)}</span>
+                                </div>
+                                <p className="text-xs mt-2">{localInsuranceQuote.riskAnalysis}</p>
+                            </AlertDescription>
+                        </Alert>
+                    </motion.div>
+                )}
+            </div>
+            <DialogFooter>
+                <Button variant="ghost" onClick={() => setShowInsuranceDialog(false)}>Cancel</Button>
+                <Button onClick={handleAddInsurance} disabled={!localInsuranceQuote}>Add to Delivery</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -66,6 +66,11 @@ import {
   type GetInvestorReportInput,
   type GetInvestorReportOutput,
 } from '@/ai/flows/get-investor-report';
+import {
+  getInsuranceQuote as getInsuranceQuoteFlow,
+  type GetInsuranceQuoteInput,
+  type GetInsuranceQuoteOutput,
+} from '@/ai/flows/get-insurance-quote';
 
 async function handleFlow<I, O>(
   flow: (input: I) => Promise<O>,
@@ -132,4 +137,8 @@ export async function handleQueryBusinessData(data: QueryBusinessDataInput) {
 
 export async function handleGetInvestorReport(data: GetInvestorReportInput) {
   return handleFlow(getInvestorReportFlow, data, 'handleGetInvestorReport', 'Failed to generate investor report.');
+}
+
+export async function handleGetInsuranceQuote(data: GetInsuranceQuoteInput) {
+  return handleFlow(getInsuranceQuoteFlow, data, 'handleGetInsuranceQuote', 'Failed to generate insurance quote.');
 }
