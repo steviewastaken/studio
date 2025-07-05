@@ -10,13 +10,13 @@ import type { DeliveryStatus } from '@/app/tracking/page';
 type MapComponentProps = {
   pickup?: string | null;
   destinations?: string[];
-  deliveryStatus: DeliveryStatus;
+  deliveryStatus?: DeliveryStatus;
 };
 
 const scooterSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48px" height="48px" fill="#a855f7"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19.77 7.23l-1.02-1.02c-.39-.39-1.02-.39-1.41 0L14 9.58V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v4.58L4.66 6.21c-.39-.39-1.02-.39-1.41 0l-1.02 1.02c-.39.39-.39 1.02 0 1.41L4.42 11H2v2h3.17L3.41 14.77c-.39.39-.39 1.02 0 1.41l1.02 1.02c.39.39 1.02.39 1.41 0L9 14.83V19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-4.17l3.24 3.24c.39.39 1.02.39 1.41 0l1.02-1.02c.39-.39.39-1.02 0-1.41L19.58 13H22v-2h-2.58l2.25-2.25c.39-.39.39-1.03 0-1.42zM12 17c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>`;
 
 
-export default function MapComponent({ pickup, destinations = [], deliveryStatus }: MapComponentProps) {
+export default function MapComponent({ pickup, destinations = [], deliveryStatus = 'IDLE' }: MapComponentProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +146,8 @@ export default function MapComponent({ pickup, destinations = [], deliveryStatus
         });
 
       } else {
-        console.error(`Directions request failed due to ${status}`);
+        // This is not a fatal error. The user is notified by the form's toast.
+        // We can safely ignore it here to avoid polluting the console.
       }
     });
 
