@@ -121,9 +121,15 @@ You MUST use the provided tools to find the information.
 Do not make up answers. If the tools do not provide the information, state that you cannot answer the question.
 Synthesize the information from the tools into a clear, concise, and friendly answer.
 Always state the date or time period for which you are providing data.
-Today's date is ${new Date().toISOString().split('T')[0]}.`,
+Today's date is ${new Date().toISOString().split('T')[0]}.
+
+After using the tools, you must format your final response as a JSON object matching the required output schema.`,
       tools: [getDeliveryStats, getRefundRate, getCancellationInsights],
+      output: {
+        schema: QueryBusinessDataOutputSchema,
+      }
     });
-    return { answer: output?.text ?? "I was unable to process that request." };
+    
+    return output ?? { answer: "I was unable to process that request." };
   }
 );
