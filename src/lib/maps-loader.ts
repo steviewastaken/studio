@@ -15,7 +15,7 @@ export function loadGoogleMapsApi() {
         const loader = new Loader({
             apiKey: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY,
             version: 'weekly',
-            libraries: ['places', 'marker', 'routes'],
+            libraries: ['places', 'marker', 'routes', 'geometry'],
         });
 
         apiLoaded = new Promise((resolve, reject) => {

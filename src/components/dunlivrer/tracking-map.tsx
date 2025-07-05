@@ -65,6 +65,7 @@ export default function TrackingMap({ deliveryDetails, driverDetails, deliverySt
           <MapComponent 
               pickup={deliveryDetails?.pickupAddress}
               destinations={deliveryDetails?.destinationAddresses}
+              deliveryStatus={deliveryStatus}
           />
           {deliveryDetails ? (
              <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10 pointer-events-none">
