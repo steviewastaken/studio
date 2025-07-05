@@ -350,29 +350,29 @@ export default function DunlivrerPage() {
 
       {/* Blockchain Section */}
       <motion.section
-        className="py-24"
+        className="py-24 bg-background/20"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={sectionVariants}
       >
-        <div className="w-full max-w-3xl mx-auto px-4 md:px-8 text-center">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
           <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">
             {content.blockchainTitle}
           </h2>
           <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
             {content.blockchainHeadline}
           </p>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
             {content.blockchainSubtitle}
           </p>
           <motion.div
-            className="mt-12 space-y-8"
+            className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
             variants={staggeredContainer}
           >
             <motion.div
               variants={itemVariants}
-              className="flex items-start gap-4 text-left"
+              className="flex items-start gap-4"
             >
               <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
                 <ShieldCheck className="w-6 h-6" />
@@ -388,7 +388,7 @@ export default function DunlivrerPage() {
             </motion.div>
             <motion.div
               variants={itemVariants}
-              className="flex items-start gap-4 text-left"
+              className="flex items-start gap-4"
             >
               <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
                 <FileText className="w-6 h-6" />
@@ -404,7 +404,7 @@ export default function DunlivrerPage() {
             </motion.div>
             <motion.div
               variants={itemVariants}
-              className="flex items-start gap-4 text-left"
+              className="flex items-start gap-4"
             >
               <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
                 <ListChecks className="w-6 h-6" />
