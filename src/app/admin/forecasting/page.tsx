@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react';
@@ -101,7 +102,7 @@ export default function ForecastingPage() {
     useEffect(() => {
         const fetchForecast = async () => {
             setIsLoading(true);
-            const result = await handleGetDemandForecast();
+            const result = await handleGetDemandForecast({});
             if (result.success && result.data) {
                 setForecast(result.data);
             } else {
