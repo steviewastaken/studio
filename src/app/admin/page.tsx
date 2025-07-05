@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, AlertTriangle, UserPlus, Headset, BrainCircuit } from "lucide-react";
+import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, AlertTriangle, UserPlus, Headset, BrainCircuit, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -148,10 +148,22 @@ export default function AdminPage() {
             </motion.div>
             
              <motion.div
-                className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 0.2, staggerChildren: 0.1 } }}
             >
+                 <Link href="/admin/investor">
+                    <Card className="bg-gradient-to-br from-accent/20 to-primary/20 border-accent/50 hover:border-accent/80 transition-colors h-full">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Investor Metrics</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">View Growth</div>
+                            <p className="text-xs text-muted-foreground">CAC, LTV, Churn & More</p>
+                        </CardContent>
+                    </Card>
+                </Link>
                 <Link href="/admin/revenue">
                     <Card className="bg-card/80 border-white/10 hover:border-primary/50 transition-colors h-full">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

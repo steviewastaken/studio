@@ -4,168 +4,132 @@
 import {
   answerSupportQuestion as answerSupportQuestionFlow,
   type AnswerSupportQuestionInput,
+  type AnswerSupportQuestionOutput,
 } from '@/ai/flows/answer-support-questions';
 import {
   detectFraud as detectFraudFlow,
   type DetectFraudInput,
+  type DetectFraudOutput,
 } from '@/ai/flows/detect-fraud';
 import {
   findDriver as findDriverFlow,
   type FindDriverInput,
+  type FindDriverOutput,
 } from '@/ai/flows/find-driver';
 import {
   getQuote as getQuoteFlow,
   type GetQuoteInput,
+  type GetQuoteOutput,
 } from '@/ai/flows/get-quote';
 import {
   rerouteDelivery as rerouteDeliveryFlow,
   type RerouteDeliveryInput,
+  type RerouteDeliveryOutput,
 } from '@/ai/flows/reroute-delivery';
 import {
   detectEmotion as detectEmotionFlow,
   type DetectEmotionInput,
+  type DetectEmotionOutput,
 } from '@/ai/flows/detect-emotion';
 import {
   getDriverPerformanceReport as getDriverPerformanceReportFlow,
   type GetDriverPerformanceReportInput,
+  type GetDriverPerformanceReportOutput,
 } from '@/ai/flows/get-driver-performance-report';
 import {
   correctAddress as correctAddressFlow,
   type CorrectAddressInput,
+  type CorrectAddressOutput,
 } from '@/ai/flows/correct-address';
 import {
   createIncidentReport as createIncidentReportFlow,
   type CreateIncidentReportInput,
+  type CreateIncidentReportOutput,
 } from '@/ai/flows/create-incident-report';
 import {
   textToSpeech as textToSpeechFlow,
   type TextToSpeechInput,
+  type TextToSpeechOutput,
 } from '@/ai/flows/text-to-speech';
 import {
   getDemandForecast as getDemandForecastFlow,
   type GetDemandForecastInput,
+  type GetDemandForecastOutput,
 } from '@/ai/flows/get-demand-forecast';
 import {
   queryBusinessData as queryBusinessDataFlow,
   type QueryBusinessDataInput,
+  type QueryBusinessDataOutput,
 } from '@/ai/flows/query-business-data';
+import {
+  getInvestorReport as getInvestorReportFlow,
+  type GetInvestorReportInput,
+  type GetInvestorReportOutput,
+} from '@/ai/flows/get-investor-report';
 
-export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
+async function handleFlow<I, O>(
+  flow: (input: I) => Promise<O>,
+  input: I,
+  flowName: string,
+  errorMessage: string
+): Promise<{ success: true; data: O } | { success: false; error: string }> {
   try {
-    const result = await answerSupportQuestionFlow(data);
+    const result = await flow(input);
     return { success: true, data: result };
   } catch (error: any) {
-    console.error("handleSupportQuestion Error:", error.message);
-    return { success: false, error: error.message || 'I am sorry, I am unable to answer that question at the moment.' };
+    console.error(`Error in ${flowName}:`, error.message);
+    return { success: false, error: error.message || errorMessage };
   }
+}
+
+export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
+  return handleFlow(answerSupportQuestionFlow, data, 'handleSupportQuestion', 'I am sorry, I am unable to answer that question at the moment.');
 }
 
 export async function handleDetectFraud(data: DetectFraudInput) {
-  try {
-    const result = await detectFraudFlow(data);
-    return { success: true, data: result };
-  } catch (error: any) {
-    console.error("handleDetectFraud Error:", error.message);
-    return { success: false, error: error.message || 'Fraud check could not be completed. Please try again.' };
-  }
+  return handleFlow(detectFraudFlow, data, 'handleDetectFraud', 'Fraud check could not be completed. Please try again.');
 }
 
 export async function handleFindDriver(data: FindDriverInput) {
-  try {
-    const result = await findDriverFlow(data);
-    return { success: true, data: result };
-  } catch (error: any) {
-    console.error("handleFindDriver Error:", error.message);
-    return { success: false, error: error.message || 'Failed to find a driver. Please try again later.' };
-  }
+  return handleFlow(findDriverFlow, data, 'handleFindDriver', 'Failed to find a driver. Please try again later.');
 }
 
 export async function handleGetQuote(data: GetQuoteInput) {
-  try {
-    const result = await getQuoteFlow(data);
-    return { success: true, data: result };
-  } catch (error: any) {
-    console.error("handleGetQuote Error:", error.message);
-    return { success: false, error: error.message || 'An unknown error occurred while generating the quote.' };
-  }
+  return handleFlow(getQuoteFlow, data, 'handleGetQuote', 'An unknown error occurred while generating the quote.');
 }
 
 export async function handleRerouteDelivery(data: RerouteDeliveryInput) {
-  try {
-    const result = await rerouteDeliveryFlow(data);
-    return { success: true, data: result };
-  } catch (error: any) {
-    console.error("handleRerouteDelivery Error:", error.message);
-    return { success: false, error: error.message || 'Failed to check rerouting feasibility. Please try again later.' };
-  }
+  return handleFlow(rerouteDeliveryFlow, data, 'handleRerouteDelivery', 'Failed to check rerouting feasibility. Please try again later.');
 }
 
 export async function handleDetectEmotion(data: DetectEmotionInput) {
-  try {
-    const result = await detectEmotionFlow(data);
-    return { success: true, data: result };
-  } catch (error: any) {
-    console.error("handleDetectEmotion Error:", error.message);
-    return { success: false, error: error.message || 'Failed to analyze emotion. Please try again.' };
-  }
+  return handleFlow(detectEmotionFlow, data, 'handleDetectEmotion', 'Failed to analyze emotion. Please try again.');
 }
 
 export async function handleGetDriverPerformanceReport(data: GetDriverPerformanceReportInput) {
-    try {
-        const result = await getDriverPerformanceReportFlow(data);
-        return { success: true, data: result };
-    } catch (error: any) {
-        console.error("handleGetDriverPerformanceReport Error:", error.message);
-        return { success: false, error: error.message || 'Failed to generate performance report.' };
-    }
+  return handleFlow(getDriverPerformanceReportFlow, data, 'handleGetDriverPerformanceReport', 'Failed to generate performance report.');
 }
 
 export async function handleCorrectAddress(data: CorrectAddressInput) {
-  try {
-    const result = await correctAddressFlow(data);
-    return { success: true, data: result };
-  } catch (error: any) {
-    console.error("handleCorrectAddress Error:", error.message);
-    return { success: false, error: error.message || 'Failed to verify the address.' };
-  }
+  return handleFlow(correctAddressFlow, data, 'handleCorrectAddress', 'Failed to verify the address.');
 }
 
 export async function handleCreateIncidentReport(data: CreateIncidentReportInput) {
-    try {
-        const result = await createIncidentReportFlow(data);
-        return { success: true, data: result };
-    } catch (error: any) {
-        console.error("handleCreateIncidentReport Error:", error.message);
-        return { success: false, error: error.message || 'Failed to generate incident report.' };
-    }
+  return handleFlow(createIncidentReportFlow, data, 'handleCreateIncidentReport', 'Failed to generate incident report.');
 }
 
 export async function handleTextToSpeech(data: TextToSpeechInput) {
-    try {
-        const result = await textToSpeechFlow(data);
-        return { success: true, data: result };
-    } catch (error: any) {
-        console.error("handleTextToSpeech Error:", error.message);
-        return { success: false, error: error.message || 'Failed to generate audio.' };
-    }
+  return handleFlow(textToSpeechFlow, data, 'handleTextToSpeech', 'Failed to generate audio.');
 }
 
-export async function handleGetDemandForecast(data?: GetDemandForecastInput) {
-    try {
-        const result = await getDemandForecastFlow(data || {});
-        return { success: true, data: result };
-    } catch (error: any) {
-        console.error("handleGetDemandForecast Error:", error.message);
-        return { success: false, error: error.message || 'Failed to generate demand forecast.' };
-    }
+export async function handleGetDemandForecast(data: GetDemandForecastInput) {
+  return handleFlow(getDemandForecastFlow, data, 'handleGetDemandForecast', 'Failed to generate demand forecast.');
 }
 
 export async function handleQueryBusinessData(data: QueryBusinessDataInput) {
-    try {
-        const result = await queryBusinessDataFlow(data);
-        return { success: true, data: result };
-    } catch (error: any) {
-        console.error("handleQueryBusinessData Error:", error.message);
-        return { success: false, error: error.message || 'Failed to query business data.' };
-    }
+  return handleFlow(queryBusinessDataFlow, data, 'handleQueryBusinessData', 'Failed to query business data.');
+}
+
+export async function handleGetInvestorReport(data: GetInvestorReportInput) {
+  return handleFlow(getInvestorReportFlow, data, 'handleGetInvestorReport', 'Failed to generate investor report.');
 }
