@@ -24,6 +24,7 @@ import { useJobs } from '@/context/jobs-context';
 import AddressInput from './address-input';
 import { Input } from '../ui/input';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Label } from '../ui/label';
 
 const formSchema = z.object({
   pickupAddress: z.string({ required_error: "Please select a pickup location."}).min(1, "Please select a pickup location."),
@@ -173,11 +174,19 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
         }
     } catch (error: any) {
         onQuoteChange(null);
-        toast({
-            variant: 'destructive',
-            title: "Route Not Found",
-            description: "Could not find a valid route. Please check the addresses and try again.",
-        });
+        if (error.message && error.message.includes('NOT_FOUND')) {
+             toast({
+                variant: 'destructive',
+                title: "Route Not Found",
+                description: "Could not find a valid route. Please check the addresses and try again.",
+            });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: "Quotation Failed",
+                description: "An unexpected error occurred while generating the quote. Please try again later.",
+            });
+        }
     } finally {
         setIsGettingQuote(false);
     }
@@ -515,19 +524,20 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
             </DialogHeader>
             <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
-                    <FormItem>
-                        <FormLabel>Declared Value (€)</FormLabel>
+                    <div className="space-y-2">
+                        <Label htmlFor="declaredValue">Declared Value (€)</Label>
                         <Input 
+                            id="declaredValue"
                             type="number"
                             placeholder="e.g., 500"
                             value={declaredValue}
                             onChange={e => setDeclaredValue(e.target.value)}
                         />
-                    </FormItem>
-                    <FormItem>
-                        <FormLabel>Package Category</FormLabel>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="packageCategory">Package Category</Label>
                         <Select onValueChange={setPackageCategory} value={packageCategory}>
-                            <SelectTrigger>
+                            <SelectTrigger id="packageCategory">
                                 <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
                             <SelectContent>
@@ -539,7 +549,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
                                 <SelectItem value="Other">Other</SelectItem>
                             </SelectContent>
                         </Select>
-                    </FormItem>
+                    </div>
                 </div>
                 <Button onClick={handleCalculateInsurance} disabled={isCheckingInsurance || !declaredValue || !packageCategory} className="w-full">
                     {isCheckingInsurance && <Loader2 className="mr-2 animate-spin" />}
