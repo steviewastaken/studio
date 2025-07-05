@@ -12,6 +12,7 @@ import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, Aler
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import AdminCopilot from "@/components/dunlivrer/admin-copilot";
 
 const LoadingSkeleton = () => (
     <div className="w-full max-w-7xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
@@ -229,6 +230,7 @@ export default function AdminPage() {
                  <RecentActivityFeed />
                  <SystemHealthPanel />
             </div>
+            <AdminCopilot />
         </div>
     );
 }

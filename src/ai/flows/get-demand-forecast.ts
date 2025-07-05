@@ -18,9 +18,7 @@ const ForecastSchema = z.object({
   suggestion: z.string().describe("An actionable suggestion for the operations team (e.g., 'Shift 2 couriers from a Low demand zone to here.')."),
 });
 
-const GetDemandForecastInputSchema = z.object({
-  // No input needed for this demo, it will generate a forecast for the current time.
-});
+const GetDemandForecastInputSchema = z.object({});
 export type GetDemandForecastInput = z.infer<typeof GetDemandForecastInputSchema>;
 
 const GetDemandForecastOutputSchema = z.object({

@@ -12,3 +12,4 @@ import '@/ai/flows/get-driver-performance-report.ts';
 import '@/ai/flows/create-incident-report.ts';
 import '@/ai/flows/text-to-speech.ts';
 import '@/ai/flows/get-demand-forecast.ts';
+import '@/ai/flows/query-business-data.ts';

@@ -45,6 +45,10 @@ import {
   getDemandForecast as getDemandForecastFlow,
   type GetDemandForecastInput,
 } from '@/ai/flows/get-demand-forecast';
+import {
+  queryBusinessData as queryBusinessDataFlow,
+  type QueryBusinessDataInput,
+} from '@/ai/flows/query-business-data';
 
 export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   try {
@@ -153,5 +157,15 @@ export async function handleGetDemandForecast(data?: GetDemandForecastInput) {
     } catch (error: any) {
         console.error("handleGetDemandForecast Error:", error.message);
         return { success: false, error: error.message || 'Failed to generate demand forecast.' };
+    }
+}
+
+export async function handleQueryBusinessData(data: QueryBusinessDataInput) {
+    try {
+        const result = await queryBusinessDataFlow(data);
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("handleQueryBusinessData Error:", error.message);
+        return { success: false, error: error.message || 'Failed to query business data.' };
     }
 }
