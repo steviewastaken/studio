@@ -41,6 +41,10 @@ import {
   textToSpeech as textToSpeechFlow,
   type TextToSpeechInput,
 } from '@/ai/flows/text-to-speech';
+import {
+  getDemandForecast as getDemandForecastFlow,
+  type GetDemandForecastInput,
+} from '@/ai/flows/get-demand-forecast';
 
 export async function handleSupportQuestion(data: AnswerSupportQuestionInput) {
   try {
@@ -139,5 +143,15 @@ export async function handleTextToSpeech(data: TextToSpeechInput) {
     } catch (error: any) {
         console.error("handleTextToSpeech Error:", error.message);
         return { success: false, error: error.message || 'Failed to generate audio.' };
+    }
+}
+
+export async function handleGetDemandForecast(data?: GetDemandForecastInput) {
+    try {
+        const result = await getDemandForecastFlow(data);
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("handleGetDemandForecast Error:", error.message);
+        return { success: false, error: error.message || 'Failed to generate demand forecast.' };
     }
 }

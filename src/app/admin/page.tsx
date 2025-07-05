@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, AlertTriangle, UserPlus, Headset } from "lucide-react";
+import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, AlertTriangle, UserPlus, Headset, BrainCircuit } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -147,7 +147,7 @@ export default function AdminPage() {
             </motion.div>
             
              <motion.div
-                className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+                className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 0.2, staggerChildren: 0.1 } }}
             >
@@ -211,6 +211,18 @@ export default function AdminPage() {
                         </CardContent>
                     </Card>
                  </Link>
+                 <Link href="/admin/forecasting">
+                    <Card className="bg-card/80 border-white/10 hover:border-primary/50 transition-colors h-full">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Demand Forecast</CardTitle>
+                            <BrainCircuit className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">3 High Zones</div>
+                            <p className="text-xs text-muted-foreground">Next hour prediction</p>
+                        </CardContent>
+                    </Card>
+                </Link>
             </motion.div>
 
             <div className="mt-8 grid gap-8 md:grid-cols-2">
