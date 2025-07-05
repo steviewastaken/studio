@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useForm } from 'react-hook-form';
@@ -9,34 +10,67 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
+import type { UserProfile } from '@/context/auth-context';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
   password: z.string().min(1, "Password is required."),
 });
 
+// Mock users
+const mockDriverUser: UserProfile = {
+    id: 'user-123',
+    name: 'Demo DunGuy',
+    email: 'demo@dunlivrer.com',
+    role: 'driver',
+};
+
+const mockAdminUser: UserProfile = {
+    id: 'admin-001',
+    name: 'Admin User',
+    email: 'admin@dunlivrer.com',
+    role: 'admin',
+};
+
 export default function SignInPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { login, loading } = useAuth();
+  const searchParams = useSearchParams();
+  const { login, loading, setLoading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: "", password: "" },
   });
 
-  const { isSubmitting } = form.formState;
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setLoading(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // This is a mock login
-    login();
-    toast({
-        title: "Signed In!",
-        description: "Welcome back!",
-    });
-    router.push('/driver');
+    const redirectPath = searchParams.get('redirect') || '/';
+
+    if (values.email.toLowerCase() === 'admin@dunlivrer.com' && values.password === 'admin') {
+        login(mockAdminUser);
+        toast({
+            title: "Admin Signed In!",
+            description: "Welcome to the admin dashboard.",
+        });
+        router.push(redirectPath.startsWith('/admin') ? redirectPath : '/admin');
+    } else {
+        // For demo purposes, any other login is treated as a driver
+        login(mockDriverUser);
+        toast({
+            title: "Signed In!",
+            description: "Welcome back!",
+        });
+        router.push(redirectPath !== '/admin' ? redirectPath : '/driver');
+    }
+    setLoading(false);
   }
 
   return (
@@ -44,7 +78,7 @@ export default function SignInPage() {
       <Card className="w-full max-w-md bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
         <CardHeader className="text-center">
           <CardTitle className="font-headline text-3xl">Welcome Back</CardTitle>
-          <CardDescription>Sign in to access your dashboard and track your deliveries.</CardDescription>
+          <CardDescription>Sign in to access your dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -70,13 +104,20 @@ export default function SignInPage() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || loading}>
-                {isSubmitting || loading ? 'Signing In...' : 'Sign In'}
+              <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                {loading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="justify-center">
+        <CardFooter className="flex flex-col gap-4">
+            <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Demo Credentials</AlertTitle>
+                <AlertDescription className="text-xs">
+                    Use <b>admin@dunlivrer.com</b> / <b>admin</b> for admin access. Any other credentials will log you in as a driver.
+                </AlertDescription>
+            </Alert>
             <p className="text-sm text-muted-foreground">
                 Don't have an account? <Link href="/signup" className="text-primary hover:underline font-medium">Sign Up</Link>
             </p>

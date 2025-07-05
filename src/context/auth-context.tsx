@@ -1,24 +1,20 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
-type UserProfile = {
+export type UserProfile = {
   id: string;
   name: string;
   email: string;
-};
-
-// A mock user for demonstration
-const mockUser: UserProfile = {
-    id: 'user-123',
-    name: 'Demo DunGuy',
-    email: 'demo@dunlivrer.com'
+  role: 'driver' | 'admin';
 };
 
 type AuthContextType = {
   user: UserProfile | null;
   loading: boolean;
-  login: () => void;
+  setLoading: (loading: boolean) => void;
+  login: (user: UserProfile) => void;
   logout: () => void;
 };
 
@@ -26,21 +22,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false); // Set to false as it's a mock
+  const [loading, setLoading] = useState(false);
 
-  const login = useCallback(() => {
-    setLoading(true);
-    setTimeout(() => {
-        setUser(mockUser);
-        setLoading(false);
-    }, 500);
+  const login = useCallback((userToLogin: UserProfile) => {
+    setUser(userToLogin);
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
   }, []);
 
-  const value = { user, loading, login, logout };
+  const value = { user, loading, setLoading, login, logout };
 
   return (
     <AuthContext.Provider value={value}>

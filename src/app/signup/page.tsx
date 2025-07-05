@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
+import type { UserProfile } from '@/context/auth-context';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -22,31 +23,40 @@ const formSchema = z.object({
 export default function SignUpPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { login, loading } = useAuth();
+  const { login, loading, setLoading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: "", email: "", password: "" },
   });
 
-  const { isSubmitting } = form.formState;
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // This is a mock signup that just logs the user in
-    login();
+    setLoading(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const newDriver: UserProfile = {
+      id: `user-${Date.now()}`,
+      name: values.name,
+      email: values.email,
+      role: 'driver',
+    };
+    
+    login(newDriver);
     toast({
         title: "Account Created!",
-        description: "You have been signed in successfully.",
+        description: "You have been signed in successfully as a driver.",
     });
     router.push('/driver');
+    setLoading(false);
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen pt-20">
       <Card className="w-full max-w-md bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
         <CardHeader className="text-center">
-          <CardTitle className="font-headline text-3xl">Create an Account</CardTitle>
-          <CardDescription>Join Dunlivrer to start shipping with the power of AI.</CardDescription>
+          <CardTitle className="font-headline text-3xl">Create a Driver Account</CardTitle>
+          <CardDescription>Join Dunlivrer to start driving and earning.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -78,8 +88,8 @@ export default function SignUpPage() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || loading}>
-                {isSubmitting || loading ? 'Creating Account...' : 'Sign Up'}
+              <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                {loading ? 'Creating Account...' : 'Sign Up as a Driver'}
               </Button>
             </form>
           </Form>

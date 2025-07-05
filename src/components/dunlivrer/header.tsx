@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from 'next/link';
-import { Menu, LogOut, Globe } from 'lucide-react';
+import { Menu, LogOut, Globe, User, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/context/auth-context';
@@ -20,12 +21,11 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '../ui/skeleton';
 
-const navLinks = [
+const baseNavLinks = [
   { href: '/services', label: 'Services' },
   { href: '/tracking', label: 'Order Tracking' },
   { href: '/feedback', label: 'Feedback' },
   { href: '/contact', label: 'Contact Us' },
-  { href: '/driver', label: 'Driver App' },
 ];
 
 const languages = [
@@ -70,13 +70,18 @@ export default function Header() {
   const { user, loading, logout } = useAuth();
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
+  
+  const navLinks = [
+      ...baseNavLinks,
+      user?.role === 'admin' 
+        ? { href: '/admin', label: 'Admin' }
+        : { href: '/driver', label: 'Driver App' }
+  ];
 
   useEffect(() => {
     const controlNavbar = () => {
       const currentScrollY = window.scrollY;
       if (typeof window !== 'undefined') {
-        // Hide header on scroll down, but only after a certain point
-        // Show header on scroll up
         if (currentScrollY > lastScrollY.current && currentScrollY > 100) { 
           setIsVisible(false);
         } else {
@@ -88,8 +93,6 @@ export default function Header() {
 
     if (typeof window !== 'undefined') {
       window.addEventListener('scroll', controlNavbar, { passive: true });
-
-      // cleanup function
       return () => {
         window.removeEventListener('scroll', controlNavbar);
       };
@@ -140,6 +143,17 @@ export default function Header() {
                     </p>
                   </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                        <Link href="/admin"><Shield className="mr-2 h-4 w-4" />Admin Panel</Link>
+                    </DropdownMenuItem>
+                )}
+                {user.role === 'driver' && (
+                    <DropdownMenuItem asChild>
+                        <Link href="/driver"><User className="mr-2 h-4 w-4" />Driver Dashboard</Link>
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
