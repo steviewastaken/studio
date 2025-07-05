@@ -73,7 +73,7 @@ const getDemandForecastFlow = ai.defineFlow(
     outputSchema: GetDemandForecastOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input || {});
     if (!output) {
       throw new Error('The AI model failed to generate a demand forecast.');
     }
