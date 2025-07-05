@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, ShieldAlert, ShieldQuestion, Shield } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { handleGetQuote, handleDetectFraud, handleGetInsuranceQuote } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
@@ -113,6 +114,16 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
 
     const directionsService = new window.google.maps.DirectionsService();
     const validDestinations = values.destinationAddresses.map(d => d.value).filter(d => d && d.trim() !== '');
+
+    if (validDestinations.length === 0 || !values.pickupAddress) {
+        toast({
+            variant: 'destructive',
+            title: "Missing Address",
+            description: "Please provide a pickup and at least one destination address.",
+        });
+        setIsGettingQuote(false);
+        return;
+    }
 
     const waypoints = validDestinations.slice(0, -1).map(d => ({ location: d, stopover: true }));
     const finalDestination = validDestinations[validDestinations.length - 1];
