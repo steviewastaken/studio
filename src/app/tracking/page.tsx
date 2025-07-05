@@ -18,6 +18,7 @@ import { Input as AddressInput } from '@/components/ui/input'; // Using regular 
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const mockDelivery: DeliveryDetails = {
     pickupAddress: 'Rue de Rivoli, 75001 Paris, France', // Louvre Museum
@@ -223,6 +224,32 @@ function TrackingPageContent() {
                   <SupportChat deliveryDetails={deliveryDetails} />
               </motion.div>
           </motion.div>
+          
+          {deliveryStatus === 'DELIVERED' && (
+              <motion.div
+                className="mt-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Card className="bg-green-500/10 border-green-500/30">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-green-400">
+                      <CheckCircle className="w-6 h-6" /> Delivery Complete & Verified
+                    </CardTitle>
+                    <CardDescription>
+                      This delivery has been permanently recorded on the blockchain for maximum transparency and security.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button asChild>
+                      <Link href="/tx/0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b">
+                        View Blockchain Transaction
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
       </div>
       
       <Dialog open={isRerouting} onOpenChange={setIsRerouting}>
