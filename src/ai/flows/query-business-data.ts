@@ -109,7 +109,11 @@ const queryBusinessDataFlow = ai.defineFlow(
     name: 'queryBusinessDataFlow',
     inputSchema: QueryBusinessDataInputSchema,
     outputSchema: QueryBusinessDataOutputSchema,
-    system: `You are an expert business intelligence analyst for Dunlivrer.
+  },
+  async (input) => {
+    const { output } = await ai.generate({
+      prompt: input.question,
+      system: `You are an expert business intelligence analyst for Dunlivrer.
 Your name is "Copilot".
 Your task is to answer an admin's questions about company data.
 You MUST use the provided tools to find the information.
@@ -117,11 +121,7 @@ Do not make up answers. If the tools do not provide the information, state that 
 Synthesize the information from the tools into a clear, concise, and friendly answer.
 Always state the date or time period for which you are providing data.
 Today's date is ${new Date().toISOString().split('T')[0]}.`,
-    tools: [getDeliveryStats, getRefundRate, getCancellationInsights],
-  },
-  async (input) => {
-    const { output } = await ai.generate({
-      prompt: input.question,
+      tools: [getDeliveryStats, getRefundRate, getCancellationInsights],
     });
     return { answer: output?.text ?? "I was unable to process that request." };
   }
