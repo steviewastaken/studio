@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -120,16 +121,14 @@ export default function AdminPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
 
-    if (loading) {
-        return <LoadingSkeleton />;
-    }
-
-    if (!user) {
-        // Redirect to signin if not logged in at all
-        if (typeof window !== 'undefined') {
+    useEffect(() => {
+        if (!loading && !user) {
             router.push('/signin?redirect=/admin');
         }
-        return <LoadingSkeleton />; // Show skeleton while redirecting
+    }, [loading, user, router]);
+
+    if (loading || !user) {
+        return <LoadingSkeleton />;
     }
 
     if (user.role !== 'admin') {
