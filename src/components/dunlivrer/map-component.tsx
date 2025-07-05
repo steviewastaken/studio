@@ -22,6 +22,9 @@ export default function MapComponent({ pickup, destinations = [], deliveryStatus
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   
+  // Storing the DirectionsResult in state to create a stable dependency for the animation effect
+  const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
+
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const driverMarkerRef = useRef<google.maps.Marker | null>(null);
@@ -87,6 +90,7 @@ export default function MapComponent({ pickup, destinations = [], deliveryStatus
     
     // Clear previous route and markers
     directionsRendererRef.current.setDirections({routes: []});
+    setDirectionsResult(null); // Clear the stored result
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
 
@@ -111,6 +115,7 @@ export default function MapComponent({ pickup, destinations = [], deliveryStatus
     }, (result, status) => {
       if (status === 'OK' && result && directionsRendererRef.current) {
         directionsRendererRef.current.setDirections(result);
+        setDirectionsResult(result); // Store result in state
         
         // Add marker for pickup location (A)
         const pickupMarker = new google.maps.Marker({
@@ -152,8 +157,7 @@ export default function MapComponent({ pickup, destinations = [], deliveryStatus
   useEffect(() => {
     if (!map || !window.google.maps.geometry) return;
 
-    const directions = directionsRendererRef.current?.getDirections();
-    const route = directions?.routes?.[0];
+    const route = directionsResult?.routes?.[0];
 
     if (deliveryStatus !== 'IN_TRANSIT' || !route?.overview_path) {
       if (driverMarkerRef.current) driverMarkerRef.current.setVisible(false);
@@ -204,7 +208,7 @@ export default function MapComponent({ pickup, destinations = [], deliveryStatus
     return () => {
       if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [map, deliveryStatus, directionsRendererRef.current?.getDirections()]);
+  }, [map, deliveryStatus, directionsResult]); // Depend on stable state variable
 
 
   if (status === 'error') {
