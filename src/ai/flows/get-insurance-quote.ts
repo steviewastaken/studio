@@ -15,7 +15,6 @@ const GetInsuranceQuoteInputSchema = z.object({
   packageCategory: z.string().describe("The category of the item being shipped (e.g., 'Electronics', 'Jewelry', 'Documents')."),
   pickupAddress: z.string().describe("The pickup address for the delivery."),
   destinationAddress: z.string().describe("The final destination address for the delivery."),
-  // For demonstration, we'll use a simulated score. In a real app, this would come from a courier database.
   courierTrustScore: z.number().min(0).max(100).describe("A simulated trust score for the assigned courier (0-100)."),
 });
 export type GetInsuranceQuoteInput = z.infer<typeof GetInsuranceQuoteInputSchema>;
@@ -32,46 +31,55 @@ export async function getInsuranceQuote(input: GetInsuranceQuoteInput): Promise<
   return getInsuranceQuoteFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'getInsuranceQuotePrompt',
-  input: {schema: GetInsuranceQuoteInputSchema},
-  output: {schema: GetInsuranceQuoteOutputSchema},
-  prompt: `You are an expert AI insurance underwriter for a delivery service called Dunlivrer.
-Your task is to assess the risk of a delivery and provide an instant insurance quote based on the provided data.
 
-**Risk Assessment Heuristics:**
+// This schema is for the AI prompt that only generates the text analysis.
+const analysisPromptInputSchema = z.object({
+    deliveryValue: z.number(),
+    packageCategory: z.string(),
+    pickupAddress: z.string(),
+    destinationAddress: z.string(),
+    premium: z.number(),
+    factors: z.object({
+        categoryMultiplier: z.number(),
+        hasCategoryMultiplier: z.boolean(),
+        locationSurcharge: z.number(),
+        hasLocationSurcharge: z.boolean(),
+        courierDiscountPercentage: z.number(),
+        hasCourierDiscount: z.boolean(),
+    }),
+});
 
-1.  **Base Premium:** The starting premium is 1.5% of the package's declared value ({{{deliveryValue}}} EUR).
-2.  **Category Risk Multiplier:**
-    *   'Jewelry', 'Luxury Goods', 'Art': High Risk (Multiplier: 1.8x)
-    *   'Electronics', 'Laptops', 'Phones': Medium Risk (Multiplier: 1.4x)
-    *   'Documents', 'Clothing', 'Books': Low Risk (Multiplier: 1.0x)
-    *   Apply the multiplier to the base premium.
-3.  **Location Risk Surcharge (Paris-specific):**
-    *   If pickup or destination contains 'Gare du Nord', 'Barbès', or 'Stalingrad', add a fixed €3.00 surcharge due to higher theft rates.
-4.  **Courier Trust Discount:**
-    *   A high courier trust score indicates reliability. Apply a discount to the premium (after multipliers/surcharges).
-    *   Score 95-100: -15% discount
-    *   Score 85-94: -10% discount
-    *   Score 75-84: -5% discount
-    *   Below 75: No discount.
+// This prompt's only job is to generate the human-friendly summary text.
+const analysisPrompt = ai.definePrompt({
+  name: 'insuranceAnalysisPrompt',
+  input: { schema: analysisPromptInputSchema },
+  output: { schema: z.object({ riskAnalysis: z.string() }) },
+  prompt: `You are an expert AI insurance underwriter. Your task is to write a brief, user-friendly explanation (1-2 sentences) for a calculated insurance premium. Be reassuring and professional.
 
-**Calculation Steps:**
-1.  Calculate Base Premium = {{{deliveryValue}}} * 0.015
-2.  Apply Category Multiplier based on '{{{packageCategory}}}'.
-3.  Add Location Surcharge if applicable based on '{{{pickupAddress}}}' and '{{{destinationAddress}}}'.
-4.  Apply Courier Trust Discount based on the score of {{{courierTrustScore}}}.
-5.  The final result is the **premium**. Round to 2 decimal places.
+**Data used for the quote:**
+- Declared Value: €{{{deliveryValue}}}
+- Package Category: {{{packageCategory}}}
+- Route: from {{{pickupAddress}}} to {{{destinationAddress}}}
 
-**Analysis and Output:**
-- **isHighRisk**: Set to \`true\` if the Category is High Risk OR a Location Surcharge was applied.
-- **premium**: The final calculated premium.
-- **riskAnalysis**: Provide a very brief, 1-2 sentence summary of your findings. Example: "The premium reflects the high value of the electronics and the standard risk profile of the route. A discount was applied due to the courier's excellent record." or "This route passes through a high-risk area, which is reflected in the premium."
-- **coverageAmount**: This should be equal to the '{{{deliveryValue}}}'.
+**Calculated Factors:**
+- **Final Premium:** €{{{premium}}}
+- **Factors considered:**
+  {{#if factors.hasCategoryMultiplier}}
+  - A risk multiplier of {{factors.categoryMultiplier}}x was applied for the '{{{packageCategory}}}' category.
+  {{/if}}
+  {{#if factors.hasLocationSurcharge}}
+  - A surcharge of €{{factors.locationSurcharge}} was added because the route involves a higher-risk area.
+  {{/if}}
+  {{#if factors.hasCourierDiscount}}
+  - A discount of {{factors.courierDiscountPercentage}}% was applied due to the courier's excellent reliability score.
+  {{/if}}
 
-Now, analyze the data and provide the results in the required JSON format.
+Now, write the 'riskAnalysis' field based on the factors above.
+Example 1 (standard): "The premium reflects the standard risk for this route and item category. A discount was applied due to the courier's excellent record."
+Example 2 (high risk): "This premium includes a surcharge for insuring a high-value electronics item and for a route that passes through a higher-risk area."
 `,
 });
+
 
 const getInsuranceQuoteFlow = ai.defineFlow(
   {
@@ -80,10 +88,74 @@ const getInsuranceQuoteFlow = ai.defineFlow(
     outputSchema: GetInsuranceQuoteOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('The AI model failed to provide an insurance quote.');
+    // --- Perform all calculations in code for reliability ---
+    const { deliveryValue, packageCategory, pickupAddress, destinationAddress, courierTrustScore } = input;
+
+    // 1. Base Premium
+    const basePremium = deliveryValue * 0.015;
+
+    // 2. Category Risk Multiplier
+    const categoryMultipliers: { [key: string]: number } = {
+        'Jewelry': 1.8, 'Luxury Goods': 1.8, 'Art': 1.8,
+        'Electronics': 1.4, 'Laptops': 1.4, 'Phones': 1.4,
+        'Documents': 1.0, 'Clothing': 1.0, 'Books': 1.0,
+        'Other': 1.1,
+    };
+    const categoryMultiplier = categoryMultipliers[packageCategory] || 1.1;
+    let calculatedPremium = basePremium * categoryMultiplier;
+
+    // 3. Location Risk Surcharge
+    const highRiskLocations = ['Gare du Nord', 'Barbès', 'Stalingrad'];
+    let locationSurcharge = 0;
+    const isHighRiskLocation = highRiskLocations.some(loc => 
+        pickupAddress.includes(loc) || destinationAddress.includes(loc)
+    );
+    if (isHighRiskLocation) {
+        locationSurcharge = 3.00;
+        calculatedPremium += locationSurcharge;
     }
-    return output;
+
+    // 4. Courier Trust Discount
+    let courierDiscountPercentage = 0;
+    if (courierTrustScore >= 95) courierDiscountPercentage = 15;
+    else if (courierTrustScore >= 85) courierDiscountPercentage = 10;
+    else if (courierTrustScore >= 75) courierDiscountPercentage = 5;
+    
+    if (courierDiscountPercentage > 0) {
+        calculatedPremium *= (1 - courierDiscountPercentage / 100);
+    }
+    
+    const finalPremium = Math.round(calculatedPremium * 100) / 100;
+
+    // 5. Determine high risk flag
+    const isHighRiskCategory = categoryMultiplier > 1.4;
+    const isHighRisk = isHighRiskCategory || isHighRiskLocation;
+    
+    // --- Use AI only for the natural language analysis ---
+    const analysisInput = {
+        ...input,
+        premium: finalPremium,
+        factors: {
+            categoryMultiplier,
+            hasCategoryMultiplier: categoryMultiplier > 1,
+            locationSurcharge,
+            hasLocationSurcharge: locationSurcharge > 0,
+            courierDiscountPercentage,
+            hasCourierDiscount: courierDiscountPercentage > 0,
+        }
+    };
+    
+    const { output } = await analysisPrompt(analysisInput);
+    if (!output) {
+        throw new Error('The AI model failed to provide a risk analysis.');
+    }
+    
+    // --- Construct final output ---
+    return {
+        isHighRisk,
+        premium: finalPremium,
+        riskAnalysis: output.riskAnalysis,
+        coverageAmount: deliveryValue,
+    };
   }
 );
