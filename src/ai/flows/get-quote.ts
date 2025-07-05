@@ -23,6 +23,8 @@ const GetQuoteInputSchema = z.object({
   deliveryType: z
     .enum(['standard', 'express', 'night'])
     .describe('The type of delivery service.'),
+  distanceMeters: z.number().describe('The total travel distance in meters.'),
+  durationSeconds: z.number().describe('The total travel duration in seconds, according to Google Maps.'),
 });
 export type GetQuoteInput = z.infer<typeof GetQuoteInputSchema>;
 
@@ -114,19 +116,7 @@ const getQuoteFlow = ai.defineFlow(
     outputSchema: GetQuoteOutputSchema,
   },
   async (input) => {
-    // This is a simulation. In a real app, you would use a mapping service
-    // like Google Maps Directions API to get the real distance and duration.
-    const MOCK_KM_PER_DESTINATION = 7.5;
-    const MOCK_MINUTES_PER_KM = 2.5;
-
-    let totalDistanceMeters = (MOCK_KM_PER_DESTINATION * input.destinationAddresses.length * 1000);
-    let totalDurationSeconds = (totalDistanceMeters / 1000) * MOCK_MINUTES_PER_KM * 60;
-    
-    if (totalDistanceMeters === 0) {
-        throw new Error('Could not calculate a valid route for the given addresses. The distance is zero.');
-    }
-
-    const distanceInKm = totalDistanceMeters / 1000;
+    const distanceInKm = input.distanceMeters / 1000;
     
     // --- Dynamic Pricing Engine ---
     const BASE_FARE = 5.00; 
@@ -189,7 +179,7 @@ const getQuoteFlow = ai.defineFlow(
     // --- AI-Powered ETA Prediction ---
     const dayOfWeek = now.toLocaleString('en-US', { weekday: 'long' }); // e.g., "Monday"
     const timeOfDay = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }); // e.g., "14:30"
-    const baseDurationMinutes = Math.round(totalDurationSeconds / 60);
+    const baseDurationMinutes = Math.round(input.durationSeconds / 60);
     const hasMajorEvent = Math.random() < 0.1; // 10% chance of a major event
 
     const etaPredictionInput = {

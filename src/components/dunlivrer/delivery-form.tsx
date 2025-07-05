@@ -104,29 +104,83 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
     onQuoteChange(null);
     onInsuranceChange(null);
 
-    const result = await handleGetQuote({
-        pickupAddress: values.pickupAddress,
-        destinationAddresses: values.destinationAddresses.map(d => d.value),
-        packageSize: values.packageSize,
-        deliveryType: values.deliveryType,
-    });
-    
-    if (result.success && result.data) {
-        onQuoteChange(result.data);
-        toast({
-            title: "Quote Generated!",
-            description: "Review your AI estimate on the right.",
+    if (typeof window.google === 'undefined' || typeof window.google.maps.DirectionsService === 'undefined') {
+        toast({ variant: 'destructive', title: "Map Error", description: "Google Maps service is not available." });
+        setIsGettingQuote(false);
+        return;
+    }
+
+    const directionsService = new window.google.maps.DirectionsService();
+    const validDestinations = values.destinationAddresses.map(d => d.value).filter(d => d && d.trim() !== '');
+
+    const waypoints = validDestinations.slice(0, -1).map(d => ({ location: d, stopover: true }));
+    const finalDestination = validDestinations[validDestinations.length - 1];
+
+    try {
+        const directionsResult = await new Promise<google.maps.DirectionsResult>((resolve, reject) => {
+            directionsService.route({
+                origin: values.pickupAddress,
+                destination: finalDestination,
+                waypoints: waypoints,
+                travelMode: google.maps.TravelMode.DRIVING
+            }, (result, status) => {
+                if (status === 'OK' && result) {
+                    resolve(result);
+                } else {
+                    reject(new Error(`Directions request failed: ${status}`));
+                }
+            });
         });
-    } else {
+
+        const route = directionsResult.routes[0];
+        if (!route) {
+            throw new Error("No route found in the directions result.");
+        }
+        
+        let totalDistanceMeters = 0;
+        let totalDurationSeconds = 0;
+        route.legs.forEach(leg => {
+            totalDistanceMeters += leg.distance?.value || 0;
+            totalDurationSeconds += leg.duration?.value || 0;
+        });
+
+        if (totalDistanceMeters === 0) {
+            throw new Error("Calculated route distance is zero.");
+        }
+
+        const result = await handleGetQuote({
+            pickupAddress: values.pickupAddress,
+            destinationAddresses: validDestinations,
+            packageSize: values.packageSize,
+            deliveryType: values.deliveryType,
+            distanceMeters: totalDistanceMeters,
+            durationSeconds: totalDurationSeconds,
+        });
+
+        if (result.success && result.data) {
+            onQuoteChange(result.data);
+            toast({
+                title: "Quote Generated!",
+                description: "Review your AI estimate on the right.",
+            });
+        } else {
+            onQuoteChange(null);
+            toast({
+                variant: 'destructive',
+                title: "Quotation Failed",
+                description: result.error,
+            });
+        }
+    } catch (error: any) {
         onQuoteChange(null);
         toast({
             variant: 'destructive',
-            title: "Quotation Failed",
-            description: result.error,
+            title: "Route Not Found",
+            description: "Could not find a valid route. Please check the addresses and try again.",
         });
+    } finally {
+        setIsGettingQuote(false);
     }
-
-    setIsGettingQuote(false);
   }
 
   const postDeliveryJob = () => {
