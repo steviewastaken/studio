@@ -33,24 +33,36 @@ export default function SignInPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const loggedInUser = await login(values.email, values.password);
 
     if (loggedInUser) {
-        const redirectPath = searchParams.get('redirect') || '/';
-        
         toast({
             title: "Signed In!",
             description: "Welcome back!",
         });
-        
-        if (loggedInUser.role === 'admin') {
-            router.push(redirectPath.startsWith('/admin') ? redirectPath : '/admin');
-        } else {
-             router.push(redirectPath.startsWith('/admin') ? '/driver' : redirectPath);
+
+        const redirectParam = searchParams.get('redirect');
+        let defaultPath: string;
+
+        switch (loggedInUser.role) {
+            case 'admin':
+                defaultPath = '/admin';
+                break;
+            case 'driver':
+                defaultPath = '/driver';
+                break;
+            default: // customer
+                defaultPath = '/';
+                break;
         }
+
+        // A valid redirect should exist and not be an admin page for non-admins
+        const isValidRedirect = redirectParam && (loggedInUser.role === 'admin' || !redirectParam.startsWith('/admin'));
+
+        router.push(isValidRedirect ? redirectParam : defaultPath);
+
     } else {
         toast({
             variant: "destructive",
