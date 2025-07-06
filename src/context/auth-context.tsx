@@ -73,16 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [users]);
 
 
-  const login = useCallback(async (email: string, password: string): Promise<UserProfile | null> => {
+  const login = async (email: string, password: string): Promise<UserProfile | null> => {
     const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
     if (foundUser) {
       setUser(foundUser);
       return foundUser;
     }
     return null;
-  }, [users]);
+  };
   
-  const signup = useCallback(async (name: string, email: string, password: string, role: 'driver' | 'customer' = 'customer'): Promise<UserProfile | null> => {
+  const signup = async (name: string, email: string, password: string, role: 'driver' | 'customer' = 'customer'): Promise<UserProfile | null> => {
     const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existingUser) {
         return null; // User already exists
@@ -98,21 +98,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsers(prevUsers => [...prevUsers, newUser]);
     setUser(newUser);
     return newUser;
-  }, [users]);
+  };
 
 
-  const logout = useCallback(() => {
+  const logout = () => {
     setUser(null);
-  }, []);
+  };
 
-  const updateUserKycStatus = useCallback((userId: string, status: UserProfile['kycStatus']) => {
+  const updateUserKycStatus = (userId: string, status: UserProfile['kycStatus']) => {
     setUsers(prevUsers => prevUsers.map(u => 
         u.id === userId ? { ...u, kycStatus: status } : u
     ));
     if (user?.id === userId) {
         setUser(prevUser => prevUser ? { ...prevUser, kycStatus: status } : null);
     }
-  }, [user?.id]);
+  };
 
   const value = { user, loading, setLoading, login, signup, logout, users, updateUserKycStatus };
 
