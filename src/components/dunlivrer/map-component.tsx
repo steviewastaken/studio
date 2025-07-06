@@ -28,12 +28,12 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
   const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
 
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const routePolylineRef = useRef<google.maps.Polyline | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const driverMarkerRef = useRef<google.maps.Marker | null>(null);
   const driverRealtimeMarkerRef = useRef<google.maps.Marker | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const blinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isPolylineVisible = useRef(true);
 
   useEffect(() => {
     loadGoogleMapsApi()
@@ -51,67 +51,62 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
       zoom: 12,
       mapId: 'DUNLIVRER_MAP_ID',
       disableDefaultUI: true,
+      zoomControl: true,
+      gestureHandling: 'cooperative',
       styles: [ /* styles remain the same */ ]
     });
     setMap(newMap);
     directionsRendererRef.current = new google.maps.DirectionsRenderer({
         map: newMap,
-        suppressMarkers: true, 
-        polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5, strokeOpacity: 0.8 }
+        suppressMarkers: true,
+        suppressPolylines: true, // We will draw our own polyline
     });
   }, [status, map]);
 
   // Blinking effect for navigation route
   useEffect(() => {
-    const renderer = directionsRendererRef.current;
-
-    // Stop any previous interval when dependencies change
+    // Stop any previous interval
     if (blinkIntervalRef.current) {
-      clearInterval(blinkIntervalRef.current);
-      blinkIntervalRef.current = null;
-    }
-
-    if (isNavigating && renderer) {
-      const visibleOptions = { strokeColor: 'hsl(var(--primary))', strokeWeight: 6, strokeOpacity: 0.9 };
-      const invisibleOptions = { strokeColor: 'hsl(var(--primary))', strokeWeight: 6, strokeOpacity: 0.2 };
-      
-      blinkIntervalRef.current = setInterval(() => {
-        isPolylineVisible.current = !isPolylineVisible.current;
-        renderer.setOptions({ polylineOptions: isPolylineVisible.current ? visibleOptions : invisibleOptions });
-      }, 600);
-
-    } else {
-      // If not navigating, ensure the line is visible.
-      if (renderer) {
-        renderer.setOptions({
-          polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5, strokeOpacity: 0.8 }
-        });
-      }
-    }
-
-    // Cleanup function for when component unmounts or deps change
-    return () => {
-      if (blinkIntervalRef.current) {
         clearInterval(blinkIntervalRef.current);
-      }
-      // On cleanup, ensure polyline is visible again.
-      if (renderer) {
-        renderer.setOptions({
-          polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5, strokeOpacity: 0.8 }
-        });
-      }
+    }
+
+    const polyline = routePolylineRef.current;
+    if (isNavigating && polyline) {
+        let isVisible = true;
+        blinkIntervalRef.current = setInterval(() => {
+            isVisible = !isVisible;
+            polyline.setVisible(isVisible);
+        }, 600);
+    } else if (polyline) {
+        // If not navigating, ensure the line is visible.
+        polyline.setVisible(true);
+    }
+    
+    // Cleanup on unmount or when deps change
+    return () => {
+        if (blinkIntervalRef.current) {
+            clearInterval(blinkIntervalRef.current);
+        }
+        // On cleanup, ensure polyline is visible again.
+        if (polyline) {
+            polyline.setVisible(true);
+        }
     };
-  }, [isNavigating, map]);
+  }, [isNavigating, directionsResult]); // Depends on directionsResult to get the polyline
 
 
   useEffect(() => {
     if (!map || !directionsRendererRef.current) return;
     
     // Clear previous state
-    directionsRendererRef.current.setDirections({routes: []});
-    setDirectionsResult(null);
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
+    if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null);
+        routePolylineRef.current = null;
+    }
+    directionsRendererRef.current.setDirections({routes: []});
+    setDirectionsResult(null);
 
     if (!origin) { // No origin, default view
         map.setCenter({ lat: 48.8566, lng: 2.3522 });
@@ -152,9 +147,20 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
 
         directionsService.route(request, (result, status) => {
           if (status === 'OK' && result && directionsRendererRef.current) {
+            // Use renderer to fit map to bounds, but don't draw its line/markers
             directionsRendererRef.current.setDirections(result);
             setDirectionsResult(result);
+
+            // Draw our own polyline
+            routePolylineRef.current = new google.maps.Polyline({
+                path: result.routes[0].overview_path,
+                strokeColor: 'hsl(var(--primary))',
+                strokeWeight: 5,
+                strokeOpacity: 0.8,
+                map: map,
+            });
             
+            // Draw our own markers
             const pickupMarker = new google.maps.Marker({
                 position: result.routes[0].legs[0].start_location,
                 map: map,
