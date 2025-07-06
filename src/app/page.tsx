@@ -14,7 +14,6 @@ import LiveTrackingPreview from '@/components/dunlivrer/live-tracking-preview';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SupportChat from '@/components/dunlivrer/support-chat';
 import { useLanguage } from '@/context/language-context';
-import { translations } from '@/lib/translations';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import type { GetInsuranceQuoteOutput } from '@/ai/flows/get-insurance-quote';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -157,8 +156,7 @@ export default function DunlivrerPage() {
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   
-  const { language } = useLanguage();
-  const content = translations[language as keyof typeof translations] || translations.en;
+  const { content } = useLanguage();
 
   const handleAddressChange = useCallback((addresses: { pickup: string | null; destinations: string[] }) => {
     setPreviewAddresses(addresses);
