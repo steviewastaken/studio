@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to convert text to speech.
@@ -68,6 +69,22 @@ const textToSpeechFlow = ai.defineFlow(
         voiceName = 'Caph'; // French voice
       } else if (input.language.startsWith('es')) {
         voiceName = 'Electra'; // Spanish voice
+      } else if (input.language.startsWith('de')) {
+        voiceName = 'Rigel'; // German voice
+      } else if (input.language.startsWith('zh')) {
+        voiceName = 'Hadar'; // Mandarin voice
+      } else if (input.language.startsWith('ja')) {
+        voiceName = 'Spica'; // Japanese voice
+      } else if (input.language.startsWith('ar')) {
+        voiceName = 'Antares'; // Arabic voice
+      } else if (input.language.startsWith('pt')) {
+        voiceName = 'Regulus'; // Portuguese voice
+      } else if (input.language.startsWith('ru')) {
+        voiceName = 'Vega'; // Russian voice
+      } else if (input.language.startsWith('hi')) {
+        voiceName = 'Procyon'; // Hindi voice
+      } else if (input.language.startsWith('it')) {
+        voiceName = 'Altair'; // Italian voice
       }
     }
 
