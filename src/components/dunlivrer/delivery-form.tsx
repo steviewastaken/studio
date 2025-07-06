@@ -21,7 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
-import { useJobs } from '@/context/jobs-context';
+import { useJobs, type Job } from '@/context/jobs-context';
 import AddressInput from './address-input';
 import { Input } from '../ui/input';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -206,14 +206,34 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
   const postDeliveryJob = () => {
     const values = form.getValues();
     if (quote) {
-      const newJob = {
+      const payoutValue = ((quote.price + (insuranceQuote?.premium || 0)) * 0.8);
+      const distanceValue = parseFloat(quote.distance.split(' ')[0]) || 1;
+
+      let suggestion = "Standard payout for this distance. Safe route reported.";
+      let suggestionType: 'accept' | 'neutral' = 'neutral';
+      if ((payoutValue / distanceValue) > 2.5) { // e.g. more than 2.5 euros per km
+          suggestion = "Excellent payout for this trip. Recommended.";
+          suggestionType = 'accept';
+      }
+
+      const newJob: Job = {
         id: `job-${Date.now()}`,
         pickup: values.pickupAddress,
         dropoff: values.destinationAddresses[values.destinationAddresses.length - 1].value,
         distance: quote.distance,
-        payout: ((quote.price + (insuranceQuote?.premium || 0)) * 0.8).toFixed(2),
+        payout: payoutValue.toFixed(2),
         time: quote.eta,
+        suggestion,
+        suggestionType,
       };
+
+      if (Math.random() < 0.2) {
+          newJob.safetyAlert = {
+              type: 'warning',
+              message: 'High traffic area alert. Be aware of potential delays.'
+          }
+      }
+
       addJob(newJob);
       toast({
         title: "Delivery Posted!",
