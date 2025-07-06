@@ -39,6 +39,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<UserProfile | null>;
   signup: (name: string, email: string, password: string, role: 'driver' | 'customer') => Promise<UserProfile | null>;
   logout: () => void;
+  users: UserProfile[];
   updateUserKycStatus: (userId: string, status: UserProfile['kycStatus']) => void;
 };
 
@@ -90,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id]);
 
-  const value = { user, loading, setLoading, login, signup, logout, updateUserKycStatus };
+  const value = { user, loading, setLoading, login, signup, logout, users, updateUserKycStatus };
 
   return (
     <AuthContext.Provider value={value}>
