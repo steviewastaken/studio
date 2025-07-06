@@ -53,22 +53,29 @@ export default function SignInPage() {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const redirectPath = searchParams.get('redirect') || '/';
+    const email = values.email.toLowerCase();
+    const password = values.password;
 
-    if (values.email.toLowerCase() === 'admin@dunlivrer.com' && values.password === 'admin') {
+    if (email === 'admin@dunlivrer.com' && password === 'admin') {
         login(mockAdminUser);
         toast({
             title: "Admin Signed In!",
             description: "Welcome to the admin dashboard.",
         });
         router.push(redirectPath.startsWith('/admin') ? redirectPath : '/admin');
-    } else {
-        // For demo purposes, any other login is treated as a driver
+    } else if (email === 'demo@dunlivrer.com' && password === 'demo') {
         login(mockDriverUser);
         toast({
             title: "Signed In!",
             description: "Welcome back!",
         });
         router.push(redirectPath !== '/admin' ? redirectPath : '/driver');
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Sign In Failed",
+            description: "Invalid email or password. Please try again.",
+        });
     }
     setLoading(false);
   }
@@ -115,7 +122,7 @@ export default function SignInPage() {
                 <Info className="h-4 w-4" />
                 <AlertTitle>Demo Credentials</AlertTitle>
                 <AlertDescription className="text-xs">
-                    Use <b>admin@dunlivrer.com</b> / <b>admin</b> for admin access. Any other credentials will log you in as a driver.
+                    Use <b>admin@dunlivrer.com</b> / <b>admin</b> for admin access, or <b>demo@dunlivrer.com</b> / <b>demo</b> for driver access.
                 </AlertDescription>
             </Alert>
             <p className="text-sm text-muted-foreground">
