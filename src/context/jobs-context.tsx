@@ -18,13 +18,6 @@ export type Job = {
   };
 };
 
-type JobsContextType = {
-  jobs: Job[];
-  addJob: (job: Job) => void;
-  removeJob: (id: string) => void;
-  loading: boolean;
-};
-
 const initialJobs: Job[] = [
     {
         id: 'job-init-1',
@@ -40,16 +33,36 @@ const initialJobs: Job[] = [
             message: '🛑 Traffic disruption detected near République due to an event. An alternate route will be automatically suggested upon acceptance.'
         }
     },
-  {
-    id: 'job-init-2',
-    pickup: 'Gare du Nord, 75010 Paris',
-    dropoff: 'La Défense, 92800 Puteaux',
-    distance: '10.8 km',
-    payout: '18.75',
-    time: '45 min',
-    suggestion: "High payout for a cross-city trip. No alerts on this route.",
-    suggestionType: 'accept'
-  },
+    {
+        id: 'job-init-2',
+        pickup: 'Gare du Nord, 75010 Paris',
+        dropoff: 'La Défense, 92800 Puteaux',
+        distance: '10.8 km',
+        payout: '18.75',
+        time: '45 min',
+        suggestion: "High payout for a cross-city trip. No alerts on this route.",
+        suggestionType: 'accept'
+    },
+    {
+        id: 'job-init-3',
+        pickup: 'Arc de Triomphe, 75008 Paris',
+        dropoff: 'Place des Vosges, 75004 Paris',
+        distance: '6.2 km',
+        payout: '11.20',
+        time: '25 min',
+        suggestion: 'Good payout for a popular cross-town route.',
+        suggestionType: 'accept',
+    },
+    {
+        id: 'job-init-4',
+        pickup: 'Opéra Garnier, 75009 Paris',
+        dropoff: 'Place du Tertre, 75018 Paris',
+        distance: '2.1 km',
+        payout: '7.00',
+        time: '12 min',
+        suggestion: 'Short and quick trip, good for filling a gap.',
+        suggestionType: 'neutral',
+    },
 ];
 
 
@@ -59,11 +72,15 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // This effect runs once on component mount on the client side.
+  // It's responsible for hydrating the state from localStorage.
   useEffect(() => {
     try {
       const item = window.localStorage.getItem('dunlivrer-jobs');
+      // If there's an item in storage, use it. Otherwise, initialize with default jobs.
       setJobs(item ? JSON.parse(item) : initialJobs);
     } catch (error) {
+      // If parsing fails, fall back to initial data.
       console.error("Failed to load jobs from localStorage, using initial data.", error);
       setJobs(initialJobs);
     } finally {
@@ -71,6 +88,8 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // This effect runs whenever the `jobs` state changes (and not during initial load).
+  // It's responsible for persisting the state back to localStorage.
   useEffect(() => {
     if (!loading) {
         try {
