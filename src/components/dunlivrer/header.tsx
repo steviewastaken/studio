@@ -20,6 +20,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '../ui/skeleton';
+import { useRouter } from 'next/navigation';
 
 const baseNavLinks = [
   { href: '/services', label: 'Services' },
@@ -68,6 +69,7 @@ function LanguageSwitcher() {
 
 export default function Header() {
   const { user, loading, logout } = useAuth();
+  const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
   
@@ -77,6 +79,11 @@ export default function Header() {
         ? { href: '/admin', label: 'Admin' }
         : { href: '/driver', label: 'Driver App' }
   ];
+
+  const handleLogout = () => {
+    logout();
+    router.push('/signin');
+  };
 
   useEffect(() => {
     const controlNavbar = () => {
@@ -155,7 +162,7 @@ export default function Header() {
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -212,7 +219,7 @@ export default function Header() {
                           <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
                       </div>
-                       <Button variant="outline" onClick={logout}>
+                       <Button variant="outline" onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         Sign Out
                       </Button>
