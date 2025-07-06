@@ -4,10 +4,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered, AlertTriangle, Lightbulb, Loader2, PartyPopper } from "lucide-react";
+import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered, AlertTriangle, Lightbulb, Loader2, PartyPopper, Camera, ArrowRight, Pickaxe, Navigation } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +19,8 @@ import { useJobs, type Job } from "@/context/jobs-context";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useLanguage } from "@/context/language-context";
 import { useRouter } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MapComponent from "@/components/dunlivrer/map-component";
+import Image from "next/image";
 
 
 // --- Job Acceptance Component ---
@@ -85,59 +86,216 @@ const AvailableJobs = ({ onAcceptJob }: { onAcceptJob: (job: Job) => void }) => 
     )
 }
 
-// --- Active Delivery Component ---
-const ActiveDelivery = ({ job, onComplete }: { job: Job, onComplete: (payout: number) => void }) => {
-    const [step, setStep] = useState<'pickup' | 'dropoff'>('pickup');
+
+const ActiveDeliveryMap = ({ job, onComplete }: { job: Job, onComplete: (payout: number) => void }) => {
+    type Step = 'to_pickup' | 'at_pickup' | 'to_dropoff' | 'at_dropoff' | 'capturing_photo';
+    const [step, setStep] = useState<Step>('to_pickup');
+    const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
+    // Photo capture state
+    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    // Get driver's live location
+    useEffect(() => {
+        let watchId: number;
+        if (navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    setDriverLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                    });
+                },
+                (error) => {
+                    console.error("Geolocation error:", error);
+                    toast({ variant: "destructive", title: "Location Error", description: "Could not get your location." });
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+        }
+        return () => {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        };
+    }, [toast]);
+
+    // Handle camera permission when needed
+    useEffect(() => {
+        if (step !== 'capturing_photo' || hasCameraPermission) return;
+        
+        if (!canvasRef.current) {
+            canvasRef.current = document.createElement('canvas');
+        }
+
+        const getCameraPermission = async () => {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+            setHasCameraPermission(true);
+          } catch (error) {
+            console.error('Error accessing camera:', error);
+            setHasCameraPermission(false);
+            setStep('at_dropoff'); // Go back a step if camera fails
+            toast({ variant: 'destructive', title: 'Camera Access Denied', description: 'Please enable camera permissions to complete the delivery.' });
+          }
+        };
+        getCameraPermission();
+        
+        // Cleanup function
+        return () => {
+          if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+          }
+        }
+    }, [step, hasCameraPermission, toast]);
+
+
     const handleAction = () => {
         setIsLoading(true);
-        // Simulate travel time
         setTimeout(() => {
-            if (step === 'pickup') {
-                setStep('dropoff');
-                toast({ title: "Package Picked Up!", description: `Now heading to ${job.dropoff}` });
-            } else {
-                onComplete(parseFloat(job.payout));
+            switch (step) {
+                case 'to_pickup':
+                    setStep('at_pickup');
+                    toast({ title: "Arrived at Pickup!", description: `Confirm you have the package from ${job.pickup}.` });
+                    break;
+                case 'at_pickup':
+                    setStep('to_dropoff');
+                    toast({ title: "Package Picked Up!", description: `Now heading to ${job.dropoff}.` });
+                    break;
+                case 'to_dropoff':
+                    setStep('at_dropoff');
+                    toast({ title: "Arrived at Destination!", description: `Confirm delivery to complete the job.` });
+                    break;
+                case 'at_dropoff':
+                    setStep('capturing_photo');
+                    break;
             }
             setIsLoading(false);
-        }, 1500);
-    }
-    
-    return (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-            <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
-                <CardHeader>
-                    <CardTitle className="font-headline text-2xl">Active Delivery</CardTitle>
-                    <CardDescription>Follow the steps to complete the delivery.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex items-center gap-4">
-                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center border-2", step === 'pickup' ? "bg-primary border-primary-foreground text-primary-foreground" : "bg-muted border-transparent")}><MapPin/></div>
-                        <div><p className="text-muted-foreground">Step 1: Pickup</p><p className="font-semibold">{job.pickup}</p></div>
-                    </div>
-                     <div className="flex items-center gap-4">
-                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center border-2", step === 'dropoff' ? "bg-primary border-primary-foreground text-primary-foreground" : "bg-muted border-transparent")}><CheckCircle/></div>
-                        <div><p className="text-muted-foreground">Step 2: Dropoff</p><p className="font-semibold">{job.dropoff}</p></div>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button size="lg" className="w-full" onClick={handleAction} disabled={isLoading}>
-                        {isLoading && <Loader2 className="mr-2 animate-spin"/>}
-                        {step === 'pickup' ? 'Mark as Picked Up' : 'Mark as Delivered'}
-                    </Button>
-                </CardFooter>
-            </Card>
-        </motion.div>
-    )
-}
+        }, 1000);
+    };
 
+    const handleCapturePhoto = () => {
+        if (!videoRef.current || !canvasRef.current) return;
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if (context) {
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            const dataUri = canvas.toDataURL('image/jpeg');
+            setCapturedImage(dataUri);
+            setStep('at_dropoff'); // Go back to confirmation view
+             // Stop the camera stream
+            if (videoRef.current && videoRef.current.srcObject) {
+                const stream = videoRef.current.srcObject as MediaStream;
+                stream.getTracks().forEach(track => track.stop());
+            }
+        }
+    };
+
+    const handleSubmitDelivery = () => {
+        onComplete(parseFloat(job.payout));
+    };
+
+    const getRoute = () => {
+        if (!driverLocation) return { origin: null, destination: null };
+        const driverPosStr = `${driverLocation.lat},${driverLocation.lng}`;
+        if (step === 'to_pickup' || step === 'at_pickup') {
+            return { origin: driverPosStr, destination: job.pickup };
+        }
+        if (step === 'to_dropoff' || step === 'at_dropoff' || step === 'capturing_photo') {
+            return { origin: job.pickup, destination: job.dropoff };
+        }
+        return { origin: null, destination: null };
+    };
+
+    const route = getRoute();
+    const isNavigating = step === 'to_pickup' || step === 'to_dropoff';
+
+    return (
+        <div className="fixed inset-0 bg-background z-50 pt-16">
+            <MapComponent
+                origin={route.origin}
+                destination={route.destination}
+                driverLocation={driverLocation}
+            />
+
+            {step === 'capturing_photo' ? (
+                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-4 gap-4 z-20">
+                    <video ref={videoRef} className="w-full max-w-lg aspect-video rounded-md bg-muted" autoPlay muted playsInline />
+                     {hasCameraPermission === false && (
+                        <Alert variant="destructive"><AlertTitle>Camera Access Required</AlertTitle></Alert>
+                    )}
+                    <div className="flex gap-4">
+                        <Button variant="outline" onClick={() => setStep('at_dropoff')}>Cancel</Button>
+                        <Button size="lg" onClick={handleCapturePhoto} disabled={hasCameraPermission !== true}>
+                            <Camera className="mr-2"/> Take Photo
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                 <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
+                    <Card className="bg-card/90 backdrop-blur-lg border-white/10 max-w-2xl mx-auto">
+                        <CardHeader>
+                            <CardTitle className="font-headline text-2xl">{isNavigating ? "On Route" : "At Location"}</CardTitle>
+                            <CardDescription>
+                                {step === 'to_pickup' && `Head to the pickup location.`}
+                                {step === 'at_pickup' && `You have arrived at the pickup location.`}
+                                {step === 'to_dropoff' && `Head to the destination.`}
+                                {step === 'at_dropoff' && `You have arrived at the destination.`}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                             <div className="flex items-center gap-3 p-3 bg-muted rounded-md">
+                               <div className="p-2 bg-primary/20 rounded-md text-primary"><MapPin/></div>
+                               <div>
+                                 <p className="text-xs text-muted-foreground">{step === 'to_pickup' || step === 'at_pickup' ? "Pickup" : "Destination"}</p>
+                                 <p className="font-semibold">{step === 'to_pickup' || step === 'at_pickup' ? job.pickup : job.dropoff}</p>
+                               </div>
+                            </div>
+                            {capturedImage && step === 'at_dropoff' && (
+                                <div className="space-y-2">
+                                    <Label>Proof of Delivery</Label>
+                                    <div className="relative aspect-video w-full rounded-md overflow-hidden border">
+                                        <Image src={capturedImage} layout="fill" objectFit="cover" alt="Proof of delivery"/>
+                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={() => setCapturedImage(null)}><X className="h-4 w-4"/></Button>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                        <CardFooter>
+                            {step === 'at_dropoff' && capturedImage ? (
+                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleSubmitDelivery}>
+                                    <CheckCircle className="mr-2" /> Complete Delivery & Get Paid
+                                </Button>
+                            ) : (
+                                <Button size="lg" className="w-full" onClick={handleAction} disabled={isLoading}>
+                                    {isLoading && <Loader2 className="mr-2 animate-spin"/>}
+                                    {step === 'to_pickup' && <><Navigation className="mr-2"/>Arrived at Pickup</>}
+                                    {step === 'at_pickup' && <><Package className="mr-2"/>Confirm Package Pickup</>}
+                                    {step === 'to_dropoff' && <><Navigation className="mr-2"/>Arrived at Destination</>}
+                                    {step === 'at_dropoff' && <><Camera className="mr-2"/>Take Proof of Delivery Photo</>}
+                                </Button>
+                            )}
+                        </CardFooter>
+                    </Card>
+                 </div>
+            )}
+        </div>
+    );
+}
 
 // --- Main Driver Dashboard Component ---
 const DriverDashboard = () => {
     const [isOnline, setIsOnline] = useState(true);
-    const [activeTab, setActiveTab] = useState("jobs");
     const [currentJob, setCurrentJob] = useState<Job | null>(null);
     const { content } = useLanguage();
     const { removeJob } = useJobs();
@@ -148,13 +306,13 @@ const DriverDashboard = () => {
     const handleAcceptJob = (job: Job) => {
         removeJob(job.id);
         setCurrentJob(job);
-        toast({ title: "Job Accepted!", description: "The delivery details have been added to your route." });
+        toast({ title: "Job Accepted!", description: "Starting new delivery. Follow the map instructions." });
     }
 
     const handleCompleteJob = (payout: number) => {
         toast({
             title: "Delivery Complete!",
-            description: `Payment of €${payout.toFixed(2)} will be processed to your account.`,
+            description: `Payment of €${payout.toFixed(2)} has been added to your earnings.`,
         });
         setStats(prev => ({
             ...prev,
@@ -162,6 +320,11 @@ const DriverDashboard = () => {
             deliveries: prev.deliveries + 1,
         }));
         setCurrentJob(null);
+    }
+    
+    // Render the active delivery map if a job is accepted
+    if (currentJob) {
+        return <ActiveDeliveryMap job={currentJob} onComplete={handleCompleteJob} />
     }
 
     return (
@@ -186,26 +349,23 @@ const DriverDashboard = () => {
                 <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{content.driver_dashboard_deliveries_title}</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">+{stats.deliveries}</div><p className="text-xs text-muted-foreground">{content.driver_dashboard_deliveries_stat}</p></CardContent></Card>
                 <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{content.driver_dashboard_rating_title}</CardTitle><Star className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">4.9/5.0</div><p className="text-xs text-muted-foreground">{content.driver_dashboard_rating_stat}</p></CardContent></Card>
             </motion.div>
+            
+             <Card className="mt-8 bg-card/80 border-white/10">
+                <CardHeader>
+                    <CardTitle>Available Jobs</CardTitle>
+                    <CardDescription>Accept a job to start a delivery.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AvailableJobs onAcceptJob={handleAcceptJob} />
+                </CardContent>
+            </Card>
 
-            {currentJob ? (
-                <ActiveDelivery job={currentJob} onComplete={handleCompleteJob} />
-            ) : (
-                <Tabs defaultValue="jobs" className="mt-8" onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="jobs"><ListOrdered className="mr-2"/>{content.driver_dashboard_jobs_tab}</TabsTrigger>
-                        <TabsTrigger value="performance"><BarChart className="mr-2"/>{content.driver_dashboard_performance_tab}</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="jobs" className="focus-visible:ring-0 focus-visible:ring-offset-0"><AvailableJobs onAcceptJob={handleAcceptJob} /></TabsContent>
-                    <TabsContent value="performance" className="focus-visible:ring-0 focus-visible:ring-offset-0"><Card className="mt-6 bg-transparent border-none shadow-none"><CardHeader className="px-0"><CardTitle className="font-headline text-2xl">{content.driver_dashboard_perf_title}</CardTitle><CardDescription>{content.driver_dashboard_perf_desc}</CardDescription></CardHeader><CardContent className="px-0"><PerformanceDashboard isActive={activeTab === 'performance'} /></CardContent></Card></TabsContent>
-                </Tabs>
-            )}
         </div>
     );
 };
 
 
 // --- Component for Public/Logged-out View ---
-
 const sectionVariants = {
   hidden: { opacity: 0, y: 30 },
   visible: { 
@@ -290,7 +450,6 @@ const DriverLandingPage = () => {
 }
 
 // --- Main Page Component ---
-
 const LoadingSkeleton = () => (
     <div className="w-full max-w-4xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
         <div className="flex justify-between items-center">

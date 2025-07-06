@@ -13,6 +13,9 @@ type LiveTrackingPreviewProps = {
 export default function LiveTrackingPreview({ pickupAddress, destinationAddresses }: LiveTrackingPreviewProps) {
   const hasAddresses = pickupAddress && destinationAddresses.length > 0 && destinationAddresses.some(d => d && d.trim() !== '');
 
+  const waypoints = hasAddresses ? destinationAddresses.slice(0, -1) : [];
+  const destination = hasAddresses ? destinationAddresses[destinationAddresses.length - 1] : null;
+
   return (
     <Card className="w-full h-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
       <CardHeader>
@@ -20,7 +23,11 @@ export default function LiveTrackingPreview({ pickupAddress, destinationAddresse
       </CardHeader>
       <CardContent>
         <div className="relative mt-4 aspect-[16/10] bg-muted/50 rounded-lg overflow-hidden border border-white/10">
-          <MapComponent pickup={pickupAddress} destinations={destinationAddresses} />
+          <MapComponent 
+            origin={pickupAddress} 
+            destination={destination}
+            waypoints={waypoints}
+          />
           {!hasAddresses && (
              <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm pointer-events-none">
                 <div className="text-center p-8">

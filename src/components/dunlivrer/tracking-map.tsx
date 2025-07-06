@@ -1,4 +1,6 @@
 
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { DeliveryDetails } from "./types";
@@ -59,6 +61,9 @@ export default function TrackingMap({ deliveryDetails, driverDetails, deliverySt
   const currentStepIndex = statusMap[deliveryStatus];
   const progressPercentage = currentStepIndex >= 0 ? (currentStepIndex / (steps.length - 1)) * 100 : 0;
   
+  const origin = deliveryDetails?.pickupAddress || null;
+  const destination = deliveryDetails?.destinationAddresses[0] || null;
+
   return (
     <Card className="w-full h-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
       <CardHeader>
@@ -67,9 +72,9 @@ export default function TrackingMap({ deliveryDetails, driverDetails, deliverySt
       <CardContent className="flex-1 flex flex-col gap-4">
         <div className="relative aspect-[16/10] bg-muted/50 rounded-lg overflow-hidden border border-white/10">
           <MapComponent 
-              pickup={deliveryDetails?.pickupAddress}
-              destinations={deliveryDetails?.destinationAddresses}
-              deliveryStatus={deliveryStatus}
+              origin={origin}
+              destination={destination}
+              animateDriverPath={deliveryStatus === 'IN_TRANSIT'}
           />
           {deliveryDetails ? (
              <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg shadow-lg text-sm border border-white/10 pointer-events-none">
