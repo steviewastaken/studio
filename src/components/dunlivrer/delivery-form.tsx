@@ -52,7 +52,7 @@ type DeliveryFormProps = {
 
 export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuranceChange, quote, insuranceQuote, isReviewed, isGettingQuote, setIsGettingQuote }: DeliveryFormProps) {
   const { user } = useAuth();
-  const { addJob } = useJobs();
+  const { addJob, loading: jobsLoading } = useJobs();
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
   const [scheduledTime, setScheduledTime] = useState('');
@@ -350,7 +350,7 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
     return `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
   });
 
-  const isDispatchLoading = isCheckingFraud;
+  const isDispatchLoading = isCheckingFraud || jobsLoading;
 
   return (
     <>
@@ -467,9 +467,9 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
                             Add Insurance
                         </Button>
                         <Button type="button" onClick={handleConfirmDispatch} size="lg" disabled={isDispatchLoading}>
-                            {isCheckingFraud && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isDispatchLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {!isDispatchLoading && <Truck className="mr-2 h-4 w-4" />}
-                            {isCheckingFraud ? 'Analyzing...' : 'Dispatch Now'}
+                            {isCheckingFraud ? 'Analyzing...' : jobsLoading ? 'Initializing...' : 'Dispatch Now'}
                         </Button>
                     </div>
                 </div>
