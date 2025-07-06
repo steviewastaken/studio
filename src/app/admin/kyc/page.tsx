@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, X, User, FileText, Camera } from "lucide-react";
@@ -13,32 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-
-// Mock data for KYC applications
-const mockApplications = [
-  {
-    id: 'user-kyc-1',
-    name: 'Sophie Lemaire',
-    email: 'sophie.l@email.com',
-    date: '2024-07-20',
-    documents: {
-      selfie: 'https://placehold.co/400x300.png',
-      license: 'https://placehold.co/400x250.png',
-      registration: 'https://placehold.co/400x500.png',
-    }
-  },
-  {
-    id: 'user-kyc-2',
-    name: 'Karim Benzema',
-    email: 'k.benz@email.com',
-    date: '2024-07-19',
-    documents: {
-      selfie: 'https://placehold.co/400x300.png',
-      license: 'https://placehold.co/400x250.png',
-      registration: 'https://placehold.co/400x500.png',
-    }
-  }
-];
 
 const DocumentViewer = ({ documents, driverName }: { documents: any, driverName: string }) => (
     <DialogContent className="max-w-4xl">
@@ -65,12 +39,26 @@ const DocumentViewer = ({ documents, driverName }: { documents: any, driverName:
 
 
 export default function KycVerificationPage() {
-    const [applications, setApplications] = useState(mockApplications);
+    const { users, updateUserKycStatus } = useAuth();
     const { toast } = useToast();
 
-    // In a real app, this would call the backend/context to update user status
+    const pendingApplications = users
+      .filter(u => u.role === 'driver' && u.kycStatus === 'pending')
+      .map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          date: new Date().toISOString().split('T')[0],
+          documents: {
+            selfie: 'https://placehold.co/400x300.png',
+            license: 'https://placehold.co/400x250.png',
+            registration: 'https://placehold.co/400x500.png',
+          }
+      }));
+
     const handleAction = (id: string, action: 'Approved' | 'Rejected') => {
-        setApplications(prev => prev.filter(app => app.id !== id));
+        const newStatus = action === 'Approved' ? 'verified' : 'rejected';
+        updateUserKycStatus(id, newStatus);
         toast({
             title: `Application ${action}`,
             description: `The driver's application has been ${action.toLowerCase()}. They will be notified.`,
@@ -94,7 +82,7 @@ export default function KycVerificationPage() {
                     </CardHeader>
                     <CardContent>
                          <AnimatePresence>
-                            {applications.length > 0 ? (
+                            {pendingApplications.length > 0 ? (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -105,7 +93,7 @@ export default function KycVerificationPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {applications.map(app => (
+                                        {pendingApplications.map(app => (
                                              <motion.tr layout key={app.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -50 }}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
