@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 
 export type UserProfile = {
   id: string;
@@ -48,7 +48,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<UserProfile[]>(initialUsers);
+  
+  const [users, setUsers] = useState<UserProfile[]>(() => {
+    if (typeof window === 'undefined') {
+      return initialUsers;
+    }
+    try {
+      const item = window.localStorage.getItem('dunlivrer-users');
+      return item ? JSON.parse(item) : initialUsers;
+    } catch (error) {
+      console.log(error);
+      return initialUsers;
+    }
+  });
+
+  useEffect(() => {
+    try {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('dunlivrer-users', JSON.stringify(users));
+        }
+    } catch (error) {
+        console.error("Failed to save users to localStorage", error);
+    }
+  }, [users]);
+
 
   const login = useCallback(async (email: string, password: string): Promise<UserProfile | null> => {
     const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
