@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export type Job = {
   id: string;
@@ -22,6 +22,7 @@ type JobsContextType = {
   jobs: Job[];
   addJob: (job: Job) => void;
   removeJob: (id: string) => void;
+  loading: boolean;
 };
 
 // Start with some initial mock jobs for demonstration
@@ -57,6 +58,35 @@ const JobsContext = createContext<JobsContextType | undefined>(undefined);
 
 export function JobsProvider({ children }: { children: ReactNode }) {
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // This effect runs once on the client to load persisted jobs.
+    try {
+      const item = window.localStorage.getItem('dunlivrer-jobs');
+      if (item) {
+        setJobs(JSON.parse(item));
+      }
+    } catch (error) {
+      console.error("Failed to load jobs from localStorage", error);
+      // If loading fails, it will just use the initialJobs state
+    } finally {
+        setLoading(false);
+    }
+  }, []); // Empty dependency array ensures it runs only once on mount.
+
+  useEffect(() => {
+    // This effect runs whenever 'jobs' state changes, saving it to localStorage.
+    // The !loading check prevents overwriting stored data with initialJobs on first render.
+    if (!loading) {
+        try {
+            window.localStorage.setItem('dunlivrer-jobs', JSON.stringify(jobs));
+        } catch (error) {
+            console.error("Failed to save jobs to localStorage", error);
+        }
+    }
+  }, [jobs, loading]);
+
 
   const addJob = (job: Job) => {
     // Add new job to the top of the list
@@ -68,7 +98,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <JobsContext.Provider value={{ jobs, addJob, removeJob }}>
+    <JobsContext.Provider value={{ jobs, addJob, removeJob, loading }}>
       {children}
     </JobsContext.Provider>
   );
