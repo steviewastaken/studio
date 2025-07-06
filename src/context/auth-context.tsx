@@ -11,8 +11,8 @@ export type UserProfile = {
   role: 'driver' | 'admin' | 'customer';
 };
 
-// Mock user "database"
-const mockUsers: UserProfile[] = [
+// Initial state for the mock user "database"
+const initialUsers: UserProfile[] = [
   {
     id: 'admin-001',
     name: 'Admin User',
@@ -43,18 +43,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
+  // Store the list of users in state so it persists for the session
+  const [users, setUsers] = useState<UserProfile[]>(initialUsers);
 
   const login = useCallback(async (email: string, password: string): Promise<UserProfile | null> => {
-    const foundUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+    const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
     if (foundUser) {
       setUser(foundUser);
       return foundUser;
     }
     return null;
-  }, []);
+  }, [users]); // Depend on the users state
   
   const signup = useCallback(async (name: string, email: string, password: string, role: 'driver' | 'customer' = 'customer'): Promise<UserProfile | null> => {
-    const existingUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existingUser) {
         return null; // User already exists
     }
@@ -65,10 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         role: role
     };
-    mockUsers.push(newUser);
+    // Update the users state with the new user
+    setUsers(prevUsers => [...prevUsers, newUser]);
     setUser(newUser);
     return newUser;
-  }, []);
+  }, [users]); // Depend on the users state
 
 
   const logout = useCallback(() => {
