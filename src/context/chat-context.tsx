@@ -56,12 +56,16 @@ const initialChats: ChatSession[] = [
        { id: 'm3-3', sender: 'user', text: 'Perfect, thank you for your help.', timestamp: '11:02 AM', rating: null }
     ]
   }
-];
+].sort((a, b) => { // Keep "Needs Attention" on top initially
+    if (a.status === 'Needs Attention' && b.status !== 'Needs Attention') return -1;
+    if (a.status !== 'Needs Attention' && b.status === 'Needs Attention') return 1;
+    return 0;
+});
 
 
 type ChatContextType = {
   chats: ChatSession[];
-  addMessageToChat: (chatId: string, message: { text: string; sender: 'user' | 'ai' | 'admin', language?: string }) => void;
+  addMessageToChat: (chatId: string, message: { text: string; sender: 'user' | 'ai' | 'admin'; language?: string; }, userInfo?: { userId: string; }) => void;
   rateMessage: (chatId: string, messageId: string, rating: 'good' | 'bad') => void;
 };
 
@@ -70,7 +74,11 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [chats, setChats] = useState<ChatSession[]>(initialChats);
 
-  const addMessageToChat = useCallback((chatId: string, message: { text: string; sender: 'user' | 'ai' | 'admin', language?: string }) => {
+  const addMessageToChat = useCallback((
+      chatId: string, 
+      message: { text: string; sender: 'user' | 'ai' | 'admin'; language?: string },
+      userInfo?: { userId: string }
+    ) => {
     setChats(prevChats => {
       const chatExists = prevChats.some(chat => chat.id === chatId);
 
@@ -78,39 +86,42 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Create a new chat session if it doesn't exist
         const newChat: ChatSession = {
           id: chatId,
-          userId: `user-${chatId.slice(-6)}`,
-          status: 'AI Handling',
+          userId: userInfo?.userId || `user-${chatId.slice(-6)}`,
+          status: 'Needs Attention', // New chats from contact form or new user need attention
           lastMessage: message.text,
           messages: [{
             id: `msg-${Date.now()}`,
-            text: message.text,
-            sender: message.sender,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             rating: null,
-            language: message.language,
+            ...message
           }]
         };
-        return [...prevChats, newChat];
+        // Add new chat to the beginning of the list
+        return [newChat, ...prevChats];
       }
 
-      return prevChats.map(chat => {
-        if (chat.id === chatId) {
-          const newMessage: Message = {
-            ...message,
-            id: `msg-${Date.now()}`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            rating: null,
-          };
-          const updatedMessages = [...chat.messages, newMessage];
-          return {
-            ...chat,
-            messages: updatedMessages,
-            lastMessage: newMessage.text,
-            status: chat.status === 'Resolved' && message.sender === 'user' ? 'AI Handling' : chat.status,
-          };
-        }
-        return chat;
+      // If chat exists, update it and move it to the top
+      let updatedChat: ChatSession | null = null;
+      const otherChats = prevChats.filter(chat => {
+          if (chat.id === chatId) {
+              const newMessage: Message = {
+                id: `msg-${Date.now()}`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                rating: null,
+                ...message
+              };
+              updatedChat = {
+                  ...chat,
+                  messages: [...chat.messages, newMessage],
+                  lastMessage: newMessage.text,
+                  status: message.sender === 'user' ? 'Needs Attention' : chat.status,
+              };
+              return false; // Remove from list to re-insert at the top
+          }
+          return true;
       });
+
+      return updatedChat ? [updatedChat, ...otherChats] : otherChats;
     });
   }, []);
 

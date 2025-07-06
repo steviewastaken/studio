@@ -23,6 +23,10 @@ declare global {
   }
 }
 
+type SupportChatProps = {
+    deliveryDetails: DeliveryDetails | null;
+};
+
 export default function SupportChat({ deliveryDetails }: SupportChatProps) {
   const { user } = useAuth();
   const { chats, addMessageToChat } = useChat();
@@ -136,7 +140,8 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
     if (!query.trim() || isLoading) return;
 
     setIsLoading(true);
-    addMessageToChat(chatId, { sender: 'user', text: query });
+    const userName = user ? user.name : 'Guest User';
+    addMessageToChat(chatId, { sender: 'user', text: query }, { userId: userName });
     
     const deliveryDetailsString = deliveryDetails
       ? `From: ${deliveryDetails.pickupAddress}, To: ${deliveryDetails.destinationAddresses.join('; ')}, Size: ${deliveryDetails.packageSize}`

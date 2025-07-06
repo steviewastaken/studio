@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/context/language-context';
+import { useChat } from '@/context/chat-context';
+import { useAuth } from '@/context/auth-context';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -71,6 +73,8 @@ const staggeredContainer = {
 export default function ContactPage() {
   const { toast } = useToast();
   const { content } = useLanguage();
+  const { addMessageToChat } = useChat();
+  const { user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,11 +84,25 @@ export default function ContactPage() {
   const { isSubmitting } = form.formState;
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // Here you would typically send the form data to your backend
+    // Determine a unique ID for the chat session
+    const chatId = user ? `support-${user.id}` : `contact-${values.email}`;
+    // Use the logged-in user's name or the name from the form
+    const userName = user ? user.name : values.name;
+
+    // Format the message to include the subject line
+    const formattedMessage = `Subject: ${values.subject}\n\n${values.message}`;
+    
+    // Add the message to the global chat context
+    addMessageToChat(chatId, {
+      sender: 'user',
+      text: formattedMessage,
+    }, {
+      userId: userName
+    });
+
     toast({
       title: content.contact_form_success_title,
-      description: content.contact_form_success_desc,
+      description: "Your message has been sent to our support team.",
     });
     form.reset();
   }
