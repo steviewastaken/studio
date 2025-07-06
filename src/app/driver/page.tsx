@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PerformanceDashboard from "@/components/dunlivrer/performance-dashboard";
 import { useJobs, type Job } from "@/context/jobs-context";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useLanguage } from "@/context/language-context";
 
 // --- Components for Driver View ---
 
@@ -108,6 +109,7 @@ const JobCard = ({ job, onAccept, onDecline }: { job: Job, onAccept: (id: string
 const AvailableJobs = () => {
   const { toast } = useToast();
   const { jobs, removeJob } = useJobs();
+  const { content } = useLanguage();
   
   const handleAccept = (id: string) => {
       removeJob(id);
@@ -132,8 +134,8 @@ const AvailableJobs = () => {
           <JobCard key={job.id} job={job} onAccept={handleAccept} onDecline={handleDecline} />
       )) : (
           <Card className="text-center p-12 bg-card/50 border-white/10">
-              <CardTitle className="font-headline text-2xl">All Clear!</CardTitle>
-              <CardDescription className="mt-2">There are no available jobs right now. We'll notify you when a new one comes in.</CardDescription>
+              <CardTitle className="font-headline text-2xl">{content.driver_dashboard_no_jobs_title}</CardTitle>
+              <CardDescription className="mt-2">{content.driver_dashboard_no_jobs_desc}</CardDescription>
           </Card>
       )}
     </div>
@@ -143,6 +145,7 @@ const AvailableJobs = () => {
 const DriverDashboard = () => {
     const [isOnline, setIsOnline] = useState(true);
     const [activeTab, setActiveTab] = useState("jobs");
+    const { content } = useLanguage();
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
@@ -152,17 +155,17 @@ const DriverDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
         >
             <div>
-                <h1 className="text-4xl font-bold font-headline text-white">Driver Dashboard</h1>
-                <p className="mt-1 text-lg text-muted-foreground">Welcome back, let's get rolling.</p>
+                <h1 className="text-4xl font-bold font-headline text-white">{content.driver_dashboard_title}</h1>
+                <p className="mt-1 text-lg text-muted-foreground">{content.driver_dashboard_subtitle}</p>
             </div>
             <div className="flex items-center gap-4">
                 <Button variant="outline" asChild>
-                    <Link href="/driver/report"><AlertTriangle className="mr-2"/> Report Incident</Link>
+                    <Link href="/driver/report"><AlertTriangle className="mr-2"/>{content.driver_dashboard_report_button}</Link>
                 </Button>
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-card/80 border-white/10">
                     <Switch id="online-status" checked={isOnline} onCheckedChange={setIsOnline} />
                     <Label htmlFor="online-status" className={cn("font-medium", isOnline ? "text-green-400" : "text-muted-foreground")}>
-                        {isOnline ? "You are Online" : "You are Offline"}
+                        {isOnline ? content.driver_dashboard_online : content.driver_dashboard_offline}
                     </Label>
                 </div>
             </div>
@@ -175,50 +178,50 @@ const DriverDashboard = () => {
         >
             <Card className="bg-card/80 border-white/10">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Today's Earnings</CardTitle>
+                    <CardTitle className="text-sm font-medium">{content.driver_dashboard_earnings_title}</CardTitle>
                     <Wallet className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">€145.80</div>
-                    <p className="text-xs text-muted-foreground">+12% from yesterday</p>
+                    <p className="text-xs text-muted-foreground">{content.driver_dashboard_earnings_stat}</p>
                 </CardContent>
             </Card>
             <Card className="bg-card/80 border-white/10">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Active Time</CardTitle>
+                    <CardTitle className="text-sm font-medium">{content.driver_dashboard_time_title}</CardTitle>
                     <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">6h 24m</div>
-                    <p className="text-xs text-muted-foreground">Currently Online</p>
+                    <p className="text-xs text-muted-foreground">{content.driver_dashboard_time_stat}</p>
                 </CardContent>
             </Card>
             <Card className="bg-card/80 border-white/10">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Deliveries Today</CardTitle>
+                    <CardTitle className="text-sm font-medium">{content.driver_dashboard_deliveries_title}</CardTitle>
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">+12</div>
-                    <p className="text-xs text-muted-foreground">3 pending</p>
+                    <p className="text-xs text-muted-foreground">{content.driver_dashboard_deliveries_stat}</p>
                 </CardContent>
             </Card>
             <Card className="bg-card/80 border-white/10">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Rating</CardTitle>
+                    <CardTitle className="text-sm font-medium">{content.driver_dashboard_rating_title}</CardTitle>
                     <Star className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">4.9/5.0</div>
-                    <p className="text-xs text-muted-foreground">Based on 25 ratings</p>
+                    <p className="text-xs text-muted-foreground">{content.driver_dashboard_rating_stat}</p>
                 </CardContent>
             </Card>
         </motion.div>
 
         <Tabs defaultValue="jobs" className="mt-8" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="jobs"><ListOrdered className="mr-2"/>Available Jobs</TabsTrigger>
-                <TabsTrigger value="performance"><BarChart className="mr-2"/>Performance</TabsTrigger>
+                <TabsTrigger value="jobs"><ListOrdered className="mr-2"/>{content.driver_dashboard_jobs_tab}</TabsTrigger>
+                <TabsTrigger value="performance"><BarChart className="mr-2"/>{content.driver_dashboard_performance_tab}</TabsTrigger>
             </TabsList>
             <TabsContent value="jobs" className="focus-visible:ring-0 focus-visible:ring-offset-0">
                 <AvailableJobs />
@@ -226,8 +229,8 @@ const DriverDashboard = () => {
             <TabsContent value="performance" className="focus-visible:ring-0 focus-visible:ring-offset-0">
                 <Card className="mt-6 bg-transparent border-none shadow-none">
                     <CardHeader className="px-0">
-                        <CardTitle className="font-headline text-2xl">End-of-Day Performance</CardTitle>
-                        <CardDescription>Review your stats and get AI-powered tips to improve.</CardDescription>
+                        <CardTitle className="font-headline text-2xl">{content.driver_dashboard_perf_title}</CardTitle>
+                        <CardDescription>{content.driver_dashboard_perf_desc}</CardDescription>
                     </CardHeader>
                     <CardContent className="px-0">
                         <PerformanceDashboard isActive={activeTab === 'performance'} />
@@ -261,21 +264,22 @@ const itemVariants = {
 };
 
 const DriverLandingPage = () => {
+    const { content } = useLanguage();
     const features = [
         {
             icon: <Clock className="w-8 h-8 text-primary"/>,
-            title: "Drive on Your Schedule",
-            description: "You're the boss. Choose when you want to drive and for how long. Work part-time, full-time, or just for a few hours."
+            title: content.driver_feature1_title,
+            description: content.driver_feature1_desc,
         },
         {
             icon: <Wallet className="w-8 h-8 text-primary"/>,
-            title: "Earn Competitive Rates",
-            description: "Get paid weekly for your deliveries. Our transparent pay structure means you always know how much you'll make."
+            title: content.driver_feature2_title,
+            description: content.driver_feature2_desc,
         },
         {
             icon: <Route className="w-8 h-8 text-primary"/>,
-            title: "Smart, Efficient Routes",
-            description: "Our AI-powered system optimizes your routes, helping you complete more deliveries in less time and maximize your earnings."
+            title: content.driver_feature3_title,
+            description: content.driver_feature3_desc,
         }
     ];
 
@@ -287,16 +291,16 @@ const DriverLandingPage = () => {
                 animate="visible"
                 variants={sectionVariants}
             >
-                <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-bold font-headline text-white">Become a DunGuy</motion.h1>
+                <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-bold font-headline text-white">{content.driver_landing_title}</motion.h1>
                 <motion.p variants={itemVariants} className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                    Join the future of delivery. Earn money by delivering packages for local businesses and people in your city.
+                    {content.driver_landing_subtitle}
                 </motion.p>
                 <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-4">
                     <Button size="lg" asChild>
-                      <Link href="/signup?as=driver">Sign Up to Drive</Link>
+                      <Link href="/signup?as=driver">{content.driver_landing_signup_button}</Link>
                     </Button>
                     <Button size="lg" variant="outline" asChild>
-                      <Link href="/signin?redirect=/driver">Already have an account? Sign In</Link>
+                      <Link href="/signin?redirect=/driver">{content.driver_landing_signin_button}</Link>
                     </Button>
                 </motion.div>
             </motion.section>

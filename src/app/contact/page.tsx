@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useForm } from 'react-hook-form';
@@ -11,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/context/language-context';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -68,6 +70,7 @@ const staggeredContainer = {
 
 export default function ContactPage() {
   const { toast } = useToast();
+  const { content } = useLanguage();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,8 +83,8 @@ export default function ContactPage() {
     console.log(values);
     // Here you would typically send the form data to your backend
     toast({
-      title: "Message Sent!",
-      description: "Thanks for reaching out. We'll get back to you shortly.",
+      title: content.contact_form_success_title,
+      description: content.contact_form_success_desc,
     });
     form.reset();
   }
@@ -94,9 +97,9 @@ export default function ContactPage() {
             animate="visible"
             variants={sectionVariants}
         >
-            <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">Contact Us</h1>
+            <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">{content.contact_title}</h1>
             <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-                Have a question, a proposal, or just want to say hello? We'd love to hear from you.
+                {content.contact_subtitle}
             </p>
         </motion.section>
 
@@ -112,23 +115,23 @@ export default function ContactPage() {
                     <motion.div variants={itemVariants} className="flex items-start gap-4" whileHover={{ x: 5, transition: { duration: 0.2 } }}>
                         <div className="p-3 bg-primary/20 rounded-lg text-primary"><Mail className="w-6 h-6"/></div>
                         <div>
-                            <h3 className="font-semibold text-lg text-white">Email Us</h3>
-                            <p className="text-muted-foreground">For sales, support, and general inquiries.</p>
+                            <h3 className="font-semibold text-lg text-white">{content.contact_email_title}</h3>
+                            <p className="text-muted-foreground">{content.contact_email_desc}</p>
                             <a href="mailto:contact@dunlivrer.com" className="text-primary hover:underline">contact@dunlivrer.com</a>
                         </div>
                     </motion.div>
                      <motion.div variants={itemVariants} className="flex items-start gap-4" whileHover={{ x: 5, transition: { duration: 0.2 } }}>
                         <div className="p-3 bg-primary/20 rounded-lg text-primary"><Phone className="w-6 h-6"/></div>
                         <div>
-                            <h3 className="font-semibold text-lg text-white">Call Us</h3>
-                            <p className="text-muted-foreground">Mon-Fri, 9am - 5pm.</p>
+                            <h3 className="font-semibold text-lg text-white">{content.contact_phone_title}</h3>
+                            <p className="text-muted-foreground">{content.contact_phone_desc}</p>
                             <a href="tel:+1234567890" className="text-primary hover:underline">+1 (234) 567-890</a>
                         </div>
                     </motion.div>
                      <motion.div variants={itemVariants} className="flex items-start gap-4" whileHover={{ x: 5, transition: { duration: 0.2 } }}>
                         <div className="p-3 bg-primary/20 rounded-lg text-primary"><MapPin className="w-6 h-6"/></div>
                         <div>
-                            <h3 className="font-semibold text-lg text-white">Our Office</h3>
+                            <h3 className="font-semibold text-lg text-white">{content.contact_office_title}</h3>
                             <p className="text-muted-foreground">101 City Center, Anytown, USA</p>
                         </div>
                     </motion.div>
@@ -137,25 +140,25 @@ export default function ContactPage() {
                 <motion.div className="lg:col-span-2" variants={formVariant}>
                     <Card className="bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
                         <CardHeader>
-                            <CardTitle className="font-headline text-3xl">Send a Message</CardTitle>
+                            <CardTitle className="font-headline text-3xl">{content.contact_form_title}</CardTitle>
                         </CardHeader>
                         <CardContent>
                              <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                     <FormField control={form.control} name="name" render={({ field }) => (
-                                        <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>{content.contact_form_name_label}</FormLabel><FormControl><Input placeholder={content.contact_form_name_placeholder} {...field} /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <FormField control={form.control} name="email" render={({ field }) => (
-                                        <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="you@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>{content.contact_form_email_label}</FormLabel><FormControl><Input placeholder={content.contact_form_email_placeholder} {...field} /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <FormField control={form.control} name="subject" render={({ field }) => (
-                                        <FormItem><FormLabel>Subject</FormLabel><FormControl><Input placeholder="e.g., Partnership Inquiry" {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>{content.contact_form_subject_label}</FormLabel><FormControl><Input placeholder={content.contact_form_subject_placeholder} {...field} /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <FormField control={form.control} name="message" render={({ field }) => (
-                                        <FormItem><FormLabel>Your Message</FormLabel><FormControl><Textarea placeholder="Tell us more..." rows={5} {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>{content.contact_form_message_label}</FormLabel><FormControl><Textarea placeholder={content.contact_form_message_placeholder} rows={5} {...field} /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <Button type="submit" size="lg" disabled={isSubmitting}>
-                                        {isSubmitting ? 'Sending...' : 'Send Message'}
+                                        {isSubmitting ? content.contact_form_sending_button : content.contact_form_send_button}
                                     </Button>
                                 </form>
                             </Form>

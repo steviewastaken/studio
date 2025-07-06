@@ -8,6 +8,7 @@ import type { FindDriverOutput } from "@/ai/flows/find-driver";
 import type { DeliveryStatus } from "@/app/tracking/page";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
+import { useLanguage } from "@/context/language-context";
 
 type TrackingMapProps = {
   deliveryDetails: DeliveryDetails | null;
@@ -35,12 +36,7 @@ function StatusStep({ icon, label, isCompleted, isCurrent }: { icon: React.React
   );
 }
 
-const steps = [
-    { id: 'SCHEDULED', label: 'Scheduled', icon: <Package className="w-6 h-6" /> },
-    { id: 'FOUND', label: 'Driver Assigned', icon: <UserRoundCheck className="w-6 h-6" /> },
-    { id: 'IN_TRANSIT', label: 'In Transit', icon: <Truck className="w-6 h-6" /> },
-    { id: 'DELIVERED', label: 'Delivered', icon: <Home className="w-6 h-6" /> }
-];
+
 
 const statusMap: { [key in DeliveryStatus]: number } = {
     IDLE: -1,
@@ -51,6 +47,14 @@ const statusMap: { [key in DeliveryStatus]: number } = {
 };
 
 export default function TrackingMap({ deliveryDetails, driverDetails, deliveryStatus, onRerouteRequest }: TrackingMapProps) {
+  const { content } = useLanguage();
+
+  const steps = [
+    { id: 'SCHEDULED', label: content.tracking_status_scheduled, icon: <Package className="w-6 h-6" /> },
+    { id: 'FOUND', label: content.tracking_status_assigned, icon: <UserRoundCheck className="w-6 h-6" /> },
+    { id: 'IN_TRANSIT', label: content.tracking_status_in_transit, icon: <Truck className="w-6 h-6" /> },
+    { id: 'DELIVERED', label: content.tracking_status_delivered, icon: <Home className="w-6 h-6" /> }
+  ];
   
   const currentStepIndex = statusMap[deliveryStatus];
   const progressPercentage = currentStepIndex >= 0 ? (currentStepIndex / (steps.length - 1)) * 100 : 0;
@@ -58,7 +62,7 @@ export default function TrackingMap({ deliveryDetails, driverDetails, deliverySt
   return (
     <Card className="w-full h-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
       <CardHeader>
-        <CardTitle className="font-headline text-3xl flex items-center gap-3"><MapPin className="text-primary"/> Live Tracking</CardTitle>
+        <CardTitle className="font-headline text-3xl flex items-center gap-3"><MapPin className="text-primary"/> {content.tracking_live_title}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
         <div className="relative aspect-[16/10] bg-muted/50 rounded-lg overflow-hidden border border-white/10">
@@ -89,8 +93,8 @@ export default function TrackingMap({ deliveryDetails, driverDetails, deliverySt
             <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center p-8 bg-black/30 backdrop-blur-sm rounded-lg">
                     <MapPin className="mx-auto w-12 h-12 text-primary/50" />
-                    <p className="font-semibold mt-4 text-lg">No Active Delivery</p>
-                    <p className="text-sm text-muted-foreground">Enter a tracking ID to see its route.</p>
+                    <p className="font-semibold mt-4 text-lg">{content.tracking_map_no_delivery}</p>
+                    <p className="text-sm text-muted-foreground">{content.tracking_map_no_delivery_desc}</p>
                 </div>
             </div>
           )}
@@ -117,20 +121,20 @@ export default function TrackingMap({ deliveryDetails, driverDetails, deliverySt
               <div className="flex flex-col md:flex-row justify-between items-center text-foreground gap-4">
                   <div className="flex items-center gap-2 text-sm">
                       <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span>{deliveryStatus === 'DELIVERED' ? 'Status' : 'Estimated Arrival:'}</span>
+                      <span>{deliveryStatus === 'DELIVERED' ? `${content.tracking_status_label}:` : content.tracking_eta_label}</span>
                        <span className="font-bold text-lg text-primary">
                         {deliveryStatus === 'DELIVERED'
-                            ? 'Package Delivered'
+                            ? content.tracking_status_delivered_text
                             : driverDetails
                             ? driverDetails.driverEta
-                            : 'Calculating...'
+                            : content.tracking_eta_calculating
                         }
                       </span>
                   </div>
                   {deliveryStatus === 'IN_TRANSIT' && (
                     <Button onClick={onRerouteRequest} variant="outline" size="sm">
                         <RefreshCw className="mr-2 h-4 w-4"/>
-                        Change Destination
+                        {content.tracking_reroute_button}
                     </Button>
                   )}
               </div>

@@ -22,13 +22,6 @@ import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '../ui/skeleton';
 import { useRouter } from 'next/navigation';
 
-const baseNavLinks = [
-  { href: '/services', label: 'Services' },
-  { href: '/tracking', label: 'Order Tracking' },
-  { href: '/feedback', label: 'Feedback' },
-  { href: '/contact', label: 'Contact Us' },
-];
-
 const languages = [
     { code: 'en', name: 'English', native: 'English' },
     { code: 'es', name: 'Spanish', native: 'Español' },
@@ -44,7 +37,7 @@ const languages = [
 ];
 
 function LanguageSwitcher() {
-    const { setLanguage } = useLanguage();
+    const { setLanguage, content } = useLanguage();
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -54,7 +47,7 @@ function LanguageSwitcher() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Select Language</DropdownMenuLabel>
+                <DropdownMenuLabel>{content.nav_select_language}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {languages.map((lang) => (
                     <DropdownMenuItem key={lang.code} onSelect={() => setLanguage(lang.code)}>
@@ -69,15 +62,23 @@ function LanguageSwitcher() {
 
 export default function Header() {
   const { user, loading, logout } = useAuth();
+  const { content } = useLanguage();
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
   
+  const baseNavLinks = [
+    { href: '/services', label: content.nav_services },
+    { href: '/tracking', label: content.nav_tracking },
+    { href: '/feedback', label: content.nav_feedback },
+    { href: '/contact', label: content.nav_contact },
+  ];
+
   const navLinks = [
       ...baseNavLinks,
       user?.role === 'admin' 
-        ? { href: '/admin', label: 'Admin' }
-        : { href: '/driver', label: 'Driver App' }
+        ? { href: '/admin', label: content.nav_admin }
+        : { href: '/driver', label: content.nav_driver_app }
   ];
 
   const handleLogout = () => {
@@ -153,12 +154,12 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 {user.role === 'admin' && (
                     <DropdownMenuItem asChild>
-                        <Link href="/admin"><Shield className="mr-2 h-4 w-4" />Admin Panel</Link>
+                        <Link href="/admin"><Shield className="mr-2 h-4 w-4" />{content.nav_admin}</Link>
                     </DropdownMenuItem>
                 )}
                 {user.role === 'driver' && (
                     <DropdownMenuItem asChild>
-                        <Link href="/driver"><User className="mr-2 h-4 w-4" />Driver Dashboard</Link>
+                        <Link href="/driver"><User className="mr-2 h-4 w-4" />{content.nav_driver_app}</Link>
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -171,10 +172,10 @@ export default function Header() {
           ) : (
             <>
               <Button variant="ghost" asChild>
-                <Link href="/signin">Sign In</Link>
+                <Link href="/signin">{content.nav_signin}</Link>
               </Button>
               <Button asChild>
-                <Link href="/signup">Sign Up</Link>
+                <Link href="/signup">{content.nav_signup}</Link>
               </Button>
             </>
           )}
@@ -227,10 +228,10 @@ export default function Header() {
                   ) : (
                     <>
                       <Button variant="outline" asChild>
-                        <Link href="/signin">Sign In</Link>
+                        <Link href="/signin">{content.nav_signin}</Link>
                       </Button>
                       <Button asChild>
-                        <Link href="/signup">Sign Up</Link>
+                        <Link href="/signup">{content.nav_signup}</Link>
                       </Button>
                     </>
                   )}

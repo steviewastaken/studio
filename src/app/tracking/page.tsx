@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { useLanguage } from '@/context/language-context';
 
 const mockDelivery: DeliveryDetails = {
     pickupAddress: 'Rue de Rivoli, 75001 Paris, France', // Louvre Museum
@@ -50,6 +51,7 @@ export type DeliveryStatus = 'IDLE' | 'SEARCHING' | 'FOUND' | 'IN_TRANSIT' | 'DE
 
 function TrackingPageContent() {
   const { toast } = useToast();
+  const { content } = useLanguage();
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
   const [trackingId, setTrackingId] = useState('DUN12345XYZ');
@@ -180,9 +182,9 @@ function TrackingPageContent() {
               animate="visible"
               variants={sectionVariants}
           >
-              <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">Order Tracking &amp; AI Support</h1>
+              <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">{content.tracking_title}</h1>
               <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                  Enter your tracking ID for real-time status, or ask our AI assistant for help.
+                  {content.tracking_subtitle}
               </p>
           </motion.div>
 
@@ -203,8 +205,8 @@ function TrackingPageContent() {
               <motion.div className="lg:col-span-2 flex flex-col gap-8" variants={itemVariants}>
                   <Card className="bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
                       <CardHeader>
-                          <CardTitle>Track your package</CardTitle>
-                          <CardDescription>Enter the demo tracking ID below to see the feature in action.</CardDescription>
+                          <CardTitle>{content.tracking_box_title}</CardTitle>
+                          <CardDescription>{content.tracking_box_desc}</CardDescription>
                       </CardHeader>
                       <CardContent>
                           <form onSubmit={handleSearch} className="flex gap-2">
@@ -216,7 +218,7 @@ function TrackingPageContent() {
                                   disabled={isLoading}
                               />
                               <Button type="submit" size="lg" disabled={isLoading || !trackingId}>
-                                  {isLoading ? <Loader2 className="animate-spin" /> : <><Search className="mr-2"/>Track</>}
+                                  {isLoading ? <Loader2 className="animate-spin" /> : <><Search className="mr-2"/>{content.tracking_box_button}</>}
                               </Button>
                           </form>
                       </CardContent>
@@ -255,7 +257,7 @@ function TrackingPageContent() {
       <Dialog open={isRerouting} onOpenChange={setIsRerouting}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle className="font-headline text-2xl flex items-center gap-2"><RefreshCw className="text-primary"/>Change Delivery Destination</DialogTitle>
+                <DialogTitle className="font-headline text-2xl flex items-center gap-2"><RefreshCw className="text-primary"/>{content.tracking_reroute_button}</DialogTitle>
                 <DialogDescription>
                     Enter a new address below to get an updated quote and ETA from our AI assistant.
                 </DialogDescription>

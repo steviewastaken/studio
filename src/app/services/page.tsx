@@ -1,36 +1,11 @@
+
 "use client";
 
 import { Ship, Briefcase, Bot, CheckCircle, BrainCircuit } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-
-const serviceList = [
-  {
-    icon: <Ship className="w-8 h-8 text-primary" />,
-    title: 'On-Demand Consumer Delivery',
-    description: 'For individuals who need things moved quickly and reliably. From forgotten keys to last-minute gifts, we deliver anything, anytime.',
-    details: ['Instant quotes', 'Real-time tracking', '24/7 availability']
-  },
-  {
-    icon: <Briefcase className="w-8 h-8 text-primary" />,
-    title: 'Enterprise & B2B Logistics',
-    description: 'A complete logistics backbone for your business. We handle last-mile delivery, supply chain movements, and multi-stop routes with precision.',
-    details: ['Dedicated account management', 'Volume-based pricing', 'Proof-of-delivery']
-  },
-  {
-    icon: <BrainCircuit className="w-8 h-8 text-primary" />,
-    title: 'Predictive Fleet Management',
-    description: "We don't just react to delivery requests—we predict them. Our AI analyzes historical data and real-time signals to forecast demand hotspots, proactively positioning our courier fleet for unmatched speed.",
-    details: ['Proactive courier positioning', 'Real-time demand forecasting', 'Reduced customer wait times']
-  },
-  {
-    icon: <Bot className="w-8 h-8 text-primary" />,
-    title: 'AI-Powered Optimization',
-    description: 'Leverage our core technology to optimize your own fleet and logistics operations, even without using our drivers.',
-    details: ['Route optimization as a service', 'Predictive demand analysis', 'Fleet utilization reporting']
-  }
-];
+import { useLanguage } from '@/context/language-context';
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -67,6 +42,43 @@ const staggeredContainer = {
 };
 
 export default function ServicesPage() {
+  const { content } = useLanguage();
+
+  const serviceList = [
+    {
+      icon: <Ship className="w-8 h-8 text-primary" />,
+      title: content.service1Title,
+      description: content.service1Desc,
+      details: [
+        content.services_list_detail1, 
+        content.services_list_detail2,
+        content.services_list_detail3
+      ]
+    },
+    {
+      icon: <Briefcase className="w-8 h-8 text-primary" />,
+      title: content.service2Title,
+      description: content.service2Desc,
+      details: ['Dedicated account management', 'Volume-based pricing', 'Proof-of-delivery']
+    },
+    {
+      icon: <BrainCircuit className="w-8 h-8 text-primary" />,
+      title: content.service3Title,
+      description: content.service3Desc,
+      details: ['Proactive courier positioning', 'Real-time demand forecasting', 'Reduced customer wait times']
+    },
+    {
+      icon: <Bot className="w-8 h-8 text-primary" />,
+      title: content.service4_title,
+      description: content.service4_desc,
+      details: [
+        content.service4_detail1,
+        content.service4_detail2,
+        content.service4_detail3
+      ]
+    }
+  ];
+
   return (
     <div className="w-full pt-24 md:pt-32">
         <motion.section 
@@ -75,9 +87,9 @@ export default function ServicesPage() {
             animate="visible"
             variants={sectionVariants}
         >
-            <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">Our Services</h1>
+            <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">{content.services_title}</h1>
             <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-                We offer a comprehensive suite of logistics solutions powered by cutting-edge AI, tailored to meet the needs of individuals and businesses of all sizes.
+                {content.services_subtitle}
             </p>
         </motion.section>
 
@@ -120,16 +132,16 @@ export default function ServicesPage() {
             variants={sectionVariants}
         >
             <div className="w-full max-w-5xl mx-auto px-4 md:px-8 text-center">
-                 <h2 className="text-3xl font-bold font-headline text-white">Ready to transform your logistics?</h2>
+                 <h2 className="text-3xl font-bold font-headline text-white">{content.services_cta_title}</h2>
                  <p className="mt-4 text-lg text-muted-foreground">
-                    Whether you're sending a single package or managing a global supply chain, Dunlivrer has a solution for you.
+                    {content.services_cta_subtitle}
                  </p>
                  <div className="mt-8 flex justify-center gap-4">
                     <Button size="lg" asChild>
-                        <Link href="/">Get Started</Link>
+                        <Link href="/">{content.services_cta_button1}</Link>
                     </Button>
                     <Button size="lg" variant="outline" asChild>
-                        <Link href="/contact">Talk to an Expert</Link>
+                        <Link href="/contact">{content.services_cta_button2}</Link>
                     </Button>
                  </div>
             </div>
