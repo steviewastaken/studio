@@ -9,6 +9,7 @@ export type UserProfile = {
   email: string;
   password?: string; // It's a mock, so we can store it here.
   role: 'driver' | 'admin' | 'customer';
+  kycStatus: 'none' | 'pending' | 'verified' | 'rejected';
 };
 
 // Initial state for the mock user "database"
@@ -19,6 +20,7 @@ const initialUsers: UserProfile[] = [
     email: 'admin@dunlivrer.com',
     password: 'admin',
     role: 'admin',
+    kycStatus: 'verified',
   },
   {
     id: 'user-123',
@@ -26,6 +28,7 @@ const initialUsers: UserProfile[] = [
     email: 'demo@dunlivrer.com',
     password: 'demo',
     role: 'driver',
+    kycStatus: 'verified',
   }
 ];
 
@@ -36,6 +39,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<UserProfile | null>;
   signup: (name: string, email: string, password: string, role: 'driver' | 'customer') => Promise<UserProfile | null>;
   logout: () => void;
+  updateUserKycStatus: (userId: string, status: UserProfile['kycStatus']) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,7 +47,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
-  // Store the list of users in state so it persists for the session
   const [users, setUsers] = useState<UserProfile[]>(initialUsers);
 
   const login = useCallback(async (email: string, password: string): Promise<UserProfile | null> => {
@@ -53,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return foundUser;
     }
     return null;
-  }, [users]); // Depend on the users state
+  }, [users]);
   
   const signup = useCallback(async (name: string, email: string, password: string, role: 'driver' | 'customer' = 'customer'): Promise<UserProfile | null> => {
     const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
@@ -65,20 +68,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name,
         email,
         password,
-        role: role
+        role: role,
+        kycStatus: role === 'driver' ? 'none' : 'verified',
     };
-    // Update the users state with the new user
     setUsers(prevUsers => [...prevUsers, newUser]);
     setUser(newUser);
     return newUser;
-  }, [users]); // Depend on the users state
+  }, [users]);
 
 
   const logout = useCallback(() => {
     setUser(null);
   }, []);
 
-  const value = { user, loading, setLoading, login, signup, logout };
+  const updateUserKycStatus = useCallback((userId: string, status: UserProfile['kycStatus']) => {
+    setUsers(prevUsers => prevUsers.map(u => 
+        u.id === userId ? { ...u, kycStatus: status } : u
+    ));
+    if (user?.id === userId) {
+        setUser(prevUser => prevUser ? { ...prevUser, kycStatus: status } : null);
+    }
+  }, [user?.id]);
+
+  const value = { user, loading, setLoading, login, signup, logout, updateUserKycStatus };
 
   return (
     <AuthContext.Provider value={value}>

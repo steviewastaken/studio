@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, AlertTriangle, UserPlus, Headset, BrainCircuit, TrendingUp } from "lucide-react";
+import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, AlertTriangle, UserPlus, Headset, BrainCircuit, TrendingUp, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -233,6 +233,18 @@ export default function AdminPage() {
                         <CardContent>
                             <div className="text-2xl font-bold">3 High Zones</div>
                             <p className="text-xs text-muted-foreground">Next hour prediction</p>
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Link href="/admin/kyc">
+                    <Card className="bg-card/80 border-white/10 hover:border-primary/50 transition-colors h-full">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">KYC Verification</CardTitle>
+                            <UserCheck className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">2</div>
+                            <p className="text-xs text-muted-foreground">Applications pending review</p>
                         </CardContent>
                     </Card>
                 </Link>

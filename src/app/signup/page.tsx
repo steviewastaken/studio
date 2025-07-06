@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useForm } from 'react-hook-form';
@@ -49,7 +50,7 @@ function SignUpPageContent() {
         });
         
         if (role === 'driver') {
-            router.push('/driver');
+            router.push('/driver/kyc');
         } else {
             router.push('/');
         }

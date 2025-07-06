@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered, AlertTriangle, Lightbulb } from "lucide-react";
+import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered, AlertTriangle, Lightbulb, Loader2 } from "lucide-react";
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -19,6 +19,7 @@ import PerformanceDashboard from "@/components/dunlivrer/performance-dashboard";
 import { useJobs, type Job } from "@/context/jobs-context";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useLanguage } from "@/context/language-context";
+import { useRouter } from "next/navigation";
 
 // --- Components for Driver View ---
 
@@ -358,6 +359,37 @@ const LoadingSkeleton = () => (
 );
 
 
+const KycPending = () => (
+    <div className="w-full h-screen flex items-center justify-center">
+        <Card className="p-8 text-center bg-card/80 border-white/10 max-w-lg">
+            <Loader2 className="w-12 h-12 mx-auto text-primary animate-spin" />
+            <CardTitle className="font-headline text-3xl mt-4">Verification Pending</CardTitle>
+            <CardDescription className="mt-2">
+                Your documents have been submitted successfully. Our team is reviewing your application, which usually takes 1-2 business days. We'll notify you via email once it's complete.
+            </CardDescription>
+        </Card>
+    </div>
+);
+
+const KycRejected = () => {
+    const router = useRouter();
+    return (
+        <div className="w-full h-screen flex items-center justify-center">
+            <Card className="p-8 text-center bg-card/80 border-destructive/30 max-w-lg">
+                <AlertTriangle className="w-12 h-12 mx-auto text-destructive" />
+                <CardTitle className="font-headline text-3xl mt-4">Verification Required</CardTitle>
+                <CardDescription className="mt-2 text-destructive-foreground">
+                    There was an issue with your submitted documents. Please re-submit them with clear and valid images.
+                </CardDescription>
+                <Button onClick={() => router.push('/driver/kyc')} className="mt-6">
+                    Re-submit Documents
+                </Button>
+            </Card>
+        </div>
+    );
+};
+
+
 export default function DriverPage() {
     const { user, loading } = useAuth();
 
@@ -367,5 +399,19 @@ export default function DriverPage() {
     
     const isDriver = user?.role === 'driver';
 
-    return isDriver ? <DriverDashboard /> : <DriverLandingPage />;
+    if (!isDriver) {
+        return <DriverLandingPage />;
+    }
+
+    switch (user.kycStatus) {
+        case 'pending':
+            return <KycPending />;
+        case 'rejected':
+        case 'none':
+            return <KycRejected />;
+        case 'verified':
+            return <DriverDashboard />;
+        default:
+            return <DriverLandingPage />;
+    }
 }
