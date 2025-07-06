@@ -25,7 +25,6 @@ type JobsContextType = {
   loading: boolean;
 };
 
-// Start with some initial mock jobs for demonstration
 const initialJobs: Job[] = [
     {
         id: 'job-init-1',
@@ -57,30 +56,22 @@ const initialJobs: Job[] = [
 const JobsContext = createContext<JobsContextType | undefined>(undefined);
 
 export function JobsProvider({ children }: { children: ReactNode }) {
-  const [jobs, setJobs] = useState<Job[]>([]); // Start with an empty array
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Effect to load from localStorage on initial client mount
   useEffect(() => {
     try {
       const item = window.localStorage.getItem('dunlivrer-jobs');
-      if (item) {
-        setJobs(JSON.parse(item));
-      } else {
-        // If nothing in storage, initialize with mock data
-        setJobs(initialJobs);
-      }
+      setJobs(item ? JSON.parse(item) : initialJobs);
     } catch (error) {
       console.error("Failed to load jobs from localStorage, using initial data.", error);
-      setJobs(initialJobs); // Also use initial data on error
+      setJobs(initialJobs);
     } finally {
         setLoading(false);
     }
-  }, []); // Empty dependency array ensures it runs only once on mount.
+  }, []);
 
-  // Effect to save to localStorage whenever jobs state changes
   useEffect(() => {
-    // Only save after the initial load is complete to avoid overwriting
     if (!loading) {
         try {
             window.localStorage.setItem('dunlivrer-jobs', JSON.stringify(jobs));
@@ -90,9 +81,26 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     }
   }, [jobs, loading]);
 
+  // Effect to listen for changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'dunlivrer-jobs' && event.newValue) {
+        try {
+          setJobs(JSON.parse(event.newValue));
+        } catch (error) {
+          console.error("Failed to parse jobs from storage event", error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
 
   const addJob = (job: Job) => {
-    // Add new job to the top of the list
     setJobs(prevJobs => [job, ...prevJobs]);
   };
 
