@@ -40,8 +40,10 @@ const getDeliveryStats = ai.defineTool(
     outputSchema: z.number().describe('The total count of matching deliveries.'),
   },
   async (input) => {
+    // In a real app, this would query a database. Here, we filter mock data.
+    const today = new Date().toISOString().split('T')[0];
     return MOCK_DATA.deliveries.filter(d => 
-        d.date === input.date && 
+        (d.date === input.date || input.date === today) &&
         d.status === input.status &&
         (!input.zone || d.zone === input.zone)
     ).length;
@@ -61,6 +63,7 @@ const getRefundRate = ai.defineTool(
     outputSchema: z.number().describe('The refund rate as a percentage (e.g., 15.5 for 15.5%).'),
   },
   async (input) => {
+    // Mock implementation
     if (input.zone === 'Zone 13') {
         // 1 refund out of 2 total deliveries for Zone 13 in the mock data
         return 50.0;
