@@ -57,27 +57,30 @@ const initialJobs: Job[] = [
 const JobsContext = createContext<JobsContextType | undefined>(undefined);
 
 export function JobsProvider({ children }: { children: ReactNode }) {
-  const [jobs, setJobs] = useState<Job[]>(initialJobs);
+  const [jobs, setJobs] = useState<Job[]>([]); // Start with an empty array
   const [loading, setLoading] = useState(true);
 
+  // Effect to load from localStorage on initial client mount
   useEffect(() => {
-    // This effect runs once on the client to load persisted jobs.
     try {
       const item = window.localStorage.getItem('dunlivrer-jobs');
       if (item) {
         setJobs(JSON.parse(item));
+      } else {
+        // If nothing in storage, initialize with mock data
+        setJobs(initialJobs);
       }
     } catch (error) {
-      console.error("Failed to load jobs from localStorage", error);
-      // If loading fails, it will just use the initialJobs state
+      console.error("Failed to load jobs from localStorage, using initial data.", error);
+      setJobs(initialJobs); // Also use initial data on error
     } finally {
         setLoading(false);
     }
   }, []); // Empty dependency array ensures it runs only once on mount.
 
+  // Effect to save to localStorage whenever jobs state changes
   useEffect(() => {
-    // This effect runs whenever 'jobs' state changes, saving it to localStorage.
-    // The !loading check prevents overwriting stored data with initialJobs on first render.
+    // Only save after the initial load is complete to avoid overwriting
     if (!loading) {
         try {
             window.localStorage.setItem('dunlivrer-jobs', JSON.stringify(jobs));
