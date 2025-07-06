@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export type UserProfile = {
   id: string;
@@ -51,18 +51,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserProfile[]>(initialUsers);
 
   useEffect(() => {
+    // This effect runs once on component mount on the client side.
+    // It's responsible for hydrating the state from localStorage.
     try {
-      const item = window.localStorage.getItem('dunlivrer-users');
-      setUsers(item ? JSON.parse(item) : initialUsers);
+      const storedUsers = window.localStorage.getItem('dunlivrer-users');
+      if (storedUsers) {
+        setUsers(JSON.parse(storedUsers));
+      }
     } catch (error) {
       console.error("Failed to load users from localStorage", error);
-      setUsers(initialUsers);
     } finally {
         setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    // This effect runs whenever the `users` state changes.
+    // It's responsible for persisting the state back to localStorage.
     if (!loading) {
         try {
             window.localStorage.setItem('dunlivrer-users', JSON.stringify(users));
@@ -72,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [users, loading]);
   
-  // Effect to listen for changes from other tabs
+  // This effect listens for storage changes from other tabs and syncs the state.
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'dunlivrer-users' && event.newValue) {
@@ -80,13 +85,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const newUsers: UserProfile[] = JSON.parse(event.newValue);
           setUsers(newUsers);
 
-          // If the current user's data changed, update it
-          if (user) {
-            const updatedCurrentUser = newUsers.find(u => u.id === user.id);
-            if (updatedCurrentUser && JSON.stringify(updatedCurrentUser) !== JSON.stringify(user)) {
-              setUser(updatedCurrentUser);
+          // Use the functional form of setUser to avoid stale state issues.
+          // This correctly updates the logged-in user's info if it changed in another tab.
+          setUser(currentUser => {
+            if (!currentUser) return null; // If not logged in, do nothing.
+
+            const updatedCurrentUser = newUsers.find(u => u.id === currentUser.id);
+            
+            // If user was deleted in another tab, log them out.
+            if (!updatedCurrentUser) return null; 
+
+            // If user data has changed, update the state.
+            if (JSON.stringify(updatedCurrentUser) !== JSON.stringify(currentUser)) {
+                return updatedCurrentUser;
             }
-          }
+
+            return currentUser; // Otherwise, keep the current user state.
+          });
         } catch (error) {
           console.error("Failed to parse users from storage event", error);
         }
@@ -97,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [user]);
+  }, []); // Empty dependency array ensures this runs once and cleans up on unmount.
 
 
   const login = async (email: string, password: string): Promise<UserProfile | null> => {
