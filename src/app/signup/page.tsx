@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useForm } from 'react-hook-form';
@@ -20,7 +19,9 @@ const formSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
-function SignUpFormComponent() {
+// A component that uses useSearchParams must be wrapped in a <Suspense> boundary
+// at a higher level in the component tree. This component contains the logic.
+function SignUpPageContent() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -121,8 +122,8 @@ function SignUpFormComponent() {
 export default function SignUpPage() {
   return (
     <div className="flex items-center justify-center min-h-screen pt-20">
-      <Suspense fallback={<div>Loading...</div>}>
-        <SignUpFormComponent />
+      <Suspense fallback={<div className="flex items-center justify-center h-screen w-full">Loading...</div>}>
+        <SignUpPageContent />
       </Suspense>
     </div>
   );
