@@ -293,7 +293,7 @@ const DriverLandingPage = () => {
                 </motion.p>
                 <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-4">
                     <Button size="lg" asChild>
-                      <Link href="/signup?redirect=/driver">Sign Up to Drive</Link>
+                      <Link href="/signup?as=driver">Sign Up to Drive</Link>
                     </Button>
                     <Button size="lg" variant="outline" asChild>
                       <Link href="/signin?redirect=/driver">Already have an account? Sign In</Link>
@@ -360,6 +360,8 @@ export default function DriverPage() {
     if (loading) {
         return <LoadingSkeleton />;
     }
+    
+    const isDriver = user?.role === 'driver';
 
-    return user ? <DriverDashboard /> : <DriverLandingPage />;
+    return isDriver ? <DriverDashboard /> : <DriverLandingPage />;
 }

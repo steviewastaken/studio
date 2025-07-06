@@ -8,7 +8,7 @@ export type UserProfile = {
   name: string;
   email: string;
   password?: string; // It's a mock, so we can store it here.
-  role: 'driver' | 'admin';
+  role: 'driver' | 'admin' | 'customer';
 };
 
 // Mock user "database"
@@ -34,7 +34,7 @@ type AuthContextType = {
   loading: boolean;
   setLoading: (loading: boolean) => void;
   login: (email: string, password: string) => Promise<UserProfile | null>;
-  signup: (name: string, email: string, password: string) => Promise<UserProfile | null>;
+  signup: (name: string, email: string, password: string, role: 'driver' | 'customer') => Promise<UserProfile | null>;
   logout: () => void;
 };
 
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
   
-  const signup = useCallback(async (name: string, email: string, password: string): Promise<UserProfile | null> => {
+  const signup = useCallback(async (name: string, email: string, password: string, role: 'driver' | 'customer' = 'customer'): Promise<UserProfile | null> => {
     const existingUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existingUser) {
         return null; // User already exists
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name,
         email,
         password,
-        role: 'driver'
+        role: role
     };
     mockUsers.push(newUser);
     setUser(newUser);
