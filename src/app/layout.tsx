@@ -1,11 +1,10 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import Header from '@/components/dunlivrer/header';
-import Footer from '@/components/dunlivrer/footer';
 import { AuthProvider } from '@/context/auth-context';
 import { LanguageProvider } from '@/context/language-context';
 import { JobsProvider } from '@/context/jobs-context';
+import MainLayout from '@/components/dunlivrer/main-layout';
 
 export const metadata: Metadata = {
   title: 'Dunlivrer',
@@ -18,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html className="dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -29,13 +28,9 @@ export default function RootLayout({
         <LanguageProvider>
           <AuthProvider>
             <JobsProvider>
-              <div className="flex flex-col min-h-screen bg-transparent text-foreground">
-                <Header />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
+              <MainLayout>
+                {children}
+              </MainLayout>
               <Toaster />
             </JobsProvider>
           </AuthProvider>
