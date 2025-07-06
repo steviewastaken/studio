@@ -12,17 +12,8 @@ import { cn } from "@/lib/utils";
 import { handleSupportQuestion, handleTextToSpeech } from "@/lib/actions";
 import type { DeliveryDetails } from "./types";
 import { useToast } from "@/hooks/use-toast";
-
-type Message = {
-  id: number;
-  role: "user" | "ai";
-  content: string;
-  language?: string;
-};
-
-type SupportChatProps = {
-  deliveryDetails: DeliveryDetails | null;
-};
+import { useChat } from "@/context/chat-context";
+import { useAuth } from "@/context/auth-context";
 
 // For SpeechRecognition
 declare global {
@@ -33,17 +24,31 @@ declare global {
 }
 
 export default function SupportChat({ deliveryDetails }: SupportChatProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { user } = useAuth();
+  const { chats, addMessageToChat } = useChat();
+  const { toast } = useToast();
+
+  const chatId = deliveryDetails 
+    ? `tracking-${deliveryDetails.pickupAddress}`
+    : user 
+    ? `user-support-${user.id}`
+    : 'guest-support-chat-1';
+
+  const currentChat = chats.find(c => c.id === chatId);
+
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [currentAudioSrc, setCurrentAudioSrc] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const { toast } = useToast();
 
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+
+  const displayMessages = currentChat?.messages ?? [
+    { id: -1, role: "ai", content: "Hello! How can I help you today?", language: 'en-US' }
+  ];
 
   useEffect(() => {
     // Autoplay audio when src changes
@@ -78,7 +83,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
             };
         }
     }
-  }, [toast, isListening]); // Dependencies
+  }, [toast, isListening]);
 
   const generateAndPlayAudio = async (text: string, language?: string) => {
       const audioResult = await handleTextToSpeech({ text, language });
@@ -96,8 +101,8 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
   const handleToggleAudio = async () => {
       const newAudioState = !isAudioEnabled;
       setIsAudioEnabled(newAudioState);
-      if (newAudioState && messages.length > 0) {
-          const lastMessage = messages[messages.length - 1];
+      if (newAudioState && displayMessages.length > 0) {
+          const lastMessage = displayMessages[displayMessages.length - 1];
           if (lastMessage.role === 'ai') {
              await generateAndPlayAudio(lastMessage.content, lastMessage.language);
           }
@@ -119,32 +124,19 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
   };
 
   useEffect(() => {
-    if (deliveryDetails) {
-        setMessages([
-            { id: 1, role: "ai", content: `Hello! I can help with questions about your delivery from ${deliveryDetails.pickupAddress}. How can I assist?`, language: 'en-US' }
-        ]);
-    } else {
-        setMessages([
-            { id: 1, role: "ai", content: "Hello! I'm the Dunlivrer AI assistant. Feel free to ask me any general questions about our services.", language: 'en-US' }
-        ]);
-    }
-  }, [deliveryDetails]);
-
-  useEffect(() => {
     if (scrollAreaRef.current) {
         scrollAreaRef.current.scrollTo({
             top: scrollAreaRef.current.scrollHeight,
             behavior: "smooth"
         });
     }
-  }, [messages]);
+  }, [displayMessages]);
 
   const sendQuery = async (query: string) => {
     if (!query.trim() || isLoading) return;
 
     setIsLoading(true);
-    const userMessage: Message = { id: Date.now(), role: "user", content: query };
-    setMessages(prev => [...prev, userMessage]);
+    addMessageToChat(chatId, { sender: 'user', text: query });
     
     const deliveryDetailsString = deliveryDetails
       ? `From: ${deliveryDetails.pickupAddress}, To: ${deliveryDetails.destinationAddresses.join('; ')}, Size: ${deliveryDetails.packageSize}`
@@ -153,11 +145,11 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
     const result = await handleSupportQuestion({ question: query, deliveryDetails: deliveryDetailsString });
     
     if (result.success && result.data) {
-        const aiMessage: Message = { id: Date.now() + 1, role: "ai", content: result.data.answer, language: result.data.language };
-        setMessages(prev => [...prev, aiMessage]);
+        const aiMessage = { sender: 'ai' as const, text: result.data.answer, language: result.data.language };
+        addMessageToChat(chatId, aiMessage);
         
         if (isAudioEnabled) {
-            await generateAndPlayAudio(result.data.answer, result.data.language);
+            await generateAndPlayAudio(aiMessage.text, aiMessage.language);
         }
     } else {
         toast({
@@ -166,8 +158,8 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
             description: result.error
         });
         const errorMessageText = "Sorry, I couldn't process that. Please try again.";
-        const errorMessage: Message = { id: Date.now() + 1, role: "ai", content: errorMessageText, language: 'en-US' };
-        setMessages(prev => [...prev, errorMessage]);
+        const errorMessage = { sender: 'ai' as const, text: errorMessageText, language: 'en-US' };
+        addMessageToChat(chatId, errorMessage);
 
         if (isAudioEnabled) {
              await generateAndPlayAudio(errorMessageText, 'en-US');
@@ -204,7 +196,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
         <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
           <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
             <div className="space-y-4">
-              {messages.map((message) => (
+              {displayMessages.map((message) => (
                 <div key={message.id} className={cn("flex items-start gap-3", message.role === "user" ? "justify-end" : "justify-start")}>
                   {message.role === "ai" && (
                     <Avatar className="w-8 h-8 border border-primary/50">

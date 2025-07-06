@@ -14,105 +14,29 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-
-type Message = {
-  id: string;
-  sender: 'user' | 'ai' | 'admin';
-  text: string;
-  timestamp: string;
-  rating?: 'good' | 'bad' | null;
-};
-
-type ChatSession = {
-  id: string;
-  userId: string;
-  status: 'AI Handling' | 'Needs Attention' | 'Resolved';
-  lastMessage: string;
-  messages: Message[];
-};
-
-const initialChats: ChatSession[] = [
-  {
-    id: 'chat-1',
-    userId: 'user-abc',
-    status: 'AI Handling',
-    lastMessage: 'Ok, that makes sense. Thanks!',
-    messages: [
-      { id: 'm1-1', sender: 'user', text: 'Hi, where is my package?', timestamp: '10:30 AM', rating: null },
-      { id: 'm1-2', sender: 'ai', text: 'Hello! I can help with that. Could you please provide your tracking ID?', timestamp: '10:31 AM', rating: 'good' },
-      { id: 'm1-3', sender: 'user', text: 'It\'s DNLVR-801', timestamp: '10:31 AM', rating: null },
-      { id: 'm1-4', sender: 'ai', text: 'Thanks! Your package is currently in transit with our courier, Alexandre Dubois, and is estimated to arrive at the Eiffel Tower within the next 25 minutes.', timestamp: '10:32 AM', rating: null },
-      { id: 'm1-5', sender: 'user', text: 'Ok, that makes sense. Thanks!', timestamp: '10:33 AM', rating: null }
-    ]
-  },
-  {
-    id: 'chat-2',
-    userId: 'user-xyz',
-    status: 'Needs Attention',
-    lastMessage: 'This is ridiculous, I want a refund now!',
-    messages: [
-      { id: 'm2-1', sender: 'user', text: 'My package is an hour late!!', timestamp: '10:40 AM', rating: null },
-      { id: 'm2-2', sender: 'ai', text: 'I understand your frustration with the delay. Delays can occasionally happen due to unforeseen traffic. I see your delivery is more than 2 hours past its ETA, which makes you eligible for a refund of the delivery fee.', timestamp: '10:41 AM', rating: 'bad' },
-      { id: 'm2-3', sender: 'user', text: 'This is ridiculous, I want a refund now!', timestamp: '10:42 AM', rating: null }
-    ]
-  },
-  {
-    id: 'chat-3',
-    userId: 'user-def',
-    status: 'Resolved',
-    lastMessage: 'Perfect, thank you for your help.',
-    messages: [
-       { id: 'm3-1', sender: 'user', text: 'Can I change my delivery address?', timestamp: '11:00 AM', rating: null },
-       { id: 'm3-2', sender: 'ai', text: 'Yes, you can request a reroute from the tracking page. There may be an additional fee depending on the new location.', timestamp: '11:01 AM', rating: 'good' },
-       { id: 'm3-3', sender: 'user', text: 'Perfect, thank you for your help.', timestamp: '11:02 AM', rating: null }
-    ]
-  }
-];
-
-const getStatusColor = (status: ChatSession['status']) => {
-    if (status === 'Needs Attention') return 'bg-red-500';
-    if (status === 'Resolved') return 'bg-gray-500';
-    return 'bg-green-500';
-}
+import { useChat, type ChatSession } from '@/context/chat-context';
 
 export default function SupportMonitorPage() {
-    const [chats, setChats] = useState<ChatSession[]>(initialChats);
-    const [selectedChat, setSelectedChat] = useState<ChatSession | null>(chats[0]);
+    const { chats, addMessageToChat, rateMessage } = useChat();
+    const [selectedChatId, setSelectedChatId] = useState<string | null>(chats[0]?.id || null);
+    const selectedChat = chats.find(c => c.id === selectedChatId);
+
     const [adminMessage, setAdminMessage] = useState("");
     const { toast } = useToast();
 
     const handleRateMessage = (chatId: string, messageId: string, rating: 'good' | 'bad') => {
-        setChats(prev => prev.map(chat => {
-            if (chat.id === chatId) {
-                const updatedMessages = chat.messages.map(msg => 
-                    msg.id === messageId ? { ...msg, rating } : msg
-                );
-                return { ...chat, messages: updatedMessages };
-            }
-            return chat;
-        }));
-        // Also update the selected chat if it's the one being rated
-        if (selectedChat?.id === chatId) {
-            setSelectedChat(prev => prev ? { ...prev, messages: prev.messages.map(msg => msg.id === messageId ? { ...msg, rating } : msg) } : null);
-        }
+        rateMessage(chatId, messageId, rating);
         toast({ title: "Feedback Submitted", description: "Thanks for helping train our AI." });
     }
 
     const handleSendMessage = () => {
-        if (!selectedChat || !adminMessage.trim()) return;
+        if (!selectedChatId || !adminMessage.trim()) return;
 
-        const newMessage: Message = {
-            id: `admin-${Date.now()}`,
+        addMessageToChat(selectedChatId, {
             sender: 'admin',
             text: adminMessage,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            rating: null,
-        };
+        });
         
-        const updatedChat = { ...selectedChat, messages: [...selectedChat.messages, newMessage] };
-        
-        setSelectedChat(updatedChat);
-        setChats(prev => prev.map(c => c.id === selectedChat.id ? updatedChat : c));
         setAdminMessage("");
     }
 
@@ -134,7 +58,7 @@ export default function SupportMonitorPage() {
                         <CardContent className="p-0">
                             <div className="space-y-1">
                                 {chats.map(chat => (
-                                    <button key={chat.id} onClick={() => setSelectedChat(chat)} className={cn("w-full text-left p-4 hover:bg-muted/50 transition-colors", selectedChat?.id === chat.id && "bg-muted")}>
+                                    <button key={chat.id} onClick={() => setSelectedChatId(chat.id)} className={cn("w-full text-left p-4 hover:bg-muted/50 transition-colors", selectedChatId === chat.id && "bg-muted")}>
                                         <div className="flex justify-between items-center">
                                             <p className="font-semibold">{chat.userId}</p>
                                             <Badge variant={chat.status === 'Needs Attention' ? 'destructive' : chat.status === 'Resolved' ? 'secondary' : 'default'}>

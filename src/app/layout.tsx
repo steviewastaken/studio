@@ -5,6 +5,7 @@ import { AuthProvider } from '@/context/auth-context';
 import { LanguageProvider } from '@/context/language-context';
 import { JobsProvider } from '@/context/jobs-context';
 import MainLayout from '@/components/dunlivrer/main-layout';
+import { ChatProvider } from '@/context/chat-context';
 
 export const metadata: Metadata = {
   title: 'Dunlivrer',
@@ -28,10 +29,12 @@ export default function RootLayout({
         <LanguageProvider>
           <AuthProvider>
             <JobsProvider>
-              <MainLayout>
-                {children}
-              </MainLayout>
-              <Toaster />
+              <ChatProvider>
+                <MainLayout>
+                  {children}
+                </MainLayout>
+                <Toaster />
+              </ChatProvider>
             </JobsProvider>
           </AuthProvider>
         </LanguageProvider>
