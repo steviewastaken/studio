@@ -61,52 +61,74 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
   useEffect(() => {
     if (!map || !directionsRendererRef.current) return;
     
+    // Clear previous state
     directionsRendererRef.current.setDirections({routes: []});
     setDirectionsResult(null);
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
 
-    if (!origin || !destination) {
+    if (!origin) { // No origin, default view
         map.setCenter({ lat: 48.8566, lng: 2.3522 });
         map.setZoom(12);
         return;
     };
-
-    const directionsService = new google.maps.DirectionsService();
-
-    const request: google.maps.DirectionsRequest = {
-        origin: origin,
-        destination: destination,
-        travelMode: google.maps.TravelMode.DRIVING
-    };
-    if (waypoints.length > 0) {
-        request.waypoints = waypoints.map(d => ({ location: d, stopover: true }));
+    
+    // Only origin is provided, center on it
+    if (origin && !destination) {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ address: origin }, (results, status) => {
+            if (status === 'OK' && results && results[0]) {
+                map.setCenter(results[0].geometry.location);
+                map.setZoom(15);
+                const marker = new google.maps.Marker({
+                    position: results[0].geometry.location,
+                    map: map,
+                    title: 'Location'
+                });
+                markersRef.current.push(marker);
+            }
+        });
+        return;
     }
 
-    directionsService.route(request, (result, status) => {
-      if (status === 'OK' && result && directionsRendererRef.current) {
-        directionsRendererRef.current.setDirections(result);
-        setDirectionsResult(result);
-        
-        const pickupMarker = new google.maps.Marker({
-            position: result.routes[0].legs[0].start_location,
-            map: map,
-            label: { text: 'A', color: 'white', fontWeight: 'bold' },
-            title: 'Origin',
-        });
-        markersRef.current.push(pickupMarker);
+    // Both origin and destination are provided, get route
+    if (origin && destination) {
+        const directionsService = new google.maps.DirectionsService();
 
-        result.routes[0].legs.forEach((leg, index) => {
-            const destinationMarker = new google.maps.Marker({
-                position: leg.end_location,
+        const request: google.maps.DirectionsRequest = {
+            origin: origin,
+            destination: destination,
+            travelMode: google.maps.TravelMode.DRIVING
+        };
+        if (waypoints.length > 0) {
+            request.waypoints = waypoints.map(d => ({ location: d, stopover: true }));
+        }
+
+        directionsService.route(request, (result, status) => {
+          if (status === 'OK' && result && directionsRendererRef.current) {
+            directionsRendererRef.current.setDirections(result);
+            setDirectionsResult(result);
+            
+            const pickupMarker = new google.maps.Marker({
+                position: result.routes[0].legs[0].start_location,
                 map: map,
-                label: { text: String.fromCharCode(66 + index), color: 'white', fontWeight: 'bold' },
-                title: `Destination ${index + 1}`,
+                label: { text: 'A', color: 'white', fontWeight: 'bold' },
+                title: 'Origin',
             });
-            markersRef.current.push(destinationMarker);
+            markersRef.current.push(pickupMarker);
+    
+            result.routes[0].legs.forEach((leg, index) => {
+                const destinationMarker = new google.maps.Marker({
+                    position: leg.end_location,
+                    map: map,
+                    label: { text: String.fromCharCode(66 + index), color: 'white', fontWeight: 'bold' },
+                    title: `Destination ${index + 1}`,
+                });
+                markersRef.current.push(destinationMarker);
+            });
+          }
         });
-      }
-    });
+    }
   }, [map, origin, destination, waypoints]);
 
   // Handle Real-time Driver Location Marker

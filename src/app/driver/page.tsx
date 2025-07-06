@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered, AlertTriangle, Lightbulb, Loader2, PartyPopper, Camera, ArrowRight, Pickaxe, Navigation } from "lucide-react";
+import { Check, X, MapPin, Euro, Clock, Wallet, Route, Star, CheckCircle, BarChart, ListOrdered, AlertTriangle, Lightbulb, Loader2, PartyPopper, Camera, ArrowRight, Pickaxe, Navigation, Package } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
@@ -90,7 +90,6 @@ const AvailableJobs = ({ onAcceptJob }: { onAcceptJob: (job: Job) => void }) => 
 const ActiveDeliveryMap = ({ job, onComplete }: { job: Job, onComplete: (payout: number) => void }) => {
     type Step = 'to_pickup' | 'at_pickup' | 'to_dropoff' | 'at_dropoff' | 'capturing_photo';
     const [step, setStep] = useState<Step>('to_pickup');
-    const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
@@ -99,30 +98,7 @@ const ActiveDeliveryMap = ({ job, onComplete }: { job: Job, onComplete: (payout:
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-
-    // Get driver's live location
-    useEffect(() => {
-        let watchId: number;
-        if (navigator.geolocation) {
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    setDriverLocation({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                    });
-                },
-                (error) => {
-                    console.error("Geolocation error:", error);
-                    toast({ variant: "destructive", title: "Location Error", description: "Could not get your location." });
-                },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-            );
-        }
-        return () => {
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-        };
-    }, [toast]);
-
+    
     // Handle camera permission when needed
     useEffect(() => {
         if (step !== 'capturing_photo' || hasCameraPermission) return;
@@ -206,15 +182,21 @@ const ActiveDeliveryMap = ({ job, onComplete }: { job: Job, onComplete: (payout:
     };
 
     const getRoute = () => {
-        if (!driverLocation) return { origin: null, destination: null };
-        const driverPosStr = `${driverLocation.lat},${driverLocation.lng}`;
-        if (step === 'to_pickup' || step === 'at_pickup') {
-            return { origin: driverPosStr, destination: job.pickup };
+        const simulatedStartPoint = 'Porte Maillot, 75017 Paris, France';
+        
+        switch (step) {
+            case 'to_pickup':
+                return { origin: simulatedStartPoint, destination: job.pickup };
+            case 'at_pickup':
+                return { origin: job.pickup, destination: null };
+            case 'to_dropoff':
+                return { origin: job.pickup, destination: job.dropoff };
+            case 'at_dropoff':
+            case 'capturing_photo':
+                return { origin: job.dropoff, destination: null };
+            default:
+                return { origin: null, destination: null };
         }
-        if (step === 'to_dropoff' || step === 'at_dropoff' || step === 'capturing_photo') {
-            return { origin: job.pickup, destination: job.dropoff };
-        }
-        return { origin: null, destination: null };
     };
 
     const route = getRoute();
@@ -225,7 +207,6 @@ const ActiveDeliveryMap = ({ job, onComplete }: { job: Job, onComplete: (payout:
             <MapComponent
                 origin={route.origin}
                 destination={route.destination}
-                driverLocation={driverLocation}
             />
 
             {step === 'capturing_photo' ? (
