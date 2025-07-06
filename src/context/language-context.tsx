@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import { translations, type Translation } from '@/lib/translations';
 
 // This gets the type of a single language's translations, e.g., typeof translations['en']
@@ -24,6 +24,14 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 // Define the provider component
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<string>('en'); // Default language is English
+
+  // This side-effect updates the lang attribute on the html tag whenever the language changes.
+  useEffect(() => {
+    if (document.documentElement.lang !== language) {
+        document.documentElement.lang = language;
+    }
+  }, [language]);
+
 
   // The value provided only contains the state and the setter.
   const value = useMemo(() => ({ language, setLanguage }), [language]);

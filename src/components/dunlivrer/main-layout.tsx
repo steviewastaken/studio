@@ -2,20 +2,10 @@
 
 import Header from '@/components/dunlivrer/header';
 import Footer from '@/components/dunlivrer/footer';
-import { useLanguage } from '@/context/language-context';
-import { useEffect } from 'react';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-    const { language } = useLanguage();
-
-    // This is a side-effect to update the lang attribute on the html tag.
-    // This is a clean way to do it without making the RootLayout a client component.
-    useEffect(() => {
-        if (document.documentElement.lang !== language) {
-            document.documentElement.lang = language;
-        }
-    }, [language]);
-
+    // The useEffect and useLanguage hook have been moved to the provider
+    // for a more direct and reliable state management.
     return (
         <div className="flex flex-col min-h-screen bg-transparent text-foreground">
             <Header />
