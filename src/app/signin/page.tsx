@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import type { UserProfile } from '@/context/auth-context';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 
@@ -20,21 +19,6 @@ const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
   password: z.string().min(1, "Password is required."),
 });
-
-// Mock users
-const mockDriverUser: UserProfile = {
-    id: 'user-123',
-    name: 'Demo DunGuy',
-    email: 'demo@dunlivrer.com',
-    role: 'driver',
-};
-
-const mockAdminUser: UserProfile = {
-    id: 'admin-001',
-    name: 'Admin User',
-    email: 'admin@dunlivrer.com',
-    role: 'admin',
-};
 
 export default function SignInPage() {
   const { toast } = useToast();
@@ -52,24 +36,21 @@ export default function SignInPage() {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const redirectPath = searchParams.get('redirect') || '/';
-    const email = values.email.toLowerCase();
-    const password = values.password;
+    const loggedInUser = await login(values.email, values.password);
 
-    if (email === 'admin@dunlivrer.com' && password === 'admin') {
-        login(mockAdminUser);
-        toast({
-            title: "Admin Signed In!",
-            description: "Welcome to the admin dashboard.",
-        });
-        router.push(redirectPath.startsWith('/admin') ? redirectPath : '/admin');
-    } else if (email === 'demo@dunlivrer.com' && password === 'demo') {
-        login(mockDriverUser);
+    if (loggedInUser) {
+        const redirectPath = searchParams.get('redirect') || '/';
+        
         toast({
             title: "Signed In!",
             description: "Welcome back!",
         });
-        router.push(redirectPath !== '/admin' ? redirectPath : '/driver');
+        
+        if (loggedInUser.role === 'admin') {
+            router.push(redirectPath.startsWith('/admin') ? redirectPath : '/admin');
+        } else {
+             router.push(redirectPath.startsWith('/admin') ? '/driver' : redirectPath);
+        }
     } else {
         toast({
             variant: "destructive",

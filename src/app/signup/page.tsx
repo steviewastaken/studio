@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import type { UserProfile } from '@/context/auth-context';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -23,7 +22,7 @@ const formSchema = z.object({
 export default function SignUpPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { login, loading, setLoading } = useAuth();
+  const { signup, loading, setLoading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,19 +34,21 @@ export default function SignUpPage() {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const newDriver: UserProfile = {
-      id: `user-${Date.now()}`,
-      name: values.name,
-      email: values.email,
-      role: 'driver',
-    };
-    
-    login(newDriver);
-    toast({
-        title: "Account Created!",
-        description: "You have been signed in successfully as a driver.",
-    });
-    router.push('/driver');
+    const newUser = await signup(values.name, values.email, values.password);
+
+    if (newUser) {
+        toast({
+            title: "Account Created!",
+            description: "You have been signed in successfully as a driver.",
+        });
+        router.push('/driver');
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Sign Up Failed",
+            description: "An account with this email already exists.",
+        });
+    }
     setLoading(false);
   }
 
