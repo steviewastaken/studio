@@ -80,10 +80,10 @@ export default function KycPage() {
         // Simulate upload and processing
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        updateUserKycStatus(user.id, 'pending');
+        updateUserKycStatus(user.id, 'verified');
         
         setIsLoading(false);
-        toast({ title: 'Application Submitted!', description: 'Your documents are now under review. We will notify you once the process is complete.' });
+        toast({ title: 'Verification Successful!', description: 'Your account has been auto-approved and is ready to go.' });
         router.push('/driver');
     };
 
