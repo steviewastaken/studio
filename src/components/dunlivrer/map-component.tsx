@@ -12,13 +12,14 @@ type MapComponentProps = {
   waypoints?: string[];
   driverLocation?: { lat: number; lng: number } | null;
   animateDriverPath?: boolean; // For customer-facing simulation
+  isNavigating?: boolean;
 };
 
 const scooterSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48px" height="48px" fill="#a855f7"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19.77 7.23l-1.02-1.02c-.39-.39-1.02-.39-1.41 0L14 9.58V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v4.58L4.66 6.21c-.39-.39-1.02-.39-1.41 0l-1.02 1.02c-.39.39-.39 1.02 0 1.41L4.42 11H2v2h3.17L3.41 14.77c-.39.39-.39 1.02 0 1.41l1.02 1.02c.39.39 1.02.39 1.41 0L9 14.83V19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-4.17l3.24 3.24c.39.39 1.02.39 1.41 0l1.02-1.02c.39-.39.39-1.02 0-1.41L19.58 13H22v-2h-2.58l2.25-2.25c.39-.39.39-1.03 0-1.42zM12 17c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>`;
 
 const driverRealtimeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="#2563eb" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="#fff"/></svg>`;
 
-export default function MapComponent({ origin, destination, waypoints = [], driverLocation, animateDriverPath = false }: MapComponentProps) {
+export default function MapComponent({ origin, destination, waypoints = [], driverLocation, animateDriverPath = false, isNavigating = false }: MapComponentProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +32,8 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
   const driverMarkerRef = useRef<google.maps.Marker | null>(null);
   const driverRealtimeMarkerRef = useRef<google.maps.Marker | null>(null);
   const animationFrameId = useRef<number | null>(null);
+  const blinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isPolylineVisible = useRef(true);
 
   useEffect(() => {
     loadGoogleMapsApi()
@@ -57,6 +60,49 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
         polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5, strokeOpacity: 0.8 }
     });
   }, [status, map]);
+
+  // Blinking effect for navigation route
+  useEffect(() => {
+    const renderer = directionsRendererRef.current;
+
+    // Stop any previous interval when dependencies change
+    if (blinkIntervalRef.current) {
+      clearInterval(blinkIntervalRef.current);
+      blinkIntervalRef.current = null;
+    }
+
+    if (isNavigating && renderer) {
+      const visibleOptions = { strokeColor: 'hsl(var(--primary))', strokeWeight: 6, strokeOpacity: 0.9 };
+      const invisibleOptions = { strokeColor: 'hsl(var(--primary))', strokeWeight: 6, strokeOpacity: 0.2 };
+      
+      blinkIntervalRef.current = setInterval(() => {
+        isPolylineVisible.current = !isPolylineVisible.current;
+        renderer.setOptions({ polylineOptions: isPolylineVisible.current ? visibleOptions : invisibleOptions });
+      }, 600);
+
+    } else {
+      // If not navigating, ensure the line is visible.
+      if (renderer) {
+        renderer.setOptions({
+          polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5, strokeOpacity: 0.8 }
+        });
+      }
+    }
+
+    // Cleanup function for when component unmounts or deps change
+    return () => {
+      if (blinkIntervalRef.current) {
+        clearInterval(blinkIntervalRef.current);
+      }
+      // On cleanup, ensure polyline is visible again.
+      if (renderer) {
+        renderer.setOptions({
+          polylineOptions: { strokeColor: 'hsl(var(--primary))', strokeWeight: 5, strokeOpacity: 0.8 }
+        });
+      }
+    };
+  }, [isNavigating, map]);
+
 
   useEffect(() => {
     if (!map || !directionsRendererRef.current) return;
@@ -93,7 +139,7 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
 
     // Both origin and destination are provided, get route
     if (origin && destination) {
-        const directionsService = new google.maps.DirectionsService();
+        const directionsService = new window.google.maps.DirectionsService();
 
         const request: google.maps.DirectionsRequest = {
             origin: origin,

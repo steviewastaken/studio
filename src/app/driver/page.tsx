@@ -207,6 +207,7 @@ const ActiveDeliveryMap = ({ job, onComplete }: { job: Job, onComplete: (payout:
             <MapComponent
                 origin={route.origin}
                 destination={route.destination}
+                isNavigating={isNavigating}
             />
 
             {step === 'capturing_photo' ? (
