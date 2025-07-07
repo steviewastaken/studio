@@ -120,28 +120,33 @@ const getQuoteFlow = ai.defineFlow(
     
     // --- Dynamic Pricing Engine ---
     const BASE_FARE = 5.00; 
-    const BASE_DISTANCE_KM = 2;
+    const BASE_DISTANCE_KM = 2; // Base fare includes first 2km
 
-    // 1. Distance-based Cost
+    // 1. Tiered Distance-based Cost
     let distanceCost = 0;
     let remainingDistance = distanceInKm > BASE_DISTANCE_KM ? distanceInKm - BASE_DISTANCE_KM : 0;
+    
+    // Tier 1: 2-5 km
     if (remainingDistance > 0) {
         const distInSlab = Math.min(remainingDistance, 3);
-        distanceCost += distInSlab * 1.00;
+        distanceCost += distInSlab * 1.00; // €1.00/km
         remainingDistance -= distInSlab;
     }
+    // Tier 2: 5-10 km
     if (remainingDistance > 0) {
         const distInSlab = Math.min(remainingDistance, 5);
-        distanceCost += distInSlab * 0.80;
+        distanceCost += distInSlab * 0.80; // €0.80/km
         remainingDistance -= distInSlab;
     }
+    // Tier 3: 10-20 km
     if (remainingDistance > 0) {
         const distInSlab = Math.min(remainingDistance, 10);
-        distanceCost += distInSlab * 0.70;
+        distanceCost += distInSlab * 0.70; // €0.70/km
         remainingDistance -= distInSlab;
     }
+    // Tier 4: >20 km
     if (remainingDistance > 0) {
-        distanceCost += remainingDistance * 0.60;
+        distanceCost += remainingDistance * 0.60; // €0.60/km
     }
 
     // 2. Package Size Surcharge

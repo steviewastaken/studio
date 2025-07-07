@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ProcessBulkDeliveryInputSchema = z.object({
-  csvData: z.string().describe("A CSV string containing a list of deliveries. The expected header is `destination_address,package_size,notes`."),
+  csvData: z.string().describe("A CSV string containing a list of deliveries. The expected header is `destination_address,package_weight_kg,notes`."),
 });
 export type ProcessBulkDeliveryInput = z.infer<typeof ProcessBulkDeliveryInputSchema>;
 
@@ -22,6 +22,7 @@ const ProcessBulkDeliveryOutputSchema = z.object({
     validPackages: z.number().describe("The number of packages with valid Parisian addresses."),
     invalidPackages: z.number().describe("The number of packages with invalid or out-of-zone addresses."),
     totalQuote: z.number().describe("The total estimated price in Euros for all valid deliveries."),
+    uniqueZones: z.number().describe("The number of unique delivery zones identified."),
   }),
   consolidatedRoutes: z.array(z.object({
     zone: z.string().describe("The name of the geographic zone or neighborhood."),
@@ -51,20 +52,22 @@ const prompt = ai.definePrompt({
   prompt: `You are an advanced AI Logistics Engine for Dunlivrer, a delivery service in Paris. Your task is to process a CSV string containing a list of deliveries and return a comprehensive optimization plan.
 
 **Input CSV Format:**
-The CSV will have three columns: \`destination_address\`, \`package_size\`, \`notes\`.
+The CSV will have three columns: \`destination_address\`, \`package_weight_kg\`, \`notes\`.
 
 **Your Analysis Tasks:**
 
 1.  **Parse & Summarize:**
     *   Parse all rows from the CSV data.
     *   Count the total number of packages, the number of valid Parisian addresses, and the number of invalid/out-of-zone addresses (e.g., London).
+    *   Count the number of unique delivery zones.
 
 2.  **AI Quote Generation (Total Cost):**
     *   For each **valid** Parisian delivery, calculate an estimated price.
     *   **Pricing Model:**
-        *   Base Fare: €5.00
-        *   Package Size Surcharge: 'small' = €0, 'medium' = €1.50, 'large' = €3.00.
-        *   Distance Cost: Use your geographical knowledge of Paris to estimate the distance between a central dispatch point (like Châtelet) and the destination address. Apply a cost of €0.80 per estimated kilometer.
+        *   Base Fare: €5.00 per delivery.
+        *   Distance Cost: Use your geographical knowledge of Paris to estimate the distance in kilometers (km) from a central dispatch point (like Châtelet) to the destination address. Apply a cost of €0.80 per estimated km.
+        *   Weight Cost: Apply a cost of €0.75 per kilogram (kg) based on the \`package_weight_kg\` column.
+        *   **Total cost per item = Base Fare + (0.80 * estimated_km) + (0.75 * package_weight_kg).**
     *   Sum the costs for all valid packages to get the \`totalQuote\`.
     *   Exclude any invalid addresses from this calculation.
 

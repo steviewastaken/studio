@@ -155,15 +155,15 @@ const EstimatorBox = ({ quote, insuranceQuote, isGettingQuote }: { quote: GetQuo
 };
 
 
-const sampleCsvData = `destination_address,package_size,notes
-"Eiffel Tower, Paris, France",medium,"VIP delivery"
-"Louvre Museum, Paris, France",small,"Fragile item"
-"5 Rue de Rivoli, 75004 Paris",small,""
-"Arc de Triomphe, Paris",large,"Requires 2 people"
-"221B Baker Street, London",medium,"Address outside primary zone"
-"Montmartre, Paris, France",medium,"Weekly restock for cafe"
-"La Défense, Puteaux",small,"Office documents"
-"Montmartre, Paris, France",small,"Second package for cafe"`;
+const sampleCsvData = `destination_address,package_weight_kg,notes
+"Eiffel Tower, Paris, France",4.5,"VIP delivery"
+"Louvre Museum, Paris, France",1.2,"Fragile item"
+"5 Rue de Rivoli, 75004 Paris",0.8,""
+"Arc de Triomphe, Paris",8.0,"Requires 2 people"
+"221B Baker Street, London",3.0,"Address outside primary zone"
+"Montmartre, Paris, France",15.5,"Weekly restock for cafe"
+"La Défense, Puteaux",2.0,"Office documents"
+"Montmartre, Paris, France",6.7,"Second package for cafe"`;
 
 const BulkUploader = ({ onProcess }: { onProcess: (csv: string) => void }) => {
     const [file, setFile] = useState<File | null>(null);
