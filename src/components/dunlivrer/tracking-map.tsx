@@ -52,10 +52,10 @@ export default function TrackingMap({ deliveryDetails, driverDetails, deliverySt
   const { content } = useLanguage();
 
   const steps = [
-    { id: 'SCHEDULED', label: content.tracking_status_scheduled, icon: <Package className="w-6 h-6" /> },
-    { id: 'FOUND', label: content.tracking_status_assigned, icon: <UserRoundCheck className="w-6 h-6" /> },
-    { id: 'IN_TRANSIT', label: content.tracking_status_in_transit, icon: <Truck className="w-6 h-6" /> },
-    { id: 'DELIVERED', label: content.tracking_status_delivered, icon: <Home className="w-6 h-6" /> }
+    { id: 'SCHEDULED', label: "Package Registered", icon: <Package className="w-6 h-6" /> },
+    { id: 'FOUND', label: "Driver Assigned", icon: <UserRoundCheck className="w-6 h-6" /> },
+    { id: 'IN_TRANSIT', label: "Package Picked Up", icon: <Truck className="w-6 h-6" /> },
+    { id: 'DELIVERED', label: "Delivered", icon: <Home className="w-6 h-6" /> }
   ];
   
   const currentStepIndex = statusMap[deliveryStatus];

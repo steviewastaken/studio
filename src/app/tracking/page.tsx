@@ -8,7 +8,7 @@ import TrackingMap from '@/components/dunlivrer/tracking-map';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, RefreshCw, AlertCircle, CheckCircle, Euro, Timer } from 'lucide-react';
+import { Search, Loader2, RefreshCw, AlertCircle, CheckCircle, Euro, Timer, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { FindDriverOutput } from '@/ai/flows/find-driver';
 import type { RerouteDeliveryOutput } from '@/ai/flows/reroute-delivery';
@@ -223,6 +223,24 @@ function TrackingPageContent() {
                           </form>
                       </CardContent>
                   </Card>
+                    {deliveryDetails && deliveryStatus !== 'IDLE' && (
+                        <Card className="bg-card/80 border-white/10">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><ShieldCheck className="text-primary"/>Smart Contract Status</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-full ${deliveryStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                        {deliveryStatus === 'DELIVERED' ? <CheckCircle className="w-5 h-5"/> : <Loader2 className="w-5 h-5 animate-spin"/>}
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold">{deliveryStatus === 'DELIVERED' ? 'Payment Released' : 'Funds in Escrow'}</p>
+                                        <p className="text-sm text-muted-foreground">{deliveryStatus === 'DELIVERED' ? 'Payment sent to driver.' : 'Payment secured on-chain.'}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                   <SupportChat deliveryDetails={deliveryDetails} />
               </motion.div>
           </motion.div>
@@ -236,16 +254,16 @@ function TrackingPageContent() {
                 <Card className="bg-green-500/10 border-green-500/30">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-green-400">
-                      <CheckCircle className="w-6 h-6" /> Delivery Complete & Verified
+                      <CheckCircle className="w-6 h-6" /> Delivery Verified On-Chain
                     </CardTitle>
                     <CardDescription>
-                      This delivery has been permanently recorded on the blockchain for maximum transparency and security.
+                      This delivery's chain of custody has been permanently recorded and payment has been released via Smart Contract.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button asChild>
                       <Link href="/tx/0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b">
-                        View Blockchain Transaction
+                        View On-Chain Record
                       </Link>
                     </Button>
                   </CardContent>

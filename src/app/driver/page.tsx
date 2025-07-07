@@ -294,7 +294,7 @@ const DriverDashboard = () => {
     const handleCompleteJob = (payout: number) => {
         toast({
             title: "Delivery Complete!",
-            description: `Payment of €${payout.toFixed(2)} has been added to your earnings.`,
+            description: `Payment of €${payout.toFixed(2)} has been released from escrow and added to your earnings.`,
         });
         setStats(prev => ({
             ...prev,

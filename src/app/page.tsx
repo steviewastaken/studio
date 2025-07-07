@@ -6,7 +6,7 @@ import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, ListChecks, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal, Layers } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion } from 'framer-motion';
@@ -389,7 +389,7 @@ export default function DunlivrerPage() {
               className="flex items-start gap-4"
             >
               <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
-                <FileText className="w-6 h-6" />
+                <Layers className="w-6 h-6" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
@@ -405,7 +405,7 @@ export default function DunlivrerPage() {
               className="flex items-start gap-4"
             >
               <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
-                <ListChecks className="w-6 h-6" />
+                <FileText className="w-6 h-6" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
