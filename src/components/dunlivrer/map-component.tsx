@@ -79,8 +79,11 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
         routePolylineRef.current = null;
     }
     
-    if (!origin || !destination) {
-        // Clear the route from the map if no origin/destination
+    // A simple heuristic to prevent API calls for incomplete addresses
+    const isRoutable = origin && destination && origin.length > 10 && destination.length > 10;
+    
+    if (!isRoutable) {
+        // Clear the route from the map if addresses are not ready
         directionsRenderer.setDirections({routes: []});
         return;
     }
