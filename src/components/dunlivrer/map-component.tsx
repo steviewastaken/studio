@@ -60,7 +60,7 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
     }
     
     if (map && !directionsRenderer) {
-        const renderer = new google.maps.DirectionsRenderer({
+        const renderer = new window.google.maps.DirectionsRenderer({
             map: map,
             suppressPolylines: true, // We'll draw our own for custom effects
         });
