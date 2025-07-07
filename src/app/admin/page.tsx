@@ -128,20 +128,20 @@ const SystemHealthPanel = () => (
 
 
 export default function AdminPage() {
-    const { user, loading } = useAuth();
+    const { profile, loading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        if (!loading && user?.role !== 'admin') {
+        if (!loading && profile?.role !== 'admin') {
             router.push('/signin?redirect=/admin');
         }
-    }, [loading, user, router]);
+    }, [loading, profile, router]);
 
-    if (loading || !user) {
+    if (loading || !profile) {
         return <LoadingSkeleton />;
     }
 
-    if (user.role !== 'admin') {
+    if (profile.role !== 'admin') {
         return <AccessDenied />;
     }
 
@@ -244,15 +244,15 @@ export default function AdminPage() {
                         </CardContent>
                     </Card>
                 </Link>
-                <Link href="/admin/kyc">
+                <Link href="/admin/b2b">
                     <Card className="bg-card/80 border-white/10 hover:border-primary/50 transition-colors h-full">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">KYC Verification</CardTitle>
+                            <CardTitle className="text-sm font-medium">B2B / Enterprise</CardTitle>
                             <UserCheck className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">2</div>
-                            <p className="text-xs text-muted-foreground">Applications pending review</p>
+                            <div className="text-2xl font-bold">Analytics</div>
+                            <p className="text-xs text-muted-foreground">View enterprise client data</p>
                         </CardContent>
                     </Card>
                 </Link>

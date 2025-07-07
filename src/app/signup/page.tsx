@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -20,13 +21,11 @@ const formSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
-// A component that uses useSearchParams must be wrapped in a <Suspense> boundary
-// at a higher level in the component tree. This component contains the logic.
 function SignUpPageContent() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signup, loading, setLoading } = useAuth();
+  const { signup, loading } = useAuth();
   
   const isDriverSignup = searchParams.get('as') === 'driver';
 
@@ -36,33 +35,25 @@ function SignUpPageContent() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
     const role = isDriverSignup ? 'driver' : 'customer';
-    const newUser = await signup(values.name, values.email, values.password, role);
+    const { error } = await signup(values.name, values.email, values.password, role);
 
-    if (newUser) {
+    if (!error) {
         toast({
             title: "Account Created!",
-            description: `You have been signed in successfully as a ${role}.`,
+            description: `A confirmation email has been sent. Please verify your email to sign in.`,
         });
         
-        if (role === 'driver') {
-            router.push('/driver/kyc');
-        } else {
-            router.push('/');
-        }
+        // Redirect to a page that tells the user to check their email
+        router.push('/signin');
 
     } else {
         toast({
             variant: "destructive",
             title: "Sign Up Failed",
-            description: "An account with this email already exists.",
+            description: error.message,
         });
     }
-    setLoading(false);
   }
 
   return (
@@ -106,7 +97,7 @@ function SignUpPageContent() {
               </FormItem>
             )} />
             <Button type="submit" size="lg" className="w-full" disabled={loading}>
-              {loading ? 'Creating Account...' : isDriverSignup ? 'Sign Up as a Driver' : 'Sign Up'}
+              {loading ? <Loader2 className="animate-spin" /> : (isDriverSignup ? 'Sign Up as a Driver' : 'Sign Up')}
             </Button>
           </form>
         </Form>

@@ -459,63 +459,17 @@ const LoadingSkeleton = () => (
     </div>
 );
 
-
-const KycPending = () => (
-    <div className="w-full h-screen flex items-center justify-center">
-        <Card className="p-8 text-center bg-card/80 border-white/10 max-w-lg">
-            <Loader2 className="w-12 h-12 mx-auto text-primary animate-spin" />
-            <CardTitle className="font-headline text-3xl mt-4">Verification Pending</CardTitle>
-            <CardDescription className="mt-2">
-                Your documents have been submitted successfully. Our team is reviewing your application, which usually takes 1-2 business days. We'll notify you via email once it's complete.
-            </CardDescription>
-        </Card>
-    </div>
-);
-
-const KycRejected = () => {
-    const router = useRouter();
-    return (
-        <div className="w-full h-screen flex items-center justify-center">
-            <Card className="p-8 text-center bg-card/80 border-destructive/30 max-w-lg">
-                <AlertTriangle className="w-12 h-12 mx-auto text-destructive" />
-                <CardTitle className="font-headline text-3xl mt-4">Verification Required</CardTitle>
-                <CardDescription className="mt-2 text-destructive-foreground">
-                    There was an issue with your submitted documents. Please re-submit them with clear and valid images.
-                </CardDescription>
-                <Button onClick={() => router.push('/driver/kyc')} className="mt-6">
-                    Re-submit Documents
-                </Button>
-            </Card>
-        </div>
-    );
-};
-
-
 export default function DriverPage() {
-    const { user, loading } = useAuth();
+    const { user, profile, loading } = useAuth();
     const router = useRouter();
 
     if (loading) {
         return <LoadingSkeleton />;
     }
     
-    const isDriver = user?.role === 'driver';
-
-    if (!isDriver) {
-        return <DriverLandingPage />;
+    if (user && profile?.role === 'driver') {
+        return <DriverDashboard />;
     }
 
-    switch (user.kycStatus) {
-        case 'pending':
-            // Since auto-approval is now in place, this state is less likely to be seen by the user.
-            return <KycPending />;
-        case 'rejected':
-        case 'none':
-            router.push('/driver/kyc'); // Redirect to re-submit
-            return <LoadingSkeleton />;
-        case 'verified':
-            return <DriverDashboard />;
-        default:
-            return <DriverLandingPage />;
-    }
+    return <DriverLandingPage />;
 }
