@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -87,7 +88,7 @@ const ReportResultCard = ({ report, capturedImage, onConfirm, onDiscard }: { rep
                 </CardContent>
                 <CardContent className="flex gap-4">
                      <Button onClick={onDiscard} variant="outline" className="w-full">Discard & Edit</Button>
-                     <Button onClick={onConfirm} className="w-full">Confirm & Send Report</Button>
+                     <Button onClick={onConfirm} className="w-full">Confirm & Record On-Chain</Button>
                 </CardContent>
             </Card>
         </motion.div>
@@ -188,8 +189,9 @@ export default function ReportIncidentPage() {
     };
     
     const confirmAndSend = () => {
-        toast({ title: "Report Sent!", description: "Support has been notified of the incident." });
-        router.push('/driver');
+        const incidentId = `INC-${Date.now()}`;
+        toast({ title: "Report Recorded!", description: "The incident has been immutably recorded on-chain." });
+        router.push(`/incident/${incidentId}`);
     };
     
     const discardReport = () => {

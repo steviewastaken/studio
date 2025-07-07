@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, AlertTriangle, UserPlus, Headset, BrainCircuit, TrendingUp, UserCheck } from "lucide-react";
+import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, FileWarning, UserPlus, Headset, BrainCircuit, TrendingUp, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -50,7 +50,7 @@ const AccessDenied = () => {
 const recentActivities = [
   { icon: <UserPlus className="text-green-500" />, text: "New courier 'Speedy Gonzalez' just signed up.", time: "2m ago" },
   { icon: <CheckCircle className="text-primary" />, text: "Delivery #DNLVR-789 successfully completed.", time: "5m ago" },
-  { icon: <AlertTriangle className="text-yellow-500" />, text: "Fraud alert triggered for transaction #FT-9912.", time: "8m ago" },
+  { icon: <FileWarning className="text-yellow-500" />, text: "Incident #INC-12345 filed for a damaged package.", time: "8m ago", href: "/incident/INC-12345" },
   { icon: <Headset className="text-blue-500" />, text: "Support AI escalated chat #chat-2 to human review.", time: "12m ago" },
   { icon: <Euro className="text-green-500" />, text: "High-value delivery of €550 scheduled.", time: "15m ago" },
 ];
@@ -62,18 +62,26 @@ const RecentActivityFeed = () => (
             <CardDescription>A live feed of important platform events.</CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                        <div className="p-2 bg-muted rounded-full mt-1">
-                            {activity.icon}
+            <div className="space-y-1">
+                {recentActivities.map((activity, index) => {
+                    const content = (
+                        <div className="flex items-start gap-3 p-2 rounded-md hover:bg-muted transition-colors w-full">
+                            <div className="p-2 bg-muted rounded-full mt-1">
+                                {activity.icon}
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm">{activity.text}</p>
+                                <p className="text-xs text-muted-foreground">{activity.time}</p>
+                            </div>
                         </div>
-                        <div className="flex-1">
-                            <p className="text-sm">{activity.text}</p>
-                            <p className="text-xs text-muted-foreground">{activity.time}</p>
-                        </div>
-                    </div>
-                ))}
+                    );
+
+                    if (activity.href) {
+                        return <Link key={index} href={activity.href} className="block">{content}</Link>;
+                    }
+
+                    return <div key={index}>{content}</div>;
+                })}
             </div>
         </CardContent>
     </Card>
