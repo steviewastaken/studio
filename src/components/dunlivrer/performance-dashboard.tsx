@@ -4,7 +4,13 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertTriangle, Lightbulb, BarChart, Clock, AlertCircle } from "lucide-react";
-import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { Bar, BarChart as RechartsBarChart, XAxis, YAxis } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
 import { handleGetDriverPerformanceReport } from "@/lib/actions";
 import type { GetDriverPerformanceReportOutput } from "@/ai/flows/get-driver-performance-report";
 import { useAuth } from "@/context/auth-context";
@@ -20,19 +26,20 @@ const mockDeliveryHistory = [
 ];
 const mockCityAverage = 24;
 
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="p-2 bg-background/80 border rounded-lg shadow-lg">
-                <p className="font-bold">{label}</p>
-                <p className="text-sm text-primary">{`Time : ${payload[0].value} min`}</p>
-            </div>
-        );
-    }
-    return null;
-};
-
+const chartConfig = {
+  time: {
+    label: "Time (min)",
+    color: "hsl(var(--chart-1))",
+  },
+  yourTime: {
+    label: "Your Time",
+    color: "hsl(var(--chart-1))",
+  },
+  averageTime: {
+    label: "City Average",
+    color: "hsl(var(--chart-2))",
+  }
+} satisfies ChartConfig
 
 export default function PerformanceDashboard({ isActive }: { isActive: boolean }) {
   const { user } = useAuth();
@@ -97,15 +104,11 @@ export default function PerformanceDashboard({ isActive }: { isActive: boolean }
   }
 
   const comparisonData = [
-    { name: "Your Average", time: report.driverAverageTime, fill: "hsl(var(--primary))" },
-    { name: "Courier Average", time: mockCityAverage, fill: "hsl(var(--muted-foreground))" }
+    { name: "Your Average", time: report.driverAverageTime, fill: "var(--color-yourTime)" },
+    { name: "Courier Average", time: mockCityAverage, fill: "var(--color-averageTime)" }
   ];
 
-  const zoneData = report.timePerZone.map((zone, index) => ({
-      name: zone.zone,
-      time: zone.averageTime,
-      fill: `hsl(var(--primary) / ${1 - (index * 0.15)})`
-  }));
+  const zoneData = report.timePerZone;
 
   return (
     <div className="space-y-8">
@@ -143,14 +146,14 @@ export default function PerformanceDashboard({ isActive }: { isActive: boolean }
                     <CardDescription>Your average delivery time vs. all couriers.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <RechartsBarChart data={comparisonData} layout="vertical" margin={{ left: 20 }}>
+                    <ChartContainer config={chartConfig} className="w-full h-[250px]">
+                        <RechartsBarChart accessibilityLayer data={comparisonData} layout="vertical" margin={{ left: 20 }}>
                             <XAxis type="number" hide />
-                            <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" axisLine={false} tickLine={false} width={100} />
-                            <Tooltip cursor={{ fill: 'hsl(var(--muted)/0.5)' }} content={<CustomTooltip />} />
+                            <YAxis dataKey="name" type="category" tickLine={false} tickMargin={10} axisLine={false} width={100} />
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
                             <Bar dataKey="time" radius={[0, 4, 4, 0]} barSize={35} />
                         </RechartsBarChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                 </CardContent>
             </Card>
             <Card className="bg-card/80 border-white/10">
@@ -159,14 +162,14 @@ export default function PerformanceDashboard({ isActive }: { isActive: boolean }
                     <CardDescription>Your average time in different city zones.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ResponsiveContainer width="100%" height={250}>
-                         <RechartsBarChart data={zoneData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false}/>
-                            <Tooltip cursor={{ fill: 'hsl(var(--muted)/0.5)' }} content={<CustomTooltip />} />
-                            <Bar dataKey="time" radius={[4, 4, 0, 0]} />
+                    <ChartContainer config={chartConfig} className="w-full h-[250px]">
+                         <RechartsBarChart accessibilityLayer data={zoneData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <XAxis dataKey="zone" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis dataKey="averageTime" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false}/>
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" nameKey="averageTime" />} />
+                            <Bar dataKey="averageTime" name="Time" fill="var(--color-time)" radius={[4, 4, 0, 0]} />
                         </RechartsBarChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                 </CardContent>
             </Card>
         </div>

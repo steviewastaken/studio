@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Briefcase, DollarSign, Package, MapPin, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ResponsiveContainer, BarChart as RechartsBarChart, XAxis, YAxis, Tooltip, Bar, LineChart, Line, CartesianGrid } from "recharts";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -39,17 +45,16 @@ const b2bData = {
   ]
 };
 
-const CustomTooltip = ({ active, payload, label, formatter }: any) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="p-2 bg-background/80 border rounded-lg shadow-lg">
-                <p className="font-bold">{label}</p>
-                <p className="text-sm text-primary">{formatter(payload[0].value)}</p>
-            </div>
-        );
-    }
-    return null;
-};
+const chartConfig = {
+  spend: {
+    label: "Spend (€)",
+    color: "hsl(var(--chart-1))",
+  },
+  deliveries: {
+    label: "Deliveries",
+    color: "hsl(var(--chart-2))",
+  },
+} satisfies ChartConfig
 
 const getStatusBadge = (status: string) => {
     switch(status) {
@@ -118,15 +123,15 @@ export default function B2BAnalyticsPage() {
                             <CardTitle className="flex items-center gap-2"><TrendingUp/> Spend Over Time</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={b2bData.monthlySpend}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.5)" />
-                                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                                    <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(value) => `€${Number(value) / 1000}k`} />
-                                    <Tooltip content={<CustomTooltip formatter={(value: number) => `€${value.toLocaleString()}`} />} cursor={{ fill: 'hsl(var(--muted)/0.5)' }} />
-                                    <Line type="monotone" dataKey="spend" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                             <ChartContainer config={chartConfig} className="w-full h-[300px]">
+                                <LineChart accessibilityLayer data={b2bData.monthlySpend} margin={{left: 12, right: 12}}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.slice(0, 3)}/>
+                                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `€${Number(value) / 1000}k`} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                    <Line dataKey="spend" type="monotone" stroke="var(--color-spend)" strokeWidth={2} dot={true}/>
                                 </LineChart>
-                            </ResponsiveContainer>
+                            </ChartContainer>
                         </CardContent>
                     </Card>
                     <Card className="lg:col-span-2 bg-card/80 border-white/10">
@@ -134,14 +139,14 @@ export default function B2BAnalyticsPage() {
                             <CardTitle className="flex items-center gap-2"><MapPin/> Top Delivery Zones</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <ResponsiveContainer width="100%" height={300}>
-                                <RechartsBarChart data={b2bData.topZones} layout="vertical" margin={{ left: 10 }}>
-                                    <XAxis type="number" hide />
-                                    <YAxis dataKey="zone" type="category" stroke="hsl(var(--muted-foreground))" width={80} />
-                                    <Tooltip content={<CustomTooltip formatter={(value: number) => `${value.toLocaleString()} deliveries`} />} cursor={{ fill: 'hsl(var(--muted)/0.5)' }} />
-                                    <Bar dataKey="deliveries" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                                </RechartsBarChart>
-                            </ResponsiveContainer>
+                             <ChartContainer config={chartConfig} className="w-full h-[300px]">
+                                <BarChart accessibilityLayer data={b2bData.topZones} layout="vertical" margin={{ left: 10 }}>
+                                    <YAxis dataKey="zone" type="category" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 15)} />
+                                    <XAxis dataKey="deliveries" type="number" hide />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                    <Bar dataKey="deliveries" layout="vertical" fill="var(--color-deliveries)" radius={4} />
+                                </BarChart>
+                            </ChartContainer>
                         </CardContent>
                     </Card>
                 </div>

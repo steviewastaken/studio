@@ -5,7 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BarChart, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { ResponsiveContainer, BarChart as RechartsBarChart, XAxis, YAxis, Tooltip, Bar, LineChart, Line, CartesianGrid } from "recharts";
+import { Bar, BarChart as RechartsBarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
 import { motion } from "framer-motion";
 
 const monthlyRevenue = [
@@ -23,17 +29,16 @@ const revenueByType = [
   { name: 'Night', value: 5000 },
 ];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="p-2 bg-background/80 border rounded-lg shadow-lg">
-                <p className="font-bold">{label}</p>
-                <p className="text-sm text-primary">{`Revenue : €${payload[0].value.toLocaleString()}`}</p>
-            </div>
-        );
-    }
-    return null;
-};
+const chartConfig = {
+  revenue: {
+    label: "Revenue (€)",
+    color: "hsl(var(--chart-1))",
+  },
+  value: {
+    label: "Revenue (€)",
+    color: "hsl(var(--chart-2))",
+  },
+} satisfies ChartConfig
 
 export default function RevenuePage() {
     return (
@@ -57,15 +62,15 @@ export default function RevenuePage() {
                         <CardTitle className="flex items-center gap-2"><TrendingUp/> Monthly Revenue Trend</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={monthlyRevenue}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.5)" />
-                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                                <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(value) => `€${Number(value) / 1000}k`} />
-                                <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '5 5' }} />
-                                <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 8, fill: 'hsl(var(--primary))' }} />
+                        <ChartContainer config={chartConfig} className="w-full h-[300px]">
+                            <LineChart accessibilityLayer data={monthlyRevenue} margin={{left: 12, right: 12}}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+                                <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `€${Number(value) / 1000}k`} />
+                                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                <Line dataKey="revenue" type="monotone" stroke="var(--color-revenue)" strokeWidth={2} dot={false}/>
                             </LineChart>
-                        </ResponsiveContainer>
+                        </ChartContainer>
                     </CardContent>
                 </Card>
                  <Card className="bg-card/80 border-white/10">
@@ -73,14 +78,14 @@ export default function RevenuePage() {
                         <CardTitle className="flex items-center gap-2"><BarChart/> Revenue by Type</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                           <RechartsBarChart data={revenueByType} layout="vertical" margin={{ left: 10 }}>
+                        <ChartContainer config={chartConfig} className="w-full h-[300px]">
+                           <RechartsBarChart accessibilityLayer data={revenueByType} layout="vertical" margin={{ left: 10 }}>
+                                <YAxis dataKey="name" type="category" tickLine={false} tickMargin={10} axisLine={false} />
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" width={80} />
-                                <Tooltip cursor={{ fill: 'hsl(var(--muted)/0.5)' }} content={<CustomTooltip />} />
-                                <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                <Bar dataKey="value" layout="vertical" fill="var(--color-value)" radius={4} />
                            </RechartsBarChart>
-                        </ResponsiveContainer>
+                        </ChartContainer>
                     </CardContent>
                 </Card>
             </div>
