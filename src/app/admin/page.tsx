@@ -172,15 +172,15 @@ export default function AdminPage() {
                         </CardContent>
                     </Card>
                 </Link>
-                <Link href="/admin/b2b">
+                <Link href="/#get-started">
                     <Card className="bg-card/80 border-white/10 hover:border-primary/50 transition-colors h-full">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">B2B / Enterprise</CardTitle>
+                            <CardTitle className="text-sm font-medium">Bulk Upload Tool</CardTitle>
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">Manage Clients</div>
-                            <p className="text-xs text-muted-foreground">Bulk uploads, analytics</p>
+                            <div className="text-2xl font-bold">Go to Homepage</div>
+                            <p className="text-xs text-muted-foreground">Access the AI-powered bulk uploader.</p>
                         </CardContent>
                     </Card>
                 </Link>
