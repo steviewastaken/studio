@@ -27,13 +27,24 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
   
   const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
 
-  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  // Separate refs for map elements
   const routePolylineRef = useRef<google.maps.Polyline | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const driverMarkerRef = useRef<google.maps.Marker | null>(null);
   const driverRealtimeMarkerRef = useRef<google.maps.Marker | null>(null);
+  
   const animationFrameId = useRef<number | null>(null);
   const blinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- Utility to clear map elements ---
+  const clearMapElements = () => {
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+    if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null);
+        routePolylineRef.current = null;
+    }
+  };
 
   useEffect(() => {
     loadGoogleMapsApi()
@@ -44,31 +55,23 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
       });
   }, []);
 
+  // --- Initialize Map ---
   useEffect(() => {
     if (status !== 'ready' || !mapRef.current || map) return;
     const newMap = new window.google.maps.Map(mapRef.current, {
       center: { lat: 48.8566, lng: 2.3522 },
       zoom: 12,
       mapId: 'DUNLIVRER_MAP_ID',
-      disableDefaultUI: true,
+      disableDefaultUI: false, // Ensure UI is not disabled
       zoomControl: true,
       gestureHandling: 'cooperative',
-      styles: [ /* styles remain the same */ ]
     });
     setMap(newMap);
-    directionsRendererRef.current = new google.maps.DirectionsRenderer({
-        map: newMap,
-        suppressMarkers: true,
-        suppressPolylines: true, // We will draw our own polyline
-    });
   }, [status, map]);
 
-  // Blinking effect for navigation route
+  // --- Blinking effect for navigation route ---
   useEffect(() => {
-    // Stop any previous interval
-    if (blinkIntervalRef.current) {
-        clearInterval(blinkIntervalRef.current);
-    }
+    if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
 
     const polyline = routePolylineRef.current;
     if (isNavigating && polyline) {
@@ -78,34 +81,21 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
             polyline.setVisible(isVisible);
         }, 600);
     } else if (polyline) {
-        // If not navigating, ensure the line is visible.
         polyline.setVisible(true);
     }
     
-    // Cleanup on unmount or when deps change
     return () => {
-        if (blinkIntervalRef.current) {
-            clearInterval(blinkIntervalRef.current);
-        }
-        // On cleanup, ensure polyline is visible again.
-        if (polyline) {
-            polyline.setVisible(true);
-        }
+        if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
+        if (polyline) polyline.setVisible(true);
     };
-  }, [isNavigating, directionsResult]); // Depends on directionsResult to get the polyline
+  }, [isNavigating, directionsResult]);
 
 
+  // --- Handle Route Drawing ---
   useEffect(() => {
-    if (!map || !directionsRendererRef.current) return;
+    if (!map) return;
     
-    // Clear previous state
-    markersRef.current.forEach(marker => marker.setMap(null));
-    markersRef.current = [];
-    if (routePolylineRef.current) {
-        routePolylineRef.current.setMap(null);
-        routePolylineRef.current = null;
-    }
-    directionsRendererRef.current.setDirections({routes: []});
+    clearMapElements();
     setDirectionsResult(null);
 
     if (!origin) { // No origin, default view
@@ -139,19 +129,16 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
         const request: google.maps.DirectionsRequest = {
             origin: origin,
             destination: destination,
-            travelMode: google.maps.TravelMode.DRIVING
+            travelMode: google.maps.TravelMode.DRIVING,
+            waypoints: waypoints.map(d => ({ location: d, stopover: true })),
         };
-        if (waypoints.length > 0) {
-            request.waypoints = waypoints.map(d => ({ location: d, stopover: true }));
-        }
 
         directionsService.route(request, (result, status) => {
-          if (status === 'OK' && result && directionsRendererRef.current) {
-            // Use renderer to fit map to bounds, but don't draw its line/markers
-            directionsRendererRef.current.setDirections(result);
+          if (status === 'OK' && result) {
             setDirectionsResult(result);
+            map.fitBounds(result.routes[0].bounds);
 
-            // Draw our own polyline
+            // Draw custom polyline
             routePolylineRef.current = new google.maps.Polyline({
                 path: result.routes[0].overview_path,
                 strokeColor: 'hsl(var(--primary))',
@@ -160,7 +147,7 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
                 map: map,
             });
             
-            // Draw our own markers
+            // Draw custom markers
             const pickupMarker = new google.maps.Marker({
                 position: result.routes[0].legs[0].start_location,
                 map: map,
@@ -183,7 +170,7 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
     }
   }, [map, origin, destination, waypoints]);
 
-  // Handle Real-time Driver Location Marker
+  // --- Handle Real-time Driver Location Marker ---
   useEffect(() => {
     if (!map || !driverLocation) {
         if (driverRealtimeMarkerRef.current) driverRealtimeMarkerRef.current.setVisible(false);
@@ -208,7 +195,7 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
 
   }, [map, driverLocation]);
 
-  // Handle Animated Driver Path (Simulation)
+  // --- Handle Animated Driver Path (Simulation) ---
   useEffect(() => {
     if (!map || !window.google.maps.geometry) return;
 
@@ -242,13 +229,21 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
       const progress = Math.min(elapsedTime / transitDuration, 1);
       
       if (path.length > 1) {
-          const index = Math.floor(progress * (path.length - 1));
-          const nextIndex = Math.min(index + 1, path.length - 1);
-          const segmentProgress = (progress * (path.length - 1)) - index;
-          const newPos = window.google.maps.geometry.spherical.interpolate(path[index], path[nextIndex], segmentProgress);
-          
-          if (driverMarkerRef.current) {
-            driverMarkerRef.current.setPosition(newPos);
+          const totalDistance = window.google.maps.geometry.spherical.computeLength(path);
+          const distanceCovered = totalDistance * progress;
+          let currentDistance = 0;
+
+          for (let i = 0; i < path.length - 1; i++) {
+            const segmentDistance = window.google.maps.geometry.spherical.computeDistanceBetween(path[i], path[i+1]);
+            if (currentDistance + segmentDistance >= distanceCovered) {
+                const segmentProgress = (distanceCovered - currentDistance) / segmentDistance;
+                const newPos = window.google.maps.geometry.spherical.interpolate(path[i], path[i+1], segmentProgress);
+                if (driverMarkerRef.current) {
+                  driverMarkerRef.current.setPosition(newPos);
+                }
+                break;
+            }
+            currentDistance += segmentDistance;
           }
       }
       
