@@ -62,7 +62,7 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
       center: { lat: 48.8566, lng: 2.3522 },
       zoom: 12,
       mapId: 'DUNLIVRER_MAP_ID',
-      disableDefaultUI: false, // Ensure UI is not disabled
+      disableDefaultUI: false,
       zoomControl: true,
       gestureHandling: 'cooperative',
     });
