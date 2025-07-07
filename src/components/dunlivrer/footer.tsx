@@ -1,10 +1,11 @@
+
 "use client";
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DunlivrerLogo from './logo';
 
-export default function Footer() {
+const Footer = React.memo(() => {
   const [year, setYear] = useState<string>('');
 
   useEffect(() => {
@@ -47,4 +48,7 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+});
+
+Footer.displayName = 'Footer';
+export default Footer;

@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import React from "react";
 
-const DunlivrerLogo = ({ className }: { className?: string }) => {
+const DunlivrerLogo = React.memo(({ className }: { className?: string }) => {
   return (
     <Link href="/" className={cn("group flex flex-col", className)}>
       <div className="flex items-center gap-3">
@@ -29,6 +30,8 @@ const DunlivrerLogo = ({ className }: { className?: string }) => {
       </div>
     </Link>
   );
-};
+});
+
+DunlivrerLogo.displayName = 'DunlivrerLogo';
 
 export default DunlivrerLogo;

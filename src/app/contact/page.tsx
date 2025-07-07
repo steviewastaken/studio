@@ -72,7 +72,7 @@ const staggeredContainer = {
 
 export default function ContactPage() {
   const { toast } = useToast();
-  const { content } = useLanguage();
+  const { t } = useLanguage();
   const { addMessageToChat } = useChat();
   const { user } = useAuth();
 
@@ -101,7 +101,7 @@ export default function ContactPage() {
     });
 
     toast({
-      title: content.contact_form_success_title,
+      title: t('contact_form_success_title'),
       description: "Your message has been sent to our support team.",
     });
     form.reset();
@@ -115,9 +115,9 @@ export default function ContactPage() {
             animate="visible"
             variants={sectionVariants}
         >
-            <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">{content.contact_title}</h1>
+            <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">{t('contact_title')}</h1>
             <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-                {content.contact_subtitle}
+                {t('contact_subtitle')}
             </p>
         </motion.section>
 
@@ -133,23 +133,23 @@ export default function ContactPage() {
                     <motion.div variants={itemVariants} className="flex items-start gap-4" whileHover={{ x: 5, transition: { duration: 0.2 } }}>
                         <div className="p-3 bg-primary/20 rounded-lg text-primary"><Mail className="w-6 h-6"/></div>
                         <div>
-                            <h3 className="font-semibold text-lg text-white">{content.contact_email_title}</h3>
-                            <p className="text-muted-foreground">{content.contact_email_desc}</p>
+                            <h3 className="font-semibold text-lg text-white">{t('contact_email_title')}</h3>
+                            <p className="text-muted-foreground">{t('contact_email_desc')}</p>
                             <a href="mailto:contact@dunlivrer.com" className="text-primary hover:underline">contact@dunlivrer.com</a>
                         </div>
                     </motion.div>
                      <motion.div variants={itemVariants} className="flex items-start gap-4" whileHover={{ x: 5, transition: { duration: 0.2 } }}>
                         <div className="p-3 bg-primary/20 rounded-lg text-primary"><Phone className="w-6 h-6"/></div>
                         <div>
-                            <h3 className="font-semibold text-lg text-white">{content.contact_phone_title}</h3>
-                            <p className="text-muted-foreground">{content.contact_phone_desc}</p>
+                            <h3 className="font-semibold text-lg text-white">{t('contact_phone_title')}</h3>
+                            <p className="text-muted-foreground">{t('contact_phone_desc')}</p>
                             <a href="tel:+1234567890" className="text-primary hover:underline">+1 (234) 567-890</a>
                         </div>
                     </motion.div>
                      <motion.div variants={itemVariants} className="flex items-start gap-4" whileHover={{ x: 5, transition: { duration: 0.2 } }}>
                         <div className="p-3 bg-primary/20 rounded-lg text-primary"><MapPin className="w-6 h-6"/></div>
                         <div>
-                            <h3 className="font-semibold text-lg text-white">{content.contact_office_title}</h3>
+                            <h3 className="font-semibold text-lg text-white">{t('contact_office_title')}</h3>
                             <p className="text-muted-foreground">101 City Center, Anytown, USA</p>
                         </div>
                     </motion.div>
@@ -158,25 +158,25 @@ export default function ContactPage() {
                 <motion.div className="lg:col-span-2" variants={formVariant}>
                     <Card className="bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
                         <CardHeader>
-                            <CardTitle className="font-headline text-3xl">{content.contact_form_title}</CardTitle>
+                            <CardTitle className="font-headline text-3xl">{t('contact_form_title')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                              <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                     <FormField control={form.control} name="name" render={({ field }) => (
-                                        <FormItem><FormLabel>{content.contact_form_name_label}</FormLabel><FormControl><Input placeholder={content.contact_form_name_placeholder} {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>{t('contact_form_name_label')}</FormLabel><FormControl><Input placeholder={t('contact_form_name_placeholder')} {...field} /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <FormField control={form.control} name="email" render={({ field }) => (
-                                        <FormItem><FormLabel>{content.contact_form_email_label}</FormLabel><FormControl><Input placeholder={content.contact_form_email_placeholder} {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>{t('contact_form_email_label')}</FormLabel><FormControl><Input placeholder={t('contact_form_email_placeholder')} {...field} /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <FormField control={form.control} name="subject" render={({ field }) => (
-                                        <FormItem><FormLabel>{content.contact_form_subject_label}</FormLabel><FormControl><Input placeholder={content.contact_form_subject_placeholder} {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>{t('contact_form_subject_label')}</FormLabel><FormControl><Input placeholder={t('contact_form_subject_placeholder')} {...field} /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <FormField control={form.control} name="message" render={({ field }) => (
-                                        <FormItem><FormLabel>{content.contact_form_message_label}</FormLabel><FormControl><Textarea placeholder={content.contact_form_message_placeholder} rows={5} {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>{t('contact_form_message_label')}</FormLabel><FormControl><Textarea placeholder={t('contact_form_message_placeholder')} rows={5} {...field} /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <Button type="submit" size="lg" disabled={isSubmitting}>
-                                        {isSubmitting ? content.contact_form_sending_button : content.contact_form_send_button}
+                                        {isSubmitting ? t('contact_form_sending_button') : t('contact_form_send_button')}
                                     </Button>
                                 </form>
                             </Form>

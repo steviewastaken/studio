@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import PerformanceDashboard from "@/components/dunlivrer/performance-dashboard";
 import { useJobs, type Job } from "@/context/jobs-context";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useLanguage } from "@/context/language-context";
+import { useLanguage } from '@/context/language-context';
 import { useRouter } from "next/navigation";
 import MapComponent from "@/components/dunlivrer/map-component";
 import Image from "next/image";
@@ -61,7 +61,7 @@ const JobCard = ({ job, onAccept, onDecline }: { job: Job, onAccept: (job: Job) 
 const AvailableJobs = ({ onAcceptJob }: { onAcceptJob: (job: Job) => void }) => {
     const { toast } = useToast();
     const { jobs, removeJob } = useJobs();
-    const { content } = useLanguage();
+    const { t } = useLanguage();
   
     const handleDecline = (id: string) => {
         removeJob(id);
@@ -76,8 +76,8 @@ const AvailableJobs = ({ onAcceptJob }: { onAcceptJob: (job: Job) => void }) => 
             )) : (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <Card className="text-center p-12 bg-card/50 border-white/10">
-                        <CardTitle className="font-headline text-2xl">{content.driver_dashboard_no_jobs_title}</CardTitle>
-                        <CardDescription className="mt-2">{content.driver_dashboard_no_jobs_desc}</CardDescription>
+                        <CardTitle className="font-headline text-2xl">{t('driver_dashboard_no_jobs_title')}</CardTitle>
+                        <CardDescription className="mt-2">{t('driver_dashboard_no_jobs_desc')}</CardDescription>
                     </Card>
                 </motion.div>
             )}
@@ -279,7 +279,7 @@ const ActiveDeliveryMap = ({ job, onComplete }: { job: Job, onComplete: (payout:
 const DriverDashboard = () => {
     const [isOnline, setIsOnline] = useState(true);
     const [currentJob, setCurrentJob] = useState<Job | null>(null);
-    const { content } = useLanguage();
+    const { t } = useLanguage();
     const { removeJob } = useJobs();
     const { toast } = useToast();
     
@@ -313,23 +313,23 @@ const DriverDashboard = () => {
         <div className="w-full max-w-4xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
             <motion.div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
                 <div>
-                    <h1 className="text-4xl font-bold font-headline text-white">{content.driver_dashboard_title}</h1>
-                    <p className="mt-1 text-lg text-muted-foreground">{content.driver_dashboard_subtitle}</p>
+                    <h1 className="text-4xl font-bold font-headline text-white">{t('driver_dashboard_title')}</h1>
+                    <p className="mt-1 text-lg text-muted-foreground">{t('driver_dashboard_subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <Button variant="outline" asChild><Link href="/driver/report"><AlertTriangle className="mr-2"/>{content.driver_dashboard_report_button}</Link></Button>
+                    <Button variant="outline" asChild><Link href="/driver/report"><AlertTriangle className="mr-2"/>{t('driver_dashboard_report_button')}</Link></Button>
                     <div className="flex items-center gap-2 p-2 rounded-lg bg-card/80 border-white/10">
                         <Switch id="online-status" checked={isOnline} onCheckedChange={setIsOnline} />
-                        <Label htmlFor="online-status" className={cn("font-medium", isOnline ? "text-green-400" : "text-muted-foreground")}>{isOnline ? content.driver_dashboard_online : content.driver_dashboard_offline}</Label>
+                        <Label htmlFor="online-status" className={cn("font-medium", isOnline ? "text-green-400" : "text-muted-foreground")}>{isOnline ? t('driver_dashboard_online') : t('driver_dashboard_offline')}</Label>
                     </div>
                 </div>
             </motion.div>
             
             <motion.div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}>
-                <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{content.driver_dashboard_earnings_title}</CardTitle><Wallet className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">€{stats.earnings.toFixed(2)}</div><p className="text-xs text-muted-foreground">{content.driver_dashboard_earnings_stat}</p></CardContent></Card>
-                <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{content.driver_dashboard_time_title}</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.timeHours}h 24m</div><p className="text-xs text-muted-foreground">{content.driver_dashboard_time_stat}</p></CardContent></Card>
-                <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{content.driver_dashboard_deliveries_title}</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">+{stats.deliveries}</div><p className="text-xs text-muted-foreground">{content.driver_dashboard_deliveries_stat}</p></CardContent></Card>
-                <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{content.driver_dashboard_rating_title}</CardTitle><Star className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">4.9/5.0</div><p className="text-xs text-muted-foreground">{content.driver_dashboard_rating_stat}</p></CardContent></Card>
+                <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{t('driver_dashboard_earnings_title')}</CardTitle><Wallet className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">€{stats.earnings.toFixed(2)}</div><p className="text-xs text-muted-foreground">{t('driver_dashboard_earnings_stat')}</p></CardContent></Card>
+                <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{t('driver_dashboard_time_title')}</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.timeHours}h 24m</div><p className="text-xs text-muted-foreground">{t('driver_dashboard_time_stat')}</p></CardContent></Card>
+                <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{t('driver_dashboard_deliveries_title')}</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">+{stats.deliveries}</div><p className="text-xs text-muted-foreground">{t('driver_dashboard_deliveries_stat')}</p></CardContent></Card>
+                <Card className="bg-card/80 border-white/10"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{t('driver_dashboard_rating_title')}</CardTitle><Star className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">4.9/5.0</div><p className="text-xs text-muted-foreground">{t('driver_dashboard_rating_stat')}</p></CardContent></Card>
             </motion.div>
             
              <Card className="mt-8 bg-card/80 border-white/10">
@@ -367,22 +367,22 @@ const itemVariants = {
 };
 
 const DriverLandingPage = () => {
-    const { content } = useLanguage();
+    const { t } = useLanguage();
     const features = [
         {
             icon: <Clock className="w-8 h-8 text-primary"/>,
-            title: content.driver_feature1_title,
-            description: content.driver_feature1_desc,
+            title: t('driver_feature1_title'),
+            description: t('driver_feature1_desc'),
         },
         {
             icon: <Wallet className="w-8 h-8 text-primary"/>,
-            title: content.driver_feature2_title,
-            description: content.driver_feature2_desc,
+            title: t('driver_feature2_title'),
+            description: t('driver_feature2_desc'),
         },
         {
             icon: <Route className="w-8 h-8 text-primary"/>,
-            title: content.driver_feature3_title,
-            description: content.driver_feature3_desc,
+            title: t('driver_feature3_title'),
+            description: t('driver_feature3_desc'),
         }
     ];
 
@@ -394,16 +394,16 @@ const DriverLandingPage = () => {
                 animate="visible"
                 variants={sectionVariants}
             >
-                <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-bold font-headline text-white">{content.driver_landing_title}</motion.h1>
+                <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-bold font-headline text-white">{t('driver_landing_title')}</motion.h1>
                 <motion.p variants={itemVariants} className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                    {content.driver_landing_subtitle}
+                    {t('driver_landing_subtitle')}
                 </motion.p>
                 <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-4">
                     <Button size="lg" asChild>
-                      <Link href="/signup?as=driver">{content.driver_landing_signup_button}</Link>
+                      <Link href="/signup?as=driver">{t('driver_landing_signup_button')}</Link>
                     </Button>
                     <Button size="lg" variant="outline" asChild>
-                      <Link href="/signin?redirect=/driver">{content.driver_landing_signin_button}</Link>
+                      <Link href="/signin?redirect=/driver">{t('driver_landing_signin_button')}</Link>
                     </Button>
                 </motion.div>
             </motion.section>

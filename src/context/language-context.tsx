@@ -1,17 +1,18 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback } from 'react';
 import { translations, type Translation } from '@/lib/translations';
 
 // This gets the type of a single language's translations, e.g., typeof translations['en']
-type LanguageContent = Translation[keyof Translation];
+export type LanguageContent = Translation[keyof Translation];
 
 // Define the shape of the context.
 type LanguageContextType = {
   language: string;
   setLanguage: (language: string) => void;
-  content: LanguageContent; // The translated content is now part of the context
+  // The `t` function replaces the direct `content` object to prevent re-renders.
+  t: (key: keyof LanguageContent) => string;
 };
 
 // Create the context with a default undefined value
@@ -28,18 +29,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, [language]);
 
-  // The content object is now calculated here, within the provider.
-  const content = useMemo(() => {
-    return translations[language as keyof typeof translations] || translations.en;
+  // The `t` function provides translations without causing consumers to re-render.
+  // It's memoized with useCallback so its reference remains stable.
+  const t = useCallback((key: keyof LanguageContent): string => {
+    const content = translations[language as keyof typeof translations] || translations.en;
+    return content[key] || key;
   }, [language]);
 
 
-  // The value provided to consumers now includes the content.
+  // The value provided to consumers now includes the `t` function.
   const value = useMemo(() => ({
     language,
     setLanguage,
-    content,
-  }), [language, content]);
+    t,
+  }), [language, t]);
 
   return (
     <LanguageContext.Provider value={value}>
@@ -48,7 +51,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Custom hook to use the language context. It now simply returns the context value.
+// Custom hook to use the language context.
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {

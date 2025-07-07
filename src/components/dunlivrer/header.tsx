@@ -37,7 +37,7 @@ const languages = [
 ];
 
 function LanguageSwitcher() {
-    const { setLanguage, content } = useLanguage();
+    const { setLanguage, t } = useLanguage();
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -47,7 +47,7 @@ function LanguageSwitcher() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{content.nav_select_language}</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('nav_select_language')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {languages.map((lang) => (
                     <DropdownMenuItem key={lang.code} onSelect={() => setLanguage(lang.code)}>
@@ -62,23 +62,23 @@ function LanguageSwitcher() {
 
 export default function Header() {
   const { user, loading, logout } = useAuth();
-  const { content } = useLanguage();
+  const { t } = useLanguage();
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
   
   const baseNavLinks = [
-    { href: '/services', label: content.nav_services },
-    { href: '/tracking', label: content.nav_tracking },
-    { href: '/feedback', label: content.nav_feedback },
-    { href: '/contact', label: content.nav_contact },
+    { href: '/services', label: t('nav_services') },
+    { href: '/tracking', label: t('nav_tracking') },
+    { href: '/feedback', label: t('nav_feedback') },
+    { href: '/contact', label: t('nav_contact') },
   ];
 
   const navLinks = [
       ...baseNavLinks,
       user?.role === 'admin' 
-        ? { href: '/admin', label: content.nav_admin }
-        : { href: '/driver', label: content.nav_driver_app }
+        ? { href: '/admin', label: t('nav_admin') }
+        : { href: '/driver', label: t('nav_driver_app') }
   ];
 
   const handleLogout = () => {
@@ -121,7 +121,7 @@ export default function Header() {
         <DunlivrerLogo />
         <nav className="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} prefetch={false} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <Link key={link.href} href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               {link.label}
             </Link>
           ))}
@@ -154,12 +154,12 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 {user.role === 'admin' && (
                     <DropdownMenuItem asChild>
-                        <Link href="/admin"><Shield className="mr-2 h-4 w-4" />{content.nav_admin}</Link>
+                        <Link href="/admin"><Shield className="mr-2 h-4 w-4" />{t('nav_admin')}</Link>
                     </DropdownMenuItem>
                 )}
                 {user.role === 'driver' && (
                     <DropdownMenuItem asChild>
-                        <Link href="/driver"><User className="mr-2 h-4 w-4" />{content.nav_driver_app}</Link>
+                        <Link href="/driver"><User className="mr-2 h-4 w-4" />{t('nav_driver_app')}</Link>
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -172,10 +172,10 @@ export default function Header() {
           ) : (
             <>
               <Button variant="ghost" asChild>
-                <Link href="/signin">{content.nav_signin}</Link>
+                <Link href="/signin">{t('nav_signin')}</Link>
               </Button>
               <Button asChild>
-                <Link href="/signup">{content.nav_signup}</Link>
+                <Link href="/signup">{t('nav_signup')}</Link>
               </Button>
             </>
           )}
@@ -228,10 +228,10 @@ export default function Header() {
                   ) : (
                     <>
                       <Button variant="outline" asChild>
-                        <Link href="/signin">{content.nav_signin}</Link>
+                        <Link href="/signin">{t('nav_signin')}</Link>
                       </Button>
                       <Button asChild>
-                        <Link href="/signup">{content.nav_signup}</Link>
+                        <Link href="/signup">{t('nav_signup')}</Link>
                       </Button>
                     </>
                   )}
