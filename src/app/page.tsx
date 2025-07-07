@@ -182,7 +182,7 @@ const BulkUploader = ({ onProcess }: { onProcess: (csv: string) => void }) => {
             complete: (results) => {
                 const csvString = Papa.unparse(results.data);
                 onProcess(csvString);
-                setIsProcessing(false); 
+                setIsProcessing(false);
             },
             error: (err) => {
                 console.error("CSV parsing error:", err);
@@ -200,6 +200,10 @@ const BulkUploader = ({ onProcess }: { onProcess: (csv: string) => void }) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleUseSampleData = () => {
+        onProcess(sampleCsvData);
     };
 
     return (
@@ -226,14 +230,17 @@ const BulkUploader = ({ onProcess }: { onProcess: (csv: string) => void }) => {
                         </div>
                     )}
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="space-y-3">
                      <Button onClick={handleProcess} disabled={!file || isProcessing} className="w-full" size="lg">
                         {isProcessing ? <Loader2 className="animate-spin mr-2"/> : <BrainCircuit className="mr-2"/>}
                         {isProcessing ? "Parsing..." : "Generate AI Dispatch Plan"}
                     </Button>
-                    <Button onClick={handleDownloadTemplate} variant="outline" size="lg">
-                        <Download className="mr-2" /> Template
-                    </Button>
+                    <div className="text-center text-sm text-muted-foreground">
+                        Don't have a file?{' '}
+                        <Button variant="link" className="p-0 h-auto" onClick={handleUseSampleData}>Use sample data</Button>
+                        {' '}or{' '}
+                        <Button variant="link" className="p-0 h-auto" onClick={handleDownloadTemplate}>download the template</Button>.
+                    </div>
                 </div>
             </CardContent>
         </Card>
