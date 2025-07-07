@@ -3,11 +3,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle, FileText, Layers, Clock, ArrowRight, User, Package, Check, ShieldCheck, Wallet } from "lucide-react";
+import { ArrowLeft, CheckCircle, FileText, Layers, Clock, ArrowRight, User, Package, Check, ShieldCheck, Wallet, PackageCheck } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 
 const DetailRow = ({ label, children }: { label: string, children: React.ReactNode }) => (
     <div className="flex flex-col md:flex-row justify-between py-3 border-b border-white/10 text-sm">
@@ -32,6 +31,38 @@ const TimelineItem = ({ icon, title, description, time, isLast = false }: { icon
     </div>
 );
 
+const NftCard = () => (
+    <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-accent/30">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+                <PackageCheck className="text-accent"/>
+                Delivery NFT Details
+            </CardTitle>
+            <CardDescription>
+                This digital asset represents the completed delivery.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <dl>
+                <DetailRow label="Token ID">
+                    <span>12345</span>
+                </DetailRow>
+                <DetailRow label="Contract Address">
+                    <span className="truncate">0xDunL1vr...NFT</span>
+                </DetailRow>
+                <DetailRow label="Owner (Recipient)">
+                    <span className="text-primary truncate">0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B</span>
+                </DetailRow>
+                 <DetailRow label="Status">
+                    <Badge variant="outline" className="border-green-500/50 text-green-400">
+                        Finalized
+                    </Badge>
+                </DetailRow>
+            </dl>
+        </CardContent>
+    </Card>
+);
+
 
 export default function TransactionPage({ params }: { params: { txHash: string } }) {
     const { txHash } = params;
@@ -54,13 +85,13 @@ export default function TransactionPage({ params }: { params: { txHash: string }
             </motion.div>
 
             <motion.div
-                className="mt-8"
+                className="mt-8 grid gap-8"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
             >
                 <Card className="bg-card/80 border-white/10">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                         <CardTitle className="flex items-center gap-2">
                            <FileText /> Transaction Summary
                         </CardTitle>
                     </CardHeader>
@@ -84,7 +115,9 @@ export default function TransactionPage({ params }: { params: { txHash: string }
                     </CardContent>
                 </Card>
 
-                <Card className="bg-card/80 border-white/10 mt-8">
+                <NftCard />
+
+                <Card className="bg-card/80 border-white/10">
                     <CardHeader>
                          <CardTitle className="flex items-center gap-2">
                            <Layers /> Chain of Custody
@@ -122,7 +155,7 @@ export default function TransactionPage({ params }: { params: { txHash: string }
                     </CardContent>
                 </Card>
                 
-                 <Card className="bg-card/80 border-white/10 mt-8">
+                 <Card className="bg-card/80 border-white/10">
                     <CardHeader>
                          <CardTitle className="flex items-center gap-2">
                            <Wallet /> Smart Contract Payment Flow
