@@ -25,26 +25,14 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   
-  const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
-
-  // Separate refs for map elements
+  const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer | null>(null);
   const routePolylineRef = useRef<google.maps.Polyline | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
+  
   const driverMarkerRef = useRef<google.maps.Marker | null>(null);
   const driverRealtimeMarkerRef = useRef<google.maps.Marker | null>(null);
   
   const animationFrameId = useRef<number | null>(null);
   const blinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // --- Utility to clear map elements ---
-  const clearMapElements = () => {
-    markersRef.current.forEach(marker => marker.setMap(null));
-    markersRef.current = [];
-    if (routePolylineRef.current) {
-        routePolylineRef.current.setMap(null);
-        routePolylineRef.current = null;
-    }
-  };
 
   useEffect(() => {
     loadGoogleMapsApi()
@@ -55,19 +43,77 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
       });
   }, []);
 
-  // --- Initialize Map ---
+  // --- Initialize Map and DirectionsRenderer ---
   useEffect(() => {
-    if (status !== 'ready' || !mapRef.current || map) return;
-    const newMap = new window.google.maps.Map(mapRef.current, {
-      center: { lat: 48.8566, lng: 2.3522 },
-      zoom: 12,
-      mapId: 'DUNLIVRER_MAP_ID',
-      disableDefaultUI: false,
-      zoomControl: true,
-      gestureHandling: 'cooperative',
+    if (status !== 'ready' || !mapRef.current) return;
+    
+    if (!map) {
+        const newMap = new window.google.maps.Map(mapRef.current, {
+          center: { lat: 48.8566, lng: 2.3522 },
+          zoom: 12,
+          mapId: 'DUNLIVRER_MAP_ID',
+          disableDefaultUI: false,
+          zoomControl: true,
+          gestureHandling: 'cooperative',
+        });
+        setMap(newMap);
+    }
+    
+    if (map && !directionsRenderer) {
+        const renderer = new google.maps.DirectionsRenderer({
+            map: map,
+            suppressPolylines: true, // We'll draw our own for custom effects
+        });
+        setDirectionsRenderer(renderer);
+    }
+    
+  }, [status, map, directionsRenderer]);
+
+  // --- Handle Route Drawing ---
+  useEffect(() => {
+    if (!map || !directionsRenderer) return;
+
+    // Clear previous custom polyline if it exists
+    if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null);
+        routePolylineRef.current = null;
+    }
+    
+    if (!origin || !destination) {
+        // Clear the route from the map if no origin/destination
+        directionsRenderer.setDirections({routes: []});
+        return;
+    }
+
+    const directionsService = new window.google.maps.DirectionsService();
+    const request: google.maps.DirectionsRequest = {
+        origin: origin,
+        destination: destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+        waypoints: waypoints.map(d => ({ location: d, stopover: true })),
+    };
+
+    directionsService.route(request, (result, status) => {
+      if (status === 'OK' && result) {
+        // Use the renderer to draw markers and fit bounds
+        directionsRenderer.setDirections(result);
+
+        // Draw our own polyline so we can control it
+        routePolylineRef.current = new google.maps.Polyline({
+            path: result.routes[0].overview_path,
+            strokeColor: 'hsl(var(--primary))',
+            strokeWeight: 5,
+            strokeOpacity: 0.8,
+            map: map,
+        });
+
+      } else {
+        console.error(`Directions request failed due to ${status}`);
+        directionsRenderer.setDirections({routes: []});
+      }
     });
-    setMap(newMap);
-  }, [status, map]);
+
+  }, [map, directionsRenderer, origin, destination, waypoints]);
 
   // --- Blinking effect for navigation route ---
   useEffect(() => {
@@ -86,89 +132,11 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
     
     return () => {
         if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
-        if (polyline) polyline.setVisible(true);
+        if (routePolylineRef.current) {
+          routePolylineRef.current.setVisible(true);
+        }
     };
-  }, [isNavigating, directionsResult]);
-
-
-  // --- Handle Route Drawing ---
-  useEffect(() => {
-    if (!map) return;
-    
-    clearMapElements();
-    setDirectionsResult(null);
-
-    if (!origin) { // No origin, default view
-        map.setCenter({ lat: 48.8566, lng: 2.3522 });
-        map.setZoom(12);
-        return;
-    };
-    
-    // Only origin is provided, center on it
-    if (origin && !destination) {
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ address: origin }, (results, status) => {
-            if (status === 'OK' && results && results[0]) {
-                map.setCenter(results[0].geometry.location);
-                map.setZoom(15);
-                const marker = new google.maps.Marker({
-                    position: results[0].geometry.location,
-                    map: map,
-                    title: 'Location'
-                });
-                markersRef.current.push(marker);
-            }
-        });
-        return;
-    }
-
-    // Both origin and destination are provided, get route
-    if (origin && destination) {
-        const directionsService = new window.google.maps.DirectionsService();
-
-        const request: google.maps.DirectionsRequest = {
-            origin: origin,
-            destination: destination,
-            travelMode: google.maps.TravelMode.DRIVING,
-            waypoints: waypoints.map(d => ({ location: d, stopover: true })),
-        };
-
-        directionsService.route(request, (result, status) => {
-          if (status === 'OK' && result) {
-            setDirectionsResult(result);
-            map.fitBounds(result.routes[0].bounds);
-
-            // Draw custom polyline
-            routePolylineRef.current = new google.maps.Polyline({
-                path: result.routes[0].overview_path,
-                strokeColor: 'hsl(var(--primary))',
-                strokeWeight: 5,
-                strokeOpacity: 0.8,
-                map: map,
-            });
-            
-            // Draw custom markers
-            const pickupMarker = new google.maps.Marker({
-                position: result.routes[0].legs[0].start_location,
-                map: map,
-                label: { text: 'A', color: 'white', fontWeight: 'bold' },
-                title: 'Origin',
-            });
-            markersRef.current.push(pickupMarker);
-    
-            result.routes[0].legs.forEach((leg, index) => {
-                const destinationMarker = new google.maps.Marker({
-                    position: leg.end_location,
-                    map: map,
-                    label: { text: String.fromCharCode(66 + index), color: 'white', fontWeight: 'bold' },
-                    title: `Destination ${index + 1}`,
-                });
-                markersRef.current.push(destinationMarker);
-            });
-          }
-        });
-    }
-  }, [map, origin, destination, waypoints]);
+  }, [isNavigating, routePolylineRef.current]);
 
   // --- Handle Real-time Driver Location Marker ---
   useEffect(() => {
@@ -197,9 +165,10 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
 
   // --- Handle Animated Driver Path (Simulation) ---
   useEffect(() => {
-    if (!map || !window.google.maps.geometry) return;
+    if (!map || !window.google.maps.geometry || !directionsRenderer) return;
 
-    const route = directionsResult?.routes?.[0];
+    const directions = directionsRenderer.getDirections();
+    const route = directions?.routes?.[0];
 
     if (!animateDriverPath || !route?.overview_path) {
       if (driverMarkerRef.current) driverMarkerRef.current.setVisible(false);
@@ -258,7 +227,7 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
     return () => {
       if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [map, animateDriverPath, directionsResult]);
+  }, [map, animateDriverPath, directionsRenderer]);
 
 
   if (status === 'error') {
