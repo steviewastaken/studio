@@ -208,7 +208,7 @@ const BulkUploader = ({ onProcess }: { onProcess: (csv: string) => void }) => {
     };
 
     return (
-        <Card className="bg-transparent border-none shadow-none">
+        <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
             <CardHeader>
                 <CardTitle className="font-headline text-3xl flex items-center gap-3"><Layers className="text-primary"/>Book Multiple Deliveries</CardTitle>
                 <CardDescription>Upload a CSV file with your deliveries to get an optimized dispatch plan.</CardDescription>
@@ -653,29 +653,27 @@ export default function DunlivrerPage() {
                 </p>
               </div>
               
-                <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
-                    <Tabs defaultValue="single-delivery" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 m-6">
-                            <TabsTrigger value="single-delivery"><Package className="mr-2"/>Single Delivery</TabsTrigger>
-                            <TabsTrigger value="bulk-upload"><Layers className="mr-2"/>Bulk Upload</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="single-delivery" className="p-0">
-                            <DeliveryForm 
-                              onAddressChange={handleAddressChange}
-                              onQuoteChange={handleQuoteChange}
-                              onInsuranceChange={setInsuranceQuote}
-                              quote={quote}
-                              insuranceQuote={insuranceQuote}
-                              isReviewed={isReviewed}
-                              isGettingQuote={isGettingQuote}
-                              setIsGettingQuote={setIsGettingQuote}
-                            />
-                        </TabsContent>
-                        <TabsContent value="bulk-upload" className="p-0">
-                             <BulkUploader onProcess={handleProcessCSV} />
-                        </TabsContent>
-                    </Tabs>
-                </Card>
+                <Tabs defaultValue="single-delivery" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 max-w-lg mx-auto">
+                        <TabsTrigger value="single-delivery"><Package className="mr-2"/>Single Delivery</TabsTrigger>
+                        <TabsTrigger value="bulk-upload"><Layers className="mr-2"/>Bulk Upload</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="single-delivery" className="mt-6">
+                        <DeliveryForm 
+                          onAddressChange={handleAddressChange}
+                          onQuoteChange={handleQuoteChange}
+                          onInsuranceChange={setInsuranceQuote}
+                          quote={quote}
+                          insuranceQuote={insuranceQuote}
+                          isReviewed={isReviewed}
+                          isGettingQuote={isGettingQuote}
+                          setIsGettingQuote={setIsGettingQuote}
+                        />
+                    </TabsContent>
+                    <TabsContent value="bulk-upload" className="mt-6">
+                         <BulkUploader onProcess={handleProcessCSV} />
+                    </TabsContent>
+                </Tabs>
 
                 <AnimatePresence>
                     {isBulkLoading && (
