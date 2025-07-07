@@ -71,6 +71,11 @@ import {
   type GetInsuranceQuoteInput,
   type GetInsuranceQuoteOutput,
 } from '@/ai/flows/get-insurance-quote';
+import {
+    processBulkDelivery as processBulkDeliveryFlow,
+    type ProcessBulkDeliveryInput,
+    type ProcessBulkDeliveryOutput,
+} from '@/ai/flows/process-bulk-delivery';
 
 async function handleFlow<I, O>(
   flow: (input: I) => Promise<O>,
@@ -141,4 +146,8 @@ export async function handleGetInvestorReport(data: GetInvestorReportInput) {
 
 export async function handleGetInsuranceQuote(data: GetInsuranceQuoteInput) {
   return handleFlow(getInsuranceQuoteFlow, data, 'handleGetInsuranceQuote', 'Failed to generate insurance quote.');
+}
+
+export async function handleProcessBulkDelivery(data: ProcessBulkDeliveryInput) {
+    return handleFlow(processBulkDeliveryFlow, data, 'handleProcessBulkDelivery', 'Failed to process bulk delivery file.');
 }

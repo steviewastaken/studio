@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, FileWarning, UserPlus, Headset, BrainCircuit, TrendingUp, UserCheck } from "lucide-react";
+import { BarChart, Users, Euro, ShieldCheck, Server, Activity, CheckCircle, FileWarning, UserPlus, Headset, BrainCircuit, TrendingUp, UserCheck, Briefcase } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -172,15 +172,15 @@ export default function AdminPage() {
                         </CardContent>
                     </Card>
                 </Link>
-                <Link href="/admin/revenue">
+                <Link href="/admin/b2b">
                     <Card className="bg-card/80 border-white/10 hover:border-primary/50 transition-colors h-full">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                            <Euro className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium">B2B / Enterprise</CardTitle>
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">€45,231.89</div>
-                            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                            <div className="text-2xl font-bold">Manage Clients</div>
+                            <p className="text-xs text-muted-foreground">Bulk uploads, analytics</p>
                         </CardContent>
                     </Card>
                 </Link>

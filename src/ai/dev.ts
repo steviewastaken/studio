@@ -1,3 +1,4 @@
+
 'use server';
 import { config } from 'dotenv';
 config();
@@ -16,3 +17,4 @@ import '@/ai/flows/query-business-data.ts';
 import '@/ai/flows/get-investor-report.ts';
 import '@/ai/flows/get-insurance-quote.ts';
 import '@/ai/flows/correct-address.ts';
+import '@/ai/flows/process-bulk-delivery.ts';
