@@ -1,15 +1,15 @@
 
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal, Layers } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal, Layers, Upload, Download, Route, Lightbulb, Package2, AlertTriangle, Package } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import LiveTrackingPreview from '@/components/dunlivrer/live-tracking-preview';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SupportChat from '@/components/dunlivrer/support-chat';
@@ -20,6 +20,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Papa from 'papaparse';
+import { useToast } from '@/hooks/use-toast';
+import { handleProcessBulkDelivery } from '@/lib/actions';
+import type { ProcessBulkDeliveryOutput } from '@/ai/flows/process-bulk-delivery';
 
 
 const sectionVariants = {
@@ -149,6 +154,147 @@ const EstimatorBox = ({ quote, insuranceQuote, isGettingQuote }: { quote: GetQuo
 };
 
 
+const sampleCsvData = `destination_address,package_size,notes
+"Eiffel Tower, Paris, France",medium,"VIP delivery"
+"Louvre Museum, Paris, France",small,"Fragile item"
+"5 Rue de Rivoli, 75004 Paris",small,""
+"Arc de Triomphe, Paris",large,"Requires 2 people"
+"221B Baker Street, London",medium,"Address outside primary zone"
+"Montmartre, Paris, France",medium,"Weekly restock for cafe"
+"La Défense, Puteaux",small,"Office documents"
+"Montmartre, Paris, France",small,"Second package for cafe"`;
+
+const BulkUploader = ({ onProcess }: { onProcess: (csv: string) => void }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleProcess = () => {
+        if (!file) return;
+        setIsProcessing(true);
+        Papa.parse(file, {
+            complete: (results) => {
+                const csvString = Papa.unparse(results.data);
+                onProcess(csvString);
+                setIsProcessing(false); 
+            },
+            error: (err) => {
+                console.error("CSV parsing error:", err);
+                setIsProcessing(false);
+            }
+        });
+    };
+
+    const handleDownloadTemplate = () => {
+        const blob = new Blob([sampleCsvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "dunlivrer_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    return (
+        <Card className="bg-transparent border-none shadow-none">
+            <CardHeader>
+                <CardTitle className="font-headline text-3xl flex items-center gap-3"><Layers className="text-primary"/>Book Multiple Deliveries</CardTitle>
+                <CardDescription>Upload a CSV file with your deliveries to get an optimized dispatch plan.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div 
+                    className="relative w-full h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center text-center p-4 cursor-pointer hover:border-primary transition-colors bg-muted/20"
+                    onClick={() => inputRef.current?.click()}
+                >
+                    <input type="file" ref={inputRef} className="hidden" accept=".csv" onChange={handleFileChange} />
+                    {file ? (
+                        <div className="flex flex-col items-center gap-2 text-primary">
+                            <FileText className="w-8 h-8"/>
+                            <p className="text-sm font-semibold">{file.name}</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Upload className="w-8 h-8"/>
+                            <p className="text-sm">Click or drag to upload a CSV file</p>
+                        </div>
+                    )}
+                </div>
+                <div className="flex items-center gap-4">
+                     <Button onClick={handleProcess} disabled={!file || isProcessing} className="w-full" size="lg">
+                        {isProcessing ? <Loader2 className="animate-spin mr-2"/> : <BrainCircuit className="mr-2"/>}
+                        {isProcessing ? "Parsing..." : "Generate AI Dispatch Plan"}
+                    </Button>
+                    <Button onClick={handleDownloadTemplate} variant="outline" size="lg">
+                        <Download className="mr-2" /> Template
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+const BulkResultsDisplay = ({ result }: { result: ProcessBulkDeliveryOutput }) => {
+    return (
+        <div className="mt-8 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-primary/10 border-primary/20">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-3"><Lightbulb className="text-primary"/>AI Smart Pricing</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">{result.smartPricingSuggestion.reason}</p>
+                        <div className="mt-4 p-4 rounded-lg bg-primary/20 text-center">
+                            <p>Suggested Window: <span className="font-bold">{result.smartPricingSuggestion.window}</span></p>
+                            <p className="text-2xl font-bold text-primary">Save ~{result.smartPricingSuggestion.savingsPercentage}%</p>
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card className="bg-accent/10 border-accent/20">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-3"><Zap className="text-accent"/>AI Demand Forecast</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">{result.demandForecast.prediction}</p>
+                        <div className="mt-4 text-center">
+                             <Badge variant="outline" className="border-accent/50 text-accent bg-accent/20">
+                                Confidence: {result.demandForecast.confidence}
+                            </Badge>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card className="bg-card/80 border-white/10">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Route/> AI Route Consolidation</CardTitle>
+                    <CardDescription>
+                        {result.uploadSummary.totalPackages} packages grouped into {result.uploadSummary.uniqueZones} optimized zones.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {result.consolidatedRoutes.map((route, index) => (
+                        <div key={index} className="p-4 border rounded-lg bg-muted">
+                            <h3 className="font-semibold text-white">Zone: {route.zone} ({route.addresses.length} packages)</h3>
+                            <p className="text-sm text-muted-foreground italic mt-1">"{route.routeSuggestion}"</p>
+                            <ul className="mt-3 list-disc list-inside text-xs space-y-1">
+                                {route.addresses.map((addr, i) => <li key={i}>{addr}</li>)}
+                            </ul>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        </div>
+    )
+};
+
+
 export default function DunlivrerPage() {
   const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
   const [quote, setQuote] = useState<GetQuoteOutput | null>(null);
@@ -156,6 +302,12 @@ export default function DunlivrerPage() {
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   
+  // State for bulk uploader
+  const [bulkAnalysisResult, setBulkAnalysisResult] = useState<ProcessBulkDeliveryOutput | null>(null);
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const { toast } = useToast();
+
   const { content } = useLanguage();
 
   const handleAddressChange = useCallback((addresses: { pickup: string | null; destinations: string[] }) => {
@@ -170,6 +322,21 @@ export default function DunlivrerPage() {
     setIsReviewed(!!newQuote);
     setInsuranceQuote(null); // Reset insurance when base quote changes
   };
+
+  const handleProcessCSV = useCallback(async (csvData: string) => {
+    setIsBulkLoading(true);
+    setBulkError(null);
+    setBulkAnalysisResult(null);
+
+    const result = await handleProcessBulkDelivery({ csvData });
+    if (result.success && result.data) {
+        setBulkAnalysisResult(result.data);
+        toast({ title: "Dispatch Plan Generated!", description: "Review the AI-powered suggestions below."});
+    } else {
+        setBulkError(result.error || "Failed to process the CSV file.");
+    }
+    setIsBulkLoading(false);
+  }, [toast]);
   
   const investorFeatures = [
     {
@@ -441,45 +608,52 @@ export default function DunlivrerPage() {
                   {content.getStartedSubtitle}
                 </p>
               </div>
-              <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
-                <DeliveryForm 
-                  onAddressChange={handleAddressChange}
-                  onQuoteChange={handleQuoteChange}
-                  onInsuranceChange={setInsuranceQuote}
-                  quote={quote}
-                  insuranceQuote={insuranceQuote}
-                  isReviewed={isReviewed}
-                  isGettingQuote={isGettingQuote}
-                  setIsGettingQuote={setIsGettingQuote}
-                />
-              </motion.div>
-              <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
-                  <div className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
-                    <Dialog>
-                        <div className="flex items-center gap-3">
-                            <Bot className="text-primary h-8 w-8"/>
-                            <div>
-                                <h3 className="font-headline text-2xl font-bold text-white">{content.trackSupportTitle}</h3>
-                                <p className="mt-1 text-muted-foreground">{content.trackSupportSubtitle}</p>
-                            </div>
-                        </div>
-                        <DialogTrigger asChild>
-                          <Button className="mt-6" size="lg">
-                              {content.trackSupportButton}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="p-0 bg-transparent border-none shadow-none w-full max-w-md">
-                            <DialogHeader className="sr-only">
-                              <DialogTitle>{content.trackSupportTitle}</DialogTitle>
-                              <DialogDescription>
-                                {content.trackSupportSubtitle}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <SupportChat deliveryDetails={null} />
-                        </DialogContent>
-                    </Dialog>
-                  </div>
-              </motion.div>
+              
+                <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
+                    <Tabs defaultValue="single-delivery" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 m-6">
+                            <TabsTrigger value="single-delivery"><Package className="mr-2"/>Single Delivery</TabsTrigger>
+                            <TabsTrigger value="bulk-upload"><Layers className="mr-2"/>Bulk Upload</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="single-delivery" className="p-0">
+                            <DeliveryForm 
+                              onAddressChange={handleAddressChange}
+                              onQuoteChange={handleQuoteChange}
+                              onInsuranceChange={setInsuranceQuote}
+                              quote={quote}
+                              insuranceQuote={insuranceQuote}
+                              isReviewed={isReviewed}
+                              isGettingQuote={isGettingQuote}
+                              setIsGettingQuote={setIsGettingQuote}
+                            />
+                        </TabsContent>
+                        <TabsContent value="bulk-upload" className="p-0">
+                             <BulkUploader onProcess={handleProcessCSV} />
+                        </TabsContent>
+                    </Tabs>
+                </Card>
+
+                <AnimatePresence>
+                    {isBulkLoading && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-12 space-y-4">
+                            <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary" />
+                            <h3 className="font-semibold text-xl">AI Engine is processing your manifest...</h3>
+                            <p className="text-muted-foreground">Consolidating routes, calculating smart pricing, and forecasting demand.</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                {bulkError && (
+                    <Card className="mt-8 bg-destructive/10 border-destructive/30 p-8 text-center text-destructive">
+                         <AlertTriangle className="w-12 h-12 mx-auto" />
+                         <h2 className="mt-4 text-2xl font-bold">Analysis Failed</h2>
+                         <p>{bulkError}</p>
+                    </Card>
+                 )}
+                {bulkAnalysisResult && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                        <BulkResultsDisplay result={bulkAnalysisResult} />
+                    </motion.div>
+                )}
             </div>
             <div className="lg:col-span-2 flex flex-col gap-8">
                 <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
