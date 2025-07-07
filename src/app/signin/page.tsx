@@ -13,14 +13,15 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
+import { Suspense } from 'react';
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
   password: z.string().min(1, "Password is required."),
 });
 
-export default function SignInPage() {
+function SignInPageContent() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -74,7 +75,6 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen pt-20">
       <Card className="w-full max-w-md bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
         <CardHeader className="text-center">
           <CardTitle className="font-headline text-3xl">Welcome Back</CardTitle>
@@ -105,7 +105,7 @@ export default function SignInPage() {
                 </FormItem>
               )} />
               <Button type="submit" size="lg" className="w-full" disabled={loading}>
-                {loading ? 'Signing In...' : 'Sign In'}
+                {loading ? <Loader2 className="animate-spin" /> : 'Sign In'}
               </Button>
             </form>
           </Form>
@@ -123,6 +123,20 @@ export default function SignInPage() {
             </p>
         </CardFooter>
       </Card>
+  )
+}
+
+
+export default function SignInPage() {
+  return (
+    <div className="flex items-center justify-center min-h-screen pt-20">
+      <Suspense fallback={
+        <Card className="w-full max-w-md h-[550px] flex items-center justify-center bg-card/80 border-white/10">
+          <Loader2 className="w-8 h-8 animate-spin"/>
+        </Card>
+      }>
+        <SignInPageContent />
+      </Suspense>
     </div>
   );
 }
