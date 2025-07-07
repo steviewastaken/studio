@@ -1,12 +1,19 @@
 // src/lib/supabase/server.ts
-import { createServerClient as createSupabaseServerClient, type CookieOptions } from '@supabase/auth-helpers-nextjs'
+import { createServerComponentClient as createSupabaseServerClient, type CookieOptions } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 
 export const createServerClient = () => {
   const cookieStore = cookies()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase URL and/or Anon Key are missing. Please check your .env.local file.');
+  }
+
   return createSupabaseServerClient({
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl: supabaseUrl,
+    supabaseKey: supabaseAnonKey,
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value
