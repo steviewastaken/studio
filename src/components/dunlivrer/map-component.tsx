@@ -99,7 +99,7 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
         directionsRenderer.setDirections(result);
 
         // Draw our own polyline so we can control it
-        routePolylineRef.current = new google.maps.Polyline({
+        routePolylineRef.current = new window.google.maps.Polyline({
             path: result.routes[0].overview_path,
             strokeColor: 'hsl(var(--primary))',
             strokeWeight: 5,
@@ -108,7 +108,10 @@ export default function MapComponent({ origin, destination, waypoints = [], driv
         });
 
       } else {
-        console.error(`Directions request failed due to ${status}`);
+        // Don't log an error for NOT_FOUND, it's an expected state while the user is typing an address.
+        if (status !== 'NOT_FOUND') {
+            console.error(`Directions request failed due to ${status}`);
+        }
         directionsRenderer.setDirections({routes: []});
       }
     });
