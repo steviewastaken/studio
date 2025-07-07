@@ -42,39 +42,39 @@ const staggeredContainer = {
 };
 
 export default function ServicesPage() {
-  const { t } = useLanguage();
+  const { content } = useLanguage();
 
   const serviceList = [
     {
       icon: <Ship className="w-8 h-8 text-primary" />,
-      title: t('service1Title'),
-      description: t('service1Desc'),
+      title: content.service1Title,
+      description: content.service1Desc,
       details: [
-        t('services_list_detail1'), 
-        t('services_list_detail2'),
-        t('services_list_detail3')
+        content.services_list_detail1, 
+        content.services_list_detail2,
+        content.services_list_detail3
       ]
     },
     {
       icon: <Briefcase className="w-8 h-8 text-primary" />,
-      title: t('service2Title'),
-      description: t('service2Desc'),
+      title: content.service2Title,
+      description: content.service2Desc,
       details: ['Dedicated account management', 'Volume-based pricing', 'Proof-of-delivery']
     },
     {
       icon: <BrainCircuit className="w-8 h-8 text-primary" />,
-      title: t('service3Title'),
-      description: t('service3Desc'),
+      title: content.service3Title,
+      description: content.service3Desc,
       details: ['Proactive courier positioning', 'Real-time demand forecasting', 'Reduced customer wait times']
     },
     {
       icon: <Bot className="w-8 h-8 text-primary" />,
-      title: t('service4_title'),
-      description: t('service4_desc'),
+      title: content.service4_title,
+      description: content.service4_desc,
       details: [
-        t('service4_detail1'),
-        t('service4_detail2'),
-        t('service4_detail3')
+        content.service4_detail1,
+        content.service4_detail2,
+        content.service4_detail3
       ]
     }
   ];
@@ -87,9 +87,9 @@ export default function ServicesPage() {
             animate="visible"
             variants={sectionVariants}
         >
-            <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">{t('services_title')}</h1>
+            <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">{content.services_title}</h1>
             <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-                {t('services_subtitle')}
+                {content.services_subtitle}
             </p>
         </motion.section>
 
@@ -132,16 +132,16 @@ export default function ServicesPage() {
             variants={sectionVariants}
         >
             <div className="w-full max-w-5xl mx-auto px-4 md:px-8 text-center">
-                 <h2 className="text-3xl font-bold font-headline text-white">{t('services_cta_title')}</h2>
+                 <h2 className="text-3xl font-bold font-headline text-white">{content.services_cta_title}</h2>
                  <p className="mt-4 text-lg text-muted-foreground">
-                    {t('services_cta_subtitle')}
+                    {content.services_cta_subtitle}
                  </p>
                  <div className="mt-8 flex justify-center gap-4">
                     <Button size="lg" asChild>
-                        <Link href="/">{t('services_cta_button1')}</Link>
+                        <Link href="/">{content.services_cta_button1}</Link>
                     </Button>
                     <Button size="lg" variant="outline" asChild>
-                        <Link href="/contact">{t('services_cta_button2')}</Link>
+                        <Link href="/contact">{content.services_cta_button2}</Link>
                     </Button>
                  </div>
             </div>

@@ -51,7 +51,7 @@ export type DeliveryStatus = 'IDLE' | 'SEARCHING' | 'FOUND' | 'IN_TRANSIT' | 'DE
 
 function TrackingPageContent() {
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { content } = useLanguage();
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails | null>(null);
   const [driverDetails, setDriverDetails] = useState<FindDriverOutput | null>(null);
   const [trackingId, setTrackingId] = useState('DUN12345XYZ');
@@ -182,9 +182,9 @@ function TrackingPageContent() {
               animate="visible"
               variants={sectionVariants}
           >
-              <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">{t('tracking_title')}</h1>
+              <h1 className="text-4xl md:text-5xl font-bold font-headline text-white">{content.tracking_title}</h1>
               <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                  {t('tracking_subtitle')}
+                  {content.tracking_subtitle}
               </p>
           </motion.div>
 
@@ -205,8 +205,8 @@ function TrackingPageContent() {
               <motion.div className="lg:col-span-2 flex flex-col gap-8" variants={itemVariants}>
                   <Card className="bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
                       <CardHeader>
-                          <CardTitle>{t('tracking_box_title')}</CardTitle>
-                          <CardDescription>{t('tracking_box_desc')}</CardDescription>
+                          <CardTitle>{content.tracking_box_title}</CardTitle>
+                          <CardDescription>{content.tracking_box_desc}</CardDescription>
                       </CardHeader>
                       <CardContent>
                           <form onSubmit={handleSearch} className="flex gap-2">
@@ -218,7 +218,7 @@ function TrackingPageContent() {
                                   disabled={isLoading}
                               />
                               <Button type="submit" size="lg" disabled={isLoading || !trackingId}>
-                                  {isLoading ? <Loader2 className="animate-spin" /> : <><Search className="mr-2"/>{t('tracking_box_button')}</>}
+                                  {isLoading ? <Loader2 className="animate-spin" /> : <><Search className="mr-2"/>{content.tracking_box_button}</>}
                               </Button>
                           </form>
                       </CardContent>
@@ -275,7 +275,7 @@ function TrackingPageContent() {
       <Dialog open={isRerouting} onOpenChange={setIsRerouting}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle className="font-headline text-2xl flex items-center gap-2"><RefreshCw className="text-primary"/>{t('tracking_reroute_button')}</DialogTitle>
+                <DialogTitle className="font-headline text-2xl flex items-center gap-2"><RefreshCw className="text-primary"/>{content.tracking_reroute_button}</DialogTitle>
                 <DialogDescription>
                     Enter a new address below to get an updated quote and ETA from our AI assistant.
                 </DialogDescription>

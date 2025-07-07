@@ -4,13 +4,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Bot, Loader2 } from "lucide-react";
-import dynamic from 'next/dynamic';
-
-const SupportChat = dynamic(() => import('./support-chat'), {
-  loading: () => <div className="h-[65vh] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary"/></div>,
-  ssr: false
-});
+import { Bot } from "lucide-react";
+import SupportChat from './support-chat';
 
 export default function FloatingSupportButton() {
   const [isOpen, setIsOpen] = useState(false);

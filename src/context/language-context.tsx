@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 import { translations, type Translation } from '@/lib/translations';
 
 // This gets the type of a single language's translations, e.g., typeof translations['en']
@@ -11,8 +11,7 @@ export type LanguageContent = Translation[keyof Translation];
 type LanguageContextType = {
   language: string;
   setLanguage: (language: string) => void;
-  // The `t` function replaces the direct `content` object to prevent re-renders.
-  t: (key: keyof LanguageContent) => string;
+  content: LanguageContent; // The direct translations object
 };
 
 // Create the context with a default undefined value
@@ -22,27 +21,17 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<string>('en'); // Default language is English
 
-  // This side-effect updates the lang attribute on the html tag whenever the language changes.
-  useEffect(() => {
-    if (document.documentElement.lang !== language) {
-        document.documentElement.lang = language;
-    }
+  // Memoize the content to only change when the language changes.
+  const content = useMemo(() => {
+    return translations[language as keyof typeof translations] || translations.en;
   }, [language]);
 
-  // The `t` function provides translations without causing consumers to re-render.
-  // It's memoized with useCallback so its reference remains stable.
-  const t = useCallback((key: keyof LanguageContent): string => {
-    const content = translations[language as keyof typeof translations] || translations.en;
-    return content[key] || key;
-  }, [language]);
-
-
-  // The value provided to consumers now includes the `t` function.
+  // The value provided to consumers includes the direct content object.
   const value = useMemo(() => ({
     language,
     setLanguage,
-    t,
-  }), [language, t]);
+    content,
+  }), [language, content]);
 
   return (
     <LanguageContext.Provider value={value}>

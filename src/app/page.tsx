@@ -156,7 +156,7 @@ export default function DunlivrerPage() {
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   
-  const { t } = useLanguage();
+  const { content } = useLanguage();
 
   const handleAddressChange = useCallback((addresses: { pickup: string | null; destinations: string[] }) => {
     setPreviewAddresses(addresses);
@@ -174,20 +174,20 @@ export default function DunlivrerPage() {
   const investorFeatures = [
     {
       icon: <BrainCircuit className="w-8 h-8 text-primary" />,
-      title: t('investorFeature1Title'),
-      description: t('investorFeature1Desc'),
+      title: content.investorFeature1Title,
+      description: content.investorFeature1Desc,
       color: 'primary'
     },
     {
       icon: <TrendingUp className="w-8 h-8 text-accent" />,
-      title: t('investorFeature2Title'),
-      description: t('investorFeature2Desc'),
+      title: content.investorFeature2Title,
+      description: content.investorFeature2Desc,
       color: 'accent'
     },
     {
       icon: <ShieldCheck className="w-8 h-8 text-green-500" />,
-      title: t('investorFeature3Title'),
-      description: t('investorFeature3Desc'),
+      title: content.investorFeature3Title,
+      description: content.investorFeature3Desc,
       color: 'green'
     }
   ];
@@ -195,18 +195,18 @@ export default function DunlivrerPage() {
   const services = [
     {
       icon: <Ship className="w-10 h-10 text-primary" />,
-      title: t('service1Title'),
-      description: t('service1Desc'),
+      title: content.service1Title,
+      description: content.service1Desc,
     },
     {
       icon: <Briefcase className="w-10 h-10 text-primary" />,
-      title: t('service2Title'),
-      description: t('service2Desc'),
+      title: content.service2Title,
+      description: content.service2Desc,
     },
     {
       icon: <BrainCircuit className="w-10 h-10 text-primary" />,
-      title: t('service3Title'),
-      description: t('service3Desc'),
+      title: content.service3Title,
+      description: content.service3Desc,
     }
   ];
 
@@ -221,17 +221,17 @@ export default function DunlivrerPage() {
       >
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
           <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold font-headline bg-clip-text text-transparent bg-gradient-to-br from-white to-gray-400 pb-4" style={{ whiteSpace: 'pre-line' }}>
-            {t('heroTitle')}
+            {content.heroTitle}
           </motion.h1>
           <motion.p variants={itemVariants} className="max-w-3xl mx-auto text-lg text-muted-foreground">
-            {t('heroSubtitle')}
+            {content.heroSubtitle}
           </motion.p>
           <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="#get-started">{t('scheduleButton')}</Link>
+                <Link href="#get-started">{content.scheduleButton}</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/contact">{t('contactButton')}</Link>
+                <Link href="/contact">{content.contactButton}</Link>
               </Button>
           </motion.div>
       </motion.section>
@@ -246,10 +246,10 @@ export default function DunlivrerPage() {
       >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8">
             <div className="text-center">
-              <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">{t('advantageTitle')}</h2>
-              <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">{t('advantageHeadline')}</p>
+              <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">{content.advantageTitle}</h2>
+              <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">{content.advantageHeadline}</p>
               <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                {t('advantageSubtitle')}
+                {content.advantageSubtitle}
               </p>
             </div>
             <motion.div 
@@ -282,13 +282,13 @@ export default function DunlivrerPage() {
       >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
           <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">
-            {t('fraudTitle')}
+            {content.fraudTitle}
           </h2>
           <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
-            {t('fraudHeadline')}
+            {content.fraudHeadline}
           </p>
           <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-            {t('fraudSubtitle')}
+            {content.fraudSubtitle}
           </p>
           <motion.div
             className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
@@ -303,10 +303,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  {t('fraudFeature1Title')}
+                  {content.fraudFeature1Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  {t('fraudFeature1Desc')}
+                  {content.fraudFeature1Desc}
                 </p>
               </div>
             </motion.div>
@@ -319,10 +319,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  {t('fraudFeature2Title')}
+                  {content.fraudFeature2Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  {t('fraudFeature2Desc')}
+                  {content.fraudFeature2Desc}
                 </p>
               </div>
             </motion.div>
@@ -335,10 +335,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  {t('fraudFeature3Title')}
+                  {content.fraudFeature3Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  {t('fraudFeature3Desc')}
+                  {content.fraudFeature3Desc}
                 </p>
               </div>
             </motion.div>
@@ -356,13 +356,13 @@ export default function DunlivrerPage() {
       >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
           <h2 className="text-base font-semibold uppercase text-primary tracking-widest">
-            {t('blockchainTitle')}
+            {content.blockchainTitle}
           </h2>
           <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
-            {t('blockchainHeadline')}
+            {content.blockchainHeadline}
           </p>
           <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-            {t('blockchainSubtitle')}
+            {content.blockchainSubtitle}
           </p>
           <motion.div
             className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
@@ -377,10 +377,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  {t('blockchainFeature1Title')}
+                  {content.blockchainFeature1Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  {t('blockchainFeature1Desc')}
+                  {content.blockchainFeature1Desc}
                 </p>
               </div>
             </motion.div>
@@ -393,10 +393,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  {t('blockchainFeature2Title')}
+                  {content.blockchainFeature2Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  {t('blockchainFeature2Desc')}
+                  {content.blockchainFeature2Desc}
                 </p>
               </div>
             </motion.div>
@@ -409,10 +409,10 @@ export default function DunlivrerPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  {t('blockchainFeature3Title')}
+                  {content.blockchainFeature3Title}
                 </h3>
                 <p className="text-muted-foreground">
-                  {t('blockchainFeature3Desc')}
+                  {content.blockchainFeature3Desc}
                 </p>
               </div>
             </motion.div>
@@ -436,9 +436,9 @@ export default function DunlivrerPage() {
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-5 gap-16 items-start">
             <div className="lg:col-span-3 flex flex-col gap-8">
               <div className="space-y-4">
-                <h2 className="text-3xl md:text-4xl font-bold font-headline text-white">{t('getStartedTitle')}</h2>
+                <h2 className="text-3xl md:text-4xl font-bold font-headline text-white">{content.getStartedTitle}</h2>
                 <p className="mt-4 text-lg text-muted-foreground">
-                  {t('getStartedSubtitle')}
+                  {content.getStartedSubtitle}
                 </p>
               </div>
               <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
@@ -459,20 +459,20 @@ export default function DunlivrerPage() {
                         <div className="flex items-center gap-3">
                             <Bot className="text-primary h-8 w-8"/>
                             <div>
-                                <h3 className="font-headline text-2xl font-bold text-white">{t('trackSupportTitle')}</h3>
-                                <p className="mt-1 text-muted-foreground">{t('trackSupportSubtitle')}</p>
+                                <h3 className="font-headline text-2xl font-bold text-white">{content.trackSupportTitle}</h3>
+                                <p className="mt-1 text-muted-foreground">{content.trackSupportSubtitle}</p>
                             </div>
                         </div>
                         <DialogTrigger asChild>
                           <Button className="mt-6" size="lg">
-                              {t('trackSupportButton')}
+                              {content.trackSupportButton}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="p-0 bg-transparent border-none shadow-none w-full max-w-md">
                             <DialogHeader className="sr-only">
-                              <DialogTitle>{t('trackSupportTitle')}</DialogTitle>
+                              <DialogTitle>{content.trackSupportTitle}</DialogTitle>
                               <DialogDescription>
-                                {t('trackSupportSubtitle')}
+                                {content.trackSupportSubtitle}
                               </DialogDescription>
                             </DialogHeader>
                             <SupportChat deliveryDetails={null} />
@@ -502,8 +502,8 @@ export default function DunlivrerPage() {
         variants={sectionVariants}
       >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
-            <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">{t('solutionsTitle')}</h2>
-            <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">{t('solutionsHeadline')}</p>
+            <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">{content.solutionsTitle}</h2>
+            <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">{content.solutionsHeadline}</p>
             <motion.div 
               className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
               variants={staggeredContainer}
