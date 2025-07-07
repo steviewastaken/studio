@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Clock, Loader2, Send, Package2, Trash2, PlusCircle, Truck, ShieldAlert, ShieldQuestion, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { handleGetQuote, handleDetectFraud, handleGetInsuranceQuote } from '@/lib/actions';
+import { handleGetQuote, handleDetectFraud, handleGetInsuranceQuote, handleCorrectAddress } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import type { DetectFraudOutput, DetectFraudInput } from '@/ai/flows/detect-fraud';
@@ -112,42 +112,79 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
         return;
     }
 
-    const directionsService = new window.google.maps.DirectionsService();
-    const validDestinations = values.destinationAddresses.map(d => d.value).filter(d => d && d.trim() !== '');
-
-    if (validDestinations.length === 0 || !values.pickupAddress) {
-        toast({
-            variant: 'destructive',
-            title: "Missing Address",
-            description: "Please provide a pickup and at least one destination address.",
-        });
-        setIsGettingQuote(false);
-        return;
-    }
-
-    const waypoints = validDestinations.slice(0, -1).map(d => ({ location: d, stopover: true }));
-    const finalDestination = validDestinations[validDestinations.length - 1];
-
     try {
+        // --- AI Address Verification Step ---
+        const { pickupAddress, destinationAddresses } = values;
+        const allAddresses = [pickupAddress, ...destinationAddresses.map(d => d.value)];
+        const correctionPromises = allAddresses.map(addr => handleCorrectAddress({ address: addr }));
+        const correctionResults = await Promise.all(correctionPromises);
+
+        // Check for API errors during correction
+        const failedCorrection = correctionResults.find(r => !r.success);
+        if (failedCorrection) {
+            throw new Error(failedCorrection.error || 'Address check failed.');
+        }
+
+        const correctedAddressesData = correctionResults.map(r => r.success && r.data);
+        
+        // Check if any address could not be confidently corrected by the AI
+        const unverifiedAddress = correctedAddressesData.find(d => d && d.reason.includes('Could not confidently correct'));
+        if (unverifiedAddress) {
+            toast({ variant: 'destructive', title: 'Address Unclear', description: `Could not verify address: "${unverifiedAddress.correctedAddress}". Please check for typos.` });
+            setIsGettingQuote(false);
+            return;
+        }
+
+        // Update form with corrected addresses if any were changed
+        let anyAddressWasCorrected = false;
+        const [correctedPickupData, ...correctedDestinationsData] = correctedAddressesData;
+
+        if (correctedPickupData?.wasCorrected) {
+            form.setValue('pickupAddress', correctedPickupData.correctedAddress, { shouldValidate: true });
+            anyAddressWasCorrected = true;
+        }
+
+        correctedDestinationsData.forEach((data, index) => {
+            if (data?.wasCorrected) {
+                form.setValue(`destinationAddresses.${index}.value`, data.correctedAddress, { shouldValidate: true });
+                anyAddressWasCorrected = true;
+            }
+        });
+
+        if (anyAddressWasCorrected) {
+            toast({ title: "Addresses Verified", description: "We've standardized your addresses for accuracy." });
+            await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause for user to see update
+        }
+
+        const correctedValues = form.getValues(); // Use the potentially updated values
+        // --- End of AI Address Verification ---
+        
+        const directionsService = new window.google.maps.DirectionsService();
+        const validDestinations = correctedValues.destinationAddresses.map(d => d.value).filter(d => d && d.trim() !== '');
+
+        if (validDestinations.length === 0 || !correctedValues.pickupAddress) {
+            toast({ variant: 'destructive', title: "Missing Address", description: "Please provide a pickup and at least one destination address." });
+            setIsGettingQuote(false);
+            return;
+        }
+
+        const waypoints = validDestinations.slice(0, -1).map(d => ({ location: d, stopover: true }));
+        const finalDestination = validDestinations[validDestinations.length - 1];
+
         const directionsResult = await new Promise<google.maps.DirectionsResult>((resolve, reject) => {
             directionsService.route({
-                origin: values.pickupAddress,
+                origin: correctedValues.pickupAddress,
                 destination: finalDestination,
                 waypoints: waypoints,
                 travelMode: google.maps.TravelMode.DRIVING
             }, (result, status) => {
-                if (status === 'OK' && result) {
-                    resolve(result);
-                } else {
-                    reject(new Error(`Directions request failed: ${status}`));
-                }
+                if (status === 'OK' && result) resolve(result);
+                else reject(new Error(`Directions request failed: ${status}`));
             });
         });
 
         const route = directionsResult.routes[0];
-        if (!route) {
-            throw new Error("No route found in the directions result.");
-        }
+        if (!route) throw new Error("No route found in the directions result.");
         
         let totalDistanceMeters = 0;
         let totalDurationSeconds = 0;
@@ -156,47 +193,31 @@ export default function DeliveryForm({ onAddressChange, onQuoteChange, onInsuran
             totalDurationSeconds += leg.duration?.value || 0;
         });
 
-        if (totalDistanceMeters === 0) {
-            throw new Error("Calculated route distance is zero.");
-        }
+        if (totalDistanceMeters === 0) throw new Error("Calculated route distance is zero.");
 
         const result = await handleGetQuote({
-            pickupAddress: values.pickupAddress,
+            pickupAddress: correctedValues.pickupAddress,
             destinationAddresses: validDestinations,
-            packageSize: values.packageSize,
-            deliveryType: values.deliveryType,
+            packageSize: correctedValues.packageSize,
+            deliveryType: correctedValues.deliveryType,
             distanceMeters: totalDistanceMeters,
             durationSeconds: totalDurationSeconds,
         });
 
         if (result.success && result.data) {
             onQuoteChange(result.data);
-            toast({
-                title: "Quote Generated!",
-                description: "Review your AI estimate on the right.",
-            });
+            toast({ title: "Quote Generated!", description: "Review your AI estimate on the right." });
         } else {
-            onQuoteChange(null);
-            toast({
-                variant: 'destructive',
-                title: "Quotation Failed",
-                description: result.error,
-            });
+            throw new Error(result.error);
         }
     } catch (error: any) {
         onQuoteChange(null);
-        if (error.message && error.message.includes('NOT_FOUND')) {
-             toast({
-                variant: 'destructive',
-                title: "Route Not Found",
-                description: "Could not find a valid route. Please check the addresses and try again.",
-            });
+        const errorMessage = error.message || "An unexpected error occurred.";
+        
+        if (errorMessage.includes('NOT_FOUND')) {
+             toast({ variant: 'destructive', title: "Route Not Found", description: "Could not find a valid route. Please check the addresses." });
         } else {
-            toast({
-                variant: 'destructive',
-                title: "Quotation Failed",
-                description: "An unexpected error occurred while generating the quote. Please try again later.",
-            });
+            toast({ variant: 'destructive', title: "Quotation Failed", description: errorMessage });
         }
     } finally {
         setIsGettingQuote(false);
