@@ -17,7 +17,7 @@ type AuthContextType = {
   profile: UserProfile | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signup: (name: string, email: string, password: string, role: 'driver' | 'customer') => Promise<{ error: AuthError | null }>;
+  signup: (name: string, email: string, password: string) => Promise<{ error: AuthError | null }>;
   logout: () => Promise<{ error: AuthError | null }>;
 };
 
@@ -79,8 +79,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
   
-  const signup = async (name: string, email: string, password: string, role: 'driver' | 'customer' = 'customer') => {
+  const signup = async (name: string, email: string, password: string) => {
     setLoading(true);
+    let role: UserProfile['role'] = 'customer';
+    if (email.toLowerCase() === 'admin@dunlivrer.com') {
+        role = 'admin';
+    } else if (email.toLowerCase() === 'driver@dunlivrer.com') {
+        role = 'driver';
+    }
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,

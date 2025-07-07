@@ -98,9 +98,9 @@ function SignInPageContent() {
         <CardFooter className="flex flex-col gap-4">
             <Alert>
                 <Info className="h-4 w-4" />
-                <AlertTitle>Demo Credentials</AlertTitle>
+                <AlertTitle>Testing Accounts</AlertTitle>
                 <AlertDescription className="text-xs">
-                    Use <b>admin@dunlivrer.com</b> or <b>demo@dunlivrer.com</b> with any password.
+                    To test, <Link href="/signup" className="font-bold underline">sign up</Link> with <b>admin@dunlivrer.com</b> or <b>driver@dunlivrer.com</b> to create pre-configured roles.
                 </AlertDescription>
             </Alert>
             <p className="text-sm text-muted-foreground">

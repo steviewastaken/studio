@@ -10,10 +10,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { Suspense } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -24,24 +25,20 @@ const formSchema = z.object({
 function SignUpPageContent() {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { signup, loading } = useAuth();
   
-  const isDriverSignup = searchParams.get('as') === 'driver';
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: "", email: "", password: "" },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const role = isDriverSignup ? 'driver' : 'customer';
-    const { error } = await signup(values.name, values.email, values.password, role);
+    const { error } = await signup(values.name, values.email, values.password);
 
     if (!error) {
         toast({
             title: "Account Created!",
-            description: `A confirmation email has been sent. Please verify your email to sign in.`,
+            description: `A confirmation email has been sent to ${values.email}. Please verify your email to sign in.`,
         });
         
         // Redirect to a page that tells the user to check their email
@@ -60,13 +57,13 @@ function SignUpPageContent() {
     <Card className="w-full max-w-md bg-card/80 border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg">
       <CardHeader className="text-center">
         <CardTitle className="font-headline text-3xl">
-            {isDriverSignup ? 'Create a Driver Account' : 'Create an Account'}
+            Create an Account
         </CardTitle>
         <CardDescription>
-            {isDriverSignup ? 'Join Dunlivrer to start driving and earning.' : 'Get started with Dunlivrer.'}
+            Get started with Dunlivrer.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField control={form.control} name="name" render={({ field }) => (
@@ -97,10 +94,17 @@ function SignUpPageContent() {
               </FormItem>
             )} />
             <Button type="submit" size="lg" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="animate-spin" /> : (isDriverSignup ? 'Sign Up as a Driver' : 'Sign Up')}
+              {loading ? <Loader2 className="animate-spin" /> : 'Create Account'}
             </Button>
           </form>
         </Form>
+        <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>For Testing Purposes</AlertTitle>
+            <AlertDescription className="text-xs">
+                Use <b>admin@dunlivrer.com</b> for an admin account or <b>driver@dunlivrer.com</b> for a driver account. Any other email will be a customer.
+            </AlertDescription>
+        </Alert>
       </CardContent>
       <CardFooter className="justify-center">
           <p className="text-sm text-muted-foreground">
