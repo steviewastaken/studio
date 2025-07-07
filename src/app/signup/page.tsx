@@ -36,14 +36,9 @@ function SignUpPageContent() {
     const { error } = await signup(values.name, values.email, values.password);
 
     if (!error) {
-        toast({
-            title: "Account Created!",
-            description: `A confirmation email has been sent to ${values.email}. Please verify your email to sign in.`,
-        });
-        
-        // Redirect to a page that tells the user to check their email
+        // The success toast is now handled within the signup function itself
+        // to ensure it only shows after all steps are complete.
         router.push('/signin');
-
     } else {
         toast({
             variant: "destructive",

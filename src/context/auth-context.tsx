@@ -88,7 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role = 'driver';
     }
     
-    const { error } = await supabase.auth.signUp({
+    // The options.data object is used by the database trigger.
+    // We will keep it for redundancy but also manually insert the profile.
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -98,8 +100,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       },
     });
+
+    if (authError) {
+      setLoading(false);
+      return { error: authError };
+    }
+    
+    // If the trigger fails, the user might still be created. Let's ensure a profile exists.
+    if (authData.user) {
+      // Check if profile was created by the trigger
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', authData.user.id)
+        .single();
+        
+      // If no profile exists, create one manually.
+      if (!existingProfile) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({ id: authData.user.id, full_name: name, role: role });
+
+          if (profileError) {
+            console.error('Manual profile creation failed:', profileError);
+            // In a real app, you might want to delete the auth.user here or handle the error more gracefully.
+            setLoading(false);
+            return { error: profileError };
+          }
+      }
+    }
+
     setLoading(false);
-    return { error };
+    toast({
+        title: "Account Created!",
+        description: `A confirmation email has been sent to ${email}. Please verify your email to sign in.`,
+    });
+    return { error: null };
   };
 
   const logout = async () => {
