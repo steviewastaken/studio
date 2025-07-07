@@ -144,7 +144,7 @@ export default function B2BAnalyticsPage() {
                                     <YAxis dataKey="zone" type="category" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 15)} />
                                     <XAxis dataKey="deliveries" type="number" hide />
                                     <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                    <Bar dataKey="deliveries" layout="vertical" fill="var(--color-deliveries)" radius={4} />
+                                    <Bar dataKey="deliveries" fill="var(--color-deliveries)" radius={4} />
                                 </BarChart>
                             </ChartContainer>
                         </CardContent>

@@ -83,7 +83,7 @@ export default function RevenuePage() {
                                 <YAxis dataKey="name" type="category" tickLine={false} tickMargin={10} axisLine={false} />
                                 <XAxis type="number" hide />
                                 <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                <Bar dataKey="value" layout="vertical" fill="var(--color-value)" radius={4} />
+                                <Bar dataKey="value" fill="var(--color-value)" radius={4} />
                            </RechartsBarChart>
                         </ChartContainer>
                     </CardContent>
