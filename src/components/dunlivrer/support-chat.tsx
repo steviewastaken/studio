@@ -51,7 +51,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
   const recognitionRef = useRef<any>(null);
 
   const displayMessages = currentChat?.messages ?? [
-    { id: -1, role: "ai", content: "Hello! How can I help you today?", language: 'en-US' }
+    { id: 'default-greeting', sender: 'ai', text: "Hello! How can I help you today?", language: 'en-US', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), rating: null }
   ];
 
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
       if (newAudioState && displayMessages.length > 0) {
           const lastMessage = displayMessages[displayMessages.length - 1];
           if (lastMessage.role === 'ai') {
-             await generateAndPlayAudio(lastMessage.content, lastMessage.language);
+             await generateAndPlayAudio(lastMessage.text, lastMessage.language);
           }
       }
   };
@@ -209,7 +209,7 @@ export default function SupportChat({ deliveryDetails }: SupportChatProps) {
                     </Avatar>
                   )}
                   <div className={cn("rounded-xl px-4 py-2 max-w-[80%] break-words text-sm", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted")}>
-                    <p>{message.content}</p>
+                    <p>{message.text}</p>
                   </div>
                   {message.role === "user" && (
                      <Avatar className="w-8 h-8 border border-accent/50">
