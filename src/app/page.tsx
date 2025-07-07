@@ -355,7 +355,7 @@ export default function DunlivrerPage() {
         variants={sectionVariants}
       >
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
-          <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">
+          <h2 className="text-base font-semibold uppercase text-primary tracking-widest">
             {content.blockchainTitle}
           </h2>
           <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
