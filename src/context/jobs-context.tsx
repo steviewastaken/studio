@@ -63,8 +63,49 @@ const initialJobs: Job[] = [
         suggestion: 'Short and quick trip, good for filling a gap.',
         suggestionType: 'neutral',
     },
+    {
+        id: 'job-init-5',
+        pickup: 'Eiffel Tower, 75007 Paris',
+        dropoff: 'Charles de Gaulle Airport, 95700 Roissy-en-France',
+        distance: '35.5 km',
+        payout: '45.00',
+        time: '60 min',
+        suggestion: 'Excellent payout for a long distance airport run. Recommended.',
+        suggestionType: 'accept',
+    },
+    {
+        id: 'job-init-6',
+        pickup: 'Le Marais, 75004 Paris',
+        dropoff: 'Saint-Germain-des-Prés, 75006 Paris',
+        distance: '1.8 km',
+        payout: '6.50',
+        time: '10 min',
+        suggestion: 'Very short trip, good for a quick completion bonus.',
+        suggestionType: 'neutral',
+    },
+    {
+        id: 'job-init-7',
+        pickup: 'Panthéon, 75005 Paris',
+        dropoff: 'Musée d\'Orsay, 75007 Paris',
+        distance: '2.2 km',
+        payout: '9.00',
+        time: '18 min',
+        suggestion: 'Decent payout for a short tourist-heavy route.',
+        suggestionType: 'neutral',
+        safetyAlert: {
+            type: 'warning',
+            message: '⚠️ High pedestrian traffic expected around Musée d\'Orsay. Exercise caution.'
+        }
+    }
 ];
 
+
+type JobsContextType = {
+    jobs: Job[];
+    addJob: (job: Job) => void;
+    removeJob: (id: string) => void;
+    loading: boolean;
+};
 
 const JobsContext = createContext<JobsContextType | undefined>(undefined);
 
