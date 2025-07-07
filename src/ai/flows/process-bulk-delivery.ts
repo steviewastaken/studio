@@ -19,7 +19,9 @@ export type ProcessBulkDeliveryInput = z.infer<typeof ProcessBulkDeliveryInputSc
 const ProcessBulkDeliveryOutputSchema = z.object({
   uploadSummary: z.object({
     totalPackages: z.number().describe("The total number of packages parsed from the CSV."),
-    uniqueZones: z.number().describe("The number of unique delivery zones or neighborhoods identified."),
+    validPackages: z.number().describe("The number of packages with valid Parisian addresses."),
+    invalidPackages: z.number().describe("The number of packages with invalid or out-of-zone addresses."),
+    totalQuote: z.number().describe("The total estimated price in Euros for all valid deliveries."),
   }),
   consolidatedRoutes: z.array(z.object({
     zone: z.string().describe("The name of the geographic zone or neighborhood."),
@@ -55,21 +57,30 @@ The CSV will have three columns: \`destination_address\`, \`package_size\`, \`no
 
 1.  **Parse & Summarize:**
     *   Parse all rows from the CSV data.
-    *   Provide a basic summary: total number of packages and the number of unique delivery zones/neighborhoods you identify.
+    *   Count the total number of packages, the number of valid Parisian addresses, and the number of invalid/out-of-zone addresses (e.g., London).
 
-2.  **AI Route Consolidation (Grouped Dispatch):**
-    *   Group the deliveries by their geographical zone or neighborhood (e.g., 'Le Marais', 'Montmartre', 'La Défense').
+2.  **AI Quote Generation (Total Cost):**
+    *   For each **valid** Parisian delivery, calculate an estimated price.
+    *   **Pricing Model:**
+        *   Base Fare: €5.00
+        *   Package Size Surcharge: 'small' = €0, 'medium' = €1.50, 'large' = €3.00.
+        *   Distance Cost: Use your geographical knowledge of Paris to estimate the distance between a central dispatch point (like Châtelet) and the destination address. Apply a cost of €0.80 per estimated kilometer.
+    *   Sum the costs for all valid packages to get the \`totalQuote\`.
+    *   Exclude any invalid addresses from this calculation.
+
+3.  **AI Route Consolidation (Grouped Dispatch):**
+    *   Group the **valid** deliveries by their geographical zone or neighborhood (e.g., 'Le Marais', 'Montmartre', 'La Défense').
     *   For each zone, create a consolidated route plan. Briefly describe an efficient path for the deliveries within that zone. For example: "Start at the northernmost address and work south."
     *   List the full addresses included in each consolidated route.
 
-3.  **AI Smart Pricing (Best Delivery Window):**
+4.  **AI Smart Pricing (Best Delivery Window):**
     *   Analyze the entire list of deliveries.
     *   Based on typical Parisian traffic patterns, identify the most cost-effective 2-hour window to dispatch these deliveries (e.g., "2-4 PM").
     *   The optimal window should be during off-peak hours (avoiding 8-10 AM and 5-7 PM).
     *   Provide a compelling reason for your suggestion (e.g., "by avoiding morning rush hour and having lighter traffic").
     *   Invent a plausible percentage saving (between 10-25%).
 
-4.  **Demand Forecast (Recurring Deliveries):**
+5.  **Demand Forecast (Recurring Deliveries):**
     *   Analyze the addresses and notes for patterns that suggest recurring business needs (e.g., multiple deliveries to office buildings, notes like "weekly restock", "monthly supplies").
     *   If a pattern is found, suggest a recurring delivery schedule (e.g., "A recurring delivery every Monday at 9 AM seems likely for the Montmartre cafe restock.").
     *   Provide a confidence score (Low, Medium, High) for your prediction.

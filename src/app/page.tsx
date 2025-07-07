@@ -251,7 +251,20 @@ const BulkUploader = ({ onProcess }: { onProcess: (csv: string) => void }) => {
 const BulkResultsDisplay = ({ result, onDispatch }: { result: ProcessBulkDeliveryOutput, onDispatch: () => void }) => {
     return (
         <div className="mt-8 space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <Card className="bg-green-500/10 border-green-500/20">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-3"><Euro className="text-green-400"/>Total Quote</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-4xl font-bold text-white">
+                            €{result.uploadSummary.totalQuote.toFixed(2)}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                            For {result.uploadSummary.validPackages} valid deliveries. {result.uploadSummary.invalidPackages > 0 && `(${result.uploadSummary.invalidPackages} excluded).`}
+                        </p>
+                    </CardContent>
+                </Card>
                 <Card className="bg-primary/10 border-primary/20">
                     <CardHeader>
                         <CardTitle className="font-headline text-2xl flex items-center gap-3"><Lightbulb className="text-primary"/>AI Smart Pricing</CardTitle>
@@ -654,7 +667,7 @@ export default function DunlivrerPage() {
               </div>
               
                 <Tabs defaultValue="single-delivery" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 max-w-lg mx-auto">
+                    <TabsList className="grid w-full grid-cols-2 max-w-lg">
                         <TabsTrigger value="single-delivery"><Package className="mr-2"/>Single Delivery</TabsTrigger>
                         <TabsTrigger value="bulk-upload"><Layers className="mr-2"/>Bulk Upload</TabsTrigger>
                     </TabsList>
