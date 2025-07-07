@@ -6,7 +6,7 @@ import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal, Layers, Upload, Download, Route, Lightbulb, Package2, AlertTriangle, Package } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal, Layers, Upload, Download, Route, Lightbulb, Package2, AlertTriangle, Package, Truck } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +16,7 @@ import SupportChat from '@/components/dunlivrer/support-chat';
 import { useLanguage } from '@/context/language-context';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import type { GetInsuranceQuoteOutput } from '@/ai/flows/get-insurance-quote';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -25,6 +25,7 @@ import Papa from 'papaparse';
 import { useToast } from '@/hooks/use-toast';
 import { handleProcessBulkDelivery } from '@/lib/actions';
 import type { ProcessBulkDeliveryOutput } from '@/ai/flows/process-bulk-delivery';
+import { useJobs, type Job } from '@/context/jobs-context';
 
 
 const sectionVariants = {
@@ -247,7 +248,7 @@ const BulkUploader = ({ onProcess }: { onProcess: (csv: string) => void }) => {
     );
 };
 
-const BulkResultsDisplay = ({ result }: { result: ProcessBulkDeliveryOutput }) => {
+const BulkResultsDisplay = ({ result, onDispatch }: { result: ProcessBulkDeliveryOutput, onDispatch: () => void }) => {
     return (
         <div className="mt-8 space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -296,6 +297,11 @@ const BulkResultsDisplay = ({ result }: { result: ProcessBulkDeliveryOutput }) =
                         </div>
                     ))}
                 </CardContent>
+                <CardFooter>
+                    <Button size="lg" className="w-full" onClick={onDispatch}>
+                        <Truck className="mr-2"/> Dispatch All Now
+                    </Button>
+                </CardFooter>
             </Card>
         </div>
     )
@@ -314,6 +320,7 @@ export default function DunlivrerPage() {
   const [isBulkLoading, setIsBulkLoading] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { addJobs } = useJobs();
 
   const { content } = useLanguage();
 
@@ -344,6 +351,36 @@ export default function DunlivrerPage() {
     }
     setIsBulkLoading(false);
   }, [toast]);
+
+  const handleDispatchBulk = () => {
+    if (!bulkAnalysisResult) return;
+
+    const newJobs: Job[] = bulkAnalysisResult.consolidatedRoutes.map((route, index) => {
+        const payout = (10 + route.addresses.length * 2.5 + Math.random() * 5).toFixed(2);
+        const time = (15 + route.addresses.length * 5 + Math.random() * 10).toFixed(0);
+
+        return {
+            id: `job-bulk-${Date.now()}-${index}`,
+            pickup: `Multiple pickups in ${route.zone}`,
+            dropoff: `Multiple dropoffs in ${route.zone}`,
+            distance: `${(5 + route.addresses.length * 1.5).toFixed(1)} km`,
+            payout: payout,
+            time: `${time} min`,
+            suggestion: `Consolidated route with ${route.addresses.length} stops. Good for zone efficiency.`,
+            suggestionType: 'accept'
+        };
+    });
+
+    addJobs(newJobs);
+
+    toast({
+        title: "Plan Dispatched!",
+        description: `${newJobs.length} consolidated delivery jobs have been posted to nearby DunGuys.`
+    });
+    
+    // Reset the UI
+    setBulkAnalysisResult(null);
+  };
   
   const investorFeatures = [
     {
@@ -658,7 +695,7 @@ export default function DunlivrerPage() {
                  )}
                 {bulkAnalysisResult && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <BulkResultsDisplay result={bulkAnalysisResult} />
+                        <BulkResultsDisplay result={bulkAnalysisResult} onDispatch={handleDispatchBulk} />
                     </motion.div>
                 )}
             </div>
