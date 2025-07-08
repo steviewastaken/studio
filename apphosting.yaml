@@ -1,7 +1,25 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
+# Specifies the version of the App Hosting schema.
+specVersion: v1alpha1
 
-runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+# Defines the build configuration.
+build:
+  # Use Docker to build the app.
+  builder: docker
+  dockerfile: Dockerfile
+  # Secrets needed during the build process (e.g., for NEXT_PUBLIC_ variables).
+  secrets:
+    - GOOGLE_SERVER_API_KEY
+    - NEXT_PUBLIC_SUPABASE_URL
+    - NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
+
+# Defines the runtime configuration.
+run:
+  # Number of instances to run.
+  instanceCount: 1
+  # Secrets needed when the app is running.
+  secrets:
+    - GOOGLE_SERVER_API_KEY
+    - NEXT_PUBLIC_SUPABASE_URL
+    - NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
