@@ -148,7 +148,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   return (
     <JobsContext.Provider value={{ jobs, addJob, addJobs, removeJob, loading }}>
       {children}
-    </Jobs.Provider>
+    </JobsContext.Provider>
   );
 }
 
