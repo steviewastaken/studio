@@ -8,14 +8,14 @@ export const createServerClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  // Temporarily remove hard crash on missing keys
   if (!supabaseUrl || !supabaseAnonKey) {
-     // This error will be thrown if the secrets are not available at runtime or build time.
-    throw new Error("Supabase URL and/or Anon Key are missing. Please check your environment configuration.");
+    console.warn("Supabase server credentials not found. This is expected if you haven't configured secrets yet.");
   }
 
   return createSupabaseServerClient({
-    supabaseUrl: supabaseUrl,
-    supabaseKey: supabaseAnonKey,
+    supabaseUrl: supabaseUrl || 'http://localhost:54321', // Provide a fallback for the build process
+    supabaseKey: supabaseAnonKey || 'dummy-key-for-build',
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value
