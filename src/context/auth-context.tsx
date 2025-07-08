@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { SupabaseClient, User, AuthError } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,28 +26,34 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  // State for the Supabase client, initialized to null.
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // This useEffect hook runs only on the client-side, after the component has mounted.
-  // This is where we will safely initialize the Supabase client.
   useEffect(() => {
-    const client = createClient();
-    setSupabase(client);
-
-    // If the client fails to initialize (e.g., missing keys), we can stop the loading process.
-    if (!client) {
-      setLoading(false);
+    // This effect runs ONLY on the client, after the initial server render.
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    // We check for keys and create the client here, inside the client-side effect.
+    if (supabaseUrl && supabaseAnonKey) {
+        const client = createClientComponentClient({
+          supabaseUrl,
+          supabaseKey: supabaseAnonKey,
+        });
+        setSupabase(client);
+    } else {
+        // If keys are missing, we explicitly set supabase to null and stop loading.
+        // This prevents the app from crashing and allows it to run in a logged-out state.
+        console.warn("Supabase credentials not found. Auth features will be disabled.");
+        setSupabase(null);
+        setLoading(false);
     }
-  }, []);
-
+  }, []); // The empty dependency array ensures this runs only once on mount (client-side).
 
   const fetchProfile = useCallback(async (userId: string) => {
-    // This function now depends on the 'supabase' state.
-    if (!supabase) return;
+    if (!supabase) return; // Guard clause
 
     const { data, error } = await supabase
       .from('profiles')
@@ -64,11 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
 
-  // This useEffect hook manages the user's session.
-  // It will only run after the Supabase client has been initialized in the first hook.
   useEffect(() => {
+    // This effect waits for the Supabase client to be initialized.
     if (!supabase) {
-      return; // Do nothing until the client is ready.
+      // If supabase is null (either initially, or because keys were missing), we do nothing.
+      // The loading state is handled by the first effect in the no-key scenario.
+      return;
     }
 
     const getInitialSession = async () => {
