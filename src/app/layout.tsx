@@ -1,19 +1,17 @@
 
-import type { Metadata } from "next";
-import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Dunlivrer",
   description: "AI-powered delivery service, built with Next.js and Genkit.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  console.log(">>> [layout.tsx] Rendering RootLayout component...");
+}) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
