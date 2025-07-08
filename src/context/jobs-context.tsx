@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Job = {
   id: string;
@@ -78,60 +78,7 @@ const JobsContext = createContext<JobsContextType | undefined>(undefined);
 
 export function JobsProvider({ children }: { children: ReactNode }) {
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
-  const [loading, setLoading] = useState(true);
-
-  // This effect runs once on component mount on the client side.
-  // It's responsible for hydrating the state from localStorage.
-  useEffect(() => {
-    // This check ensures localStorage is only accessed on the client
-    if (typeof window !== 'undefined') {
-        setLoading(true);
-        try {
-            const item = window.localStorage.getItem('dunlivrer-jobs');
-            // If there's an item in storage, use it. Otherwise, the state is already initialized.
-            if (item) {
-                setJobs(JSON.parse(item));
-            }
-        } catch (error) {
-            console.error("Failed to load jobs from localStorage, using initial data.", error);
-            // State is already set to initialJobs, so no need to set it again
-        } finally {
-            setLoading(false);
-        }
-    }
-  }, []);
-
-  // This effect runs whenever the `jobs` state changes.
-  // It's responsible for persisting the state back to localStorage.
-  useEffect(() => {
-    // Only run on client and after initial load
-    if (typeof window !== 'undefined' && !loading) {
-        try {
-            window.localStorage.setItem('dunlivrer-jobs', JSON.stringify(jobs));
-        } catch (error) {
-            console.error("Failed to save jobs to localStorage", error);
-        }
-    }
-  }, [jobs, loading]);
-
-  // Effect to listen for changes from other tabs
-  useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'dunlivrer-jobs' && event.newValue) {
-        try {
-          setJobs(JSON.parse(event.newValue));
-        } catch (error) {
-          console.error("Failed to parse jobs from storage event", error);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-
+  const loading = false; // Simplified: no longer loading from storage.
 
   const addJob = (job: Job) => {
     setJobs(prevJobs => [job, ...prevJobs]);
