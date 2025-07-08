@@ -13,7 +13,6 @@ export type UserProfile = {
 };
 
 type AuthContextType = {
-  // Supabase client can now be null if keys are not provided
   supabase: SupabaseClient | null;
   user: User | null;
   profile: UserProfile | null;
@@ -26,15 +25,28 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // createClient() can now return null
-  const supabase = createClient();
   const { toast } = useToast();
+  // State for the Supabase client, initialized to null.
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // This useEffect hook runs only on the client-side, after the component has mounted.
+  // This is where we will safely initialize the Supabase client.
+  useEffect(() => {
+    const client = createClient();
+    setSupabase(client);
+
+    // If the client fails to initialize (e.g., missing keys), we can stop the loading process.
+    if (!client) {
+      setLoading(false);
+    }
+  }, []);
+
+
   const fetchProfile = useCallback(async (userId: string) => {
-    // Guard clause in case this is called when client is not available
+    // This function now depends on the 'supabase' state.
     if (!supabase) return;
 
     const { data, error } = await supabase
@@ -52,14 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
 
+  // This useEffect hook manages the user's session.
+  // It will only run after the Supabase client has been initialized in the first hook.
   useEffect(() => {
-    // If Supabase client could not be created (missing keys),
-    // set auth state to logged out and stop.
     if (!supabase) {
-      setUser(null);
-      setProfile(null);
-      setLoading(false);
-      return;
+      return; // Do nothing until the client is ready.
     }
 
     const getInitialSession = async () => {
