@@ -3,6 +3,8 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
+console.log(">>> [auth-context.tsx] AuthProvider module loaded.");
+
 export type UserProfile = {
   id: string;
   name: string;
@@ -46,20 +48,19 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log(">>> [auth-context.tsx] AuthProvider component rendering...");
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserProfile[]>([]);
 
   useEffect(() => {
-    // This effect runs once on component mount on the client side.
-    // It's responsible for hydrating the state from localStorage.
+    console.log(">>> [auth-context.tsx] Hydration useEffect running...");
     try {
       const storedUsers = window.localStorage.getItem('dunlivrer-users');
-      // Load from storage, or fall back to initialUsers if nothing is in storage.
       setUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
+      console.log(">>> [auth-context.tsx] Users hydrated from localStorage.");
     } catch (error) {
-      console.error("Failed to load users from localStorage", error);
-      // Fallback to initial data on any error.
+      console.error(">>> [auth-context.tsx] Failed to load users from localStorage", error);
       setUsers(initialUsers);
     } finally {
         setLoading(false);
@@ -67,44 +68,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // This effect runs whenever the `users` state changes.
-    // It's responsible for persisting the state back to localStorage.
     if (!loading) {
         try {
+            console.log(">>> [auth-context.tsx] Persisting users to localStorage...");
             window.localStorage.setItem('dunlivrer-users', JSON.stringify(users));
         } catch (error) {
-            console.error("Failed to save users to localStorage", error);
+            console.error(">>> [auth-context.tsx] Failed to save users to localStorage", error);
         }
     }
   }, [users, loading]);
   
-  // This effect listens for storage changes from other tabs and syncs the state.
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'dunlivrer-users' && event.newValue) {
+        console.log(">>> [auth-context.tsx] Storage change detected from another tab.");
         try {
           const newUsers: UserProfile[] = JSON.parse(event.newValue);
           setUsers(newUsers);
-
-          // Use the functional form of setUser to avoid stale state issues.
-          // This correctly updates the logged-in user's info if it changed in another tab.
           setUser(currentUser => {
-            if (!currentUser) return null; // If not logged in, do nothing.
-
+            if (!currentUser) return null;
             const updatedCurrentUser = newUsers.find(u => u.id === currentUser.id);
-            
-            // If user was deleted in another tab, log them out.
             if (!updatedCurrentUser) return null; 
-
-            // If user data has changed, update the state.
             if (JSON.stringify(updatedCurrentUser) !== JSON.stringify(currentUser)) {
                 return updatedCurrentUser;
             }
-
-            return currentUser; // Otherwise, keep the current user state.
+            return currentUser;
           });
         } catch (error) {
-          console.error("Failed to parse users from storage event", error);
+          console.error(">>> [auth-context.tsx] Failed to parse users from storage event", error);
         }
       }
     };
@@ -113,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []); // Empty dependency array ensures this runs once and cleans up on unmount.
+  }, []);
 
 
   const login = async (email: string, password: string): Promise<UserProfile | null> => {

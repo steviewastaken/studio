@@ -3,6 +3,8 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
+console.log(">>> [jobs-context.tsx] JobsProvider module loaded.");
+
 export type Job = {
   id: string;
   pickup: string;
@@ -77,18 +79,21 @@ type JobsContextType = {
 const JobsContext = createContext<JobsContextType | undefined>(undefined);
 
 export function JobsProvider({ children }: { children: ReactNode }) {
+  console.log(">>> [jobs-context.tsx] JobsProvider component rendering...");
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
   // This effect runs once on component mount on the client side.
   // It's responsible for hydrating the state from localStorage.
   useEffect(() => {
+    console.log(">>> [jobs-context.tsx] Hydration useEffect running...");
     setLoading(true);
     try {
       const item = window.localStorage.getItem('dunlivrer-jobs');
       setJobs(item ? JSON.parse(item) : initialJobs);
+      console.log(">>> [jobs-context.tsx] Jobs hydrated from localStorage.");
     } catch (error) {
-      console.error("Failed to load jobs from localStorage, using initial data.", error);
+      console.error(">>> [jobs-context.tsx] Failed to load jobs from localStorage, using initial data.", error);
       setJobs(initialJobs);
     } finally {
         setLoading(false);
@@ -100,9 +105,10 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loading) {
         try {
+            console.log(">>> [jobs-context.tsx] Persisting jobs to localStorage...");
             window.localStorage.setItem('dunlivrer-jobs', JSON.stringify(jobs));
         } catch (error) {
-            console.error("Failed to save jobs to localStorage", error);
+            console.error(">>> [jobs-context.tsx] Failed to save jobs to localStorage", error);
         }
     }
   }, [jobs, loading]);
@@ -111,10 +117,11 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'dunlivrer-jobs' && event.newValue) {
+        console.log(">>> [jobs-context.tsx] Storage change detected from another tab.");
         try {
           setJobs(JSON.parse(event.newValue));
         } catch (error) {
-          console.error("Failed to parse jobs from storage event", error);
+          console.error(">>> [jobs-context.tsx] Failed to parse jobs from storage event", error);
         }
       }
     };
@@ -141,7 +148,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   return (
     <JobsContext.Provider value={{ jobs, addJob, addJobs, removeJob, loading }}>
       {children}
-    </JobsContext.Provider>
+    </Jobs.Provider>
   );
 }
 

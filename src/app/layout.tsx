@@ -13,6 +13,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  console.log(">>> [layout.tsx] Rendering RootLayout component...");
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
