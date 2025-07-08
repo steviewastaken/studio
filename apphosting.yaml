@@ -1,13 +1,14 @@
 
-# Specifies the version of the App Hosting schema.
 specVersion: v1alpha1
-
-# Defines the build configuration.
+run:
+  instanceCount: 1
+  secrets:
+    - secret: GOOGLE_SERVER_API_KEY
+    - secret: NEXT_PUBLIC_SUPABASE_URL
+    - secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
 build:
   builder: docker
-  dockerfile: Dockerfile
-
-# Defines the runtime configuration.
-run:
-  # Number of instances to run.
-  instanceCount: 1
+  secrets:
+    - secret: GOOGLE_SERVER_API_KEY
+    - secret: NEXT_PUBLIC_SUPABASE_URL
+    - secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
