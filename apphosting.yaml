@@ -1,16 +1,11 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
 build:
   builder: docker
   dockerfile: Dockerfile
+
+run:
+  instanceCount: 1
   secrets:
-    - secret: NEXT_PUBLIC_SUPABASE_URL
-    - secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
-    - secret: NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
-runConfig:
-  maxInstances: 1
-  secrets:
-    - secret: GOOGLE_SERVER_API_KEY
-    - secret: NEXT_PUBLIC_SUPABASE_URL
-    - secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
-    - secret: NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
+    - GOOGLE_SERVER_API_KEY
+    - NEXT_PUBLIC_SUPABASE_URL
+    - NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
