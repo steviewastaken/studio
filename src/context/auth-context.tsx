@@ -3,8 +3,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-console.log(">>> [auth-context.tsx] AuthProvider module loaded.");
-
 export type UserProfile = {
   id: string;
   name: string;
@@ -48,19 +46,16 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  console.log(">>> [auth-context.tsx] AuthProvider component rendering...");
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserProfile[]>([]);
 
   useEffect(() => {
-    console.log(">>> [auth-context.tsx] Hydration useEffect running...");
     try {
       const storedUsers = window.localStorage.getItem('dunlivrer-users');
       setUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
-      console.log(">>> [auth-context.tsx] Users hydrated from localStorage.");
     } catch (error) {
-      console.error(">>> [auth-context.tsx] Failed to load users from localStorage", error);
+      console.error("Failed to load users from localStorage", error);
       setUsers(initialUsers);
     } finally {
         setLoading(false);
@@ -70,10 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loading) {
         try {
-            console.log(">>> [auth-context.tsx] Persisting users to localStorage...");
             window.localStorage.setItem('dunlivrer-users', JSON.stringify(users));
         } catch (error) {
-            console.error(">>> [auth-context.tsx] Failed to save users to localStorage", error);
+            console.error("Failed to save users to localStorage", error);
         }
     }
   }, [users, loading]);
@@ -81,7 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'dunlivrer-users' && event.newValue) {
-        console.log(">>> [auth-context.tsx] Storage change detected from another tab.");
         try {
           const newUsers: UserProfile[] = JSON.parse(event.newValue);
           setUsers(newUsers);
@@ -95,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return currentUser;
           });
         } catch (error) {
-          console.error(">>> [auth-context.tsx] Failed to parse users from storage event", error);
+          console.error("Failed to parse users from storage event", error);
         }
       }
     };
