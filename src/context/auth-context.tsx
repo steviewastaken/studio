@@ -13,7 +13,8 @@ export type UserProfile = {
 };
 
 type AuthContextType = {
-  supabase: SupabaseClient;
+  // Supabase client can now be null if keys are not provided
+  supabase: SupabaseClient | null;
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
@@ -25,18 +26,16 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // createClient() can now return null
   const supabase = createClient();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // This check allows the app to run locally without crashing, even if Supabase keys are missing.
-  // The dummy client URL is 'http://localhost:54321'.
-  const isDummyClient = supabase.supabaseUrl.includes('localhost');
-
   const fetchProfile = useCallback(async (userId: string) => {
-    if (isDummyClient) return; // Don't fetch if keys aren't set
+    // Guard clause in case this is called when client is not available
+    if (!supabase) return;
 
     const { data, error } = await supabase
       .from('profiles')
@@ -50,13 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setProfile(data as UserProfile);
     }
-  }, [supabase, isDummyClient]);
+  }, [supabase]);
 
 
   useEffect(() => {
-    // If we're using the dummy client because keys are missing,
-    // just set the auth state to logged-out and stop.
-    if (isDummyClient) {
+    // If Supabase client could not be created (missing keys),
+    // set auth state to logged out and stop.
+    if (!supabase) {
       setUser(null);
       setProfile(null);
       setLoading(false);
@@ -85,12 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
-  }, [supabase, fetchProfile, isDummyClient]);
+  }, [supabase, fetchProfile]);
 
   const login = async (email: string, password: string) => {
-    if (isDummyClient) return { error: { message: "Supabase not configured. Cannot log in.", name:"ConfigError", status: 500 } as AuthError };
+    if (!supabase) return { error: { message: "Supabase not configured.", name:"ConfigError", status: 500 } as AuthError };
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
@@ -98,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   
   const signup = async (name: string, email: string, password: string) => {
-     if (isDummyClient) return { error: { message: "Supabase not configured. Cannot sign up.", name:"ConfigError", status: 500 } as AuthError };
+     if (!supabase) return { error: { message: "Supabase not configured.", name:"ConfigError", status: 500 } as AuthError };
     setLoading(true);
     let role: UserProfile['role'] = 'customer';
     if (email.toLowerCase() === 'admin@dunlivrer.com') {
@@ -152,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    if (isDummyClient) {
+    if (!supabase) {
       setUser(null);
       setProfile(null);
       return { error: null };
