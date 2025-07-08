@@ -1,27 +1,23 @@
-# Use an official lightweight Node.js 18 image.
-# https://hub.docker.com/_/node
-FROM node:18-slim
+# Use the official Node.js 20 image.
+FROM node:20-slim
 
 # Set the working directory in the container.
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy application dependency manifests to the container image.
-# A wildcard is used to ensure both package.json AND package-lock.json are copied.
-# Copying this first prevents re-running npm install on every code change.
+# Install dependencies.
 COPY package*.json ./
+RUN npm install
 
-# Install production dependencies.
-# --omit=dev skips installingdevDependencies.
-RUN npm install --omit=dev
-
-# Copy the rest of the local code to the container image.
+# Copy the rest of the application source code.
 COPY . .
 
 # Build the Next.js application for production.
+# Secrets defined in apphosting.yaml will be available as environment variables during this build process.
 RUN npm run build
 
-# Expose the port the app will run on.
+# Expose the port that Next.js runs on.
 EXPOSE 3000
 
-# Set the command to run when the container starts.
+# The command to run the application.
+# Secrets will also be available at runtime.
 CMD ["npm", "start"]
