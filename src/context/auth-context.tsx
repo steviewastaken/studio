@@ -31,7 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // This check allows the app to run locally without crashing, even if Supabase keys are missing.
+  // The dummy client URL is 'http://localhost:54321'.
+  const isDummyClient = supabase.supabaseUrl.includes('localhost');
+
   const fetchProfile = useCallback(async (userId: string) => {
+    if (isDummyClient) return; // Don't fetch if keys aren't set
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -44,10 +50,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setProfile(data as UserProfile);
     }
-  }, [supabase]);
+  }, [supabase, isDummyClient]);
 
 
   useEffect(() => {
+    // If we're using the dummy client because keys are missing,
+    // just set the auth state to logged-out and stop.
+    if (isDummyClient) {
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
@@ -72,9 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [supabase, fetchProfile]);
+  }, [supabase, fetchProfile, isDummyClient]);
 
   const login = async (email: string, password: string) => {
+    if (isDummyClient) return { error: { message: "Supabase not configured. Cannot log in.", name:"ConfigError", status: 500 } as AuthError };
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
@@ -82,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   
   const signup = async (name: string, email: string, password: string) => {
+     if (isDummyClient) return { error: { message: "Supabase not configured. Cannot sign up.", name:"ConfigError", status: 500 } as AuthError };
     setLoading(true);
     let role: UserProfile['role'] = 'customer';
     if (email.toLowerCase() === 'admin@dunlivrer.com') {
@@ -90,8 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role = 'driver';
     }
     
-    // The options.data object is used by the database trigger.
-    // We will keep it for redundancy but also manually insert the profile.
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -108,16 +123,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: authError };
     }
     
-    // If the trigger fails, the user might still be created. Let's ensure a profile exists.
     if (authData.user) {
-      // Check if profile was created by the trigger
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', authData.user.id)
         .single();
         
-      // If no profile exists, create one manually.
       if (!existingProfile) {
           const { error: profileError } = await supabase
             .from('profiles')
@@ -125,7 +137,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (profileError) {
             console.error('Manual profile creation failed:', profileError);
-            // In a real app, you might want to delete the auth.user here or handle the error more gracefully.
             setLoading(false);
             return { error: profileError };
           }
@@ -141,6 +152,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    if (isDummyClient) {
+      setUser(null);
+      setProfile(null);
+      return { error: null };
+    }
     const { error } = await supabase.auth.signOut();
     return { error };
   };
@@ -149,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading ? children : null}
+      {children}
     </AuthContext.Provider>
   );
 }
