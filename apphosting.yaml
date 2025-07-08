@@ -11,19 +11,9 @@ build:
     - NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0eGxhc3FnbnZ2ZG5lZHdwbGduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NzE4OTAsImV4cCI6MjA2NzE0Nzg5MH0.dBb7RMgIK3PCzQGHPPwglQD8ntB89AeqGwCuc3t0YpU"
     - NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY="AIzaSyBjbd25PsMgE3airzSJRWhe9I9G1_IeOP0"
     - GOOGLE_SERVER_API_KEY="AIzaSyDirKm7OeYmSxcmcHELb-z4U1SjJm8S4SI"
-  secrets:
-    - GOOGLE_SERVER_API_KEY
-    - NEXT_PUBLIC_SUPABASE_URL
-    - NEXT_PUBLIC_SUPABASE_ANON_KEY
-    - NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
 
 # Defines the runtime configuration.
 run:
   # Number of instances to run.
   instanceCount: 1
-  # Secrets needed when the app is running.
-  secrets:
-    - GOOGLE_SERVER_API_KEY
-    - NEXT_PUBLIC_SUPABASE_URL
-    - NEXT_PUBLIC_SUPABASE_ANON_KEY
-    - NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
+
