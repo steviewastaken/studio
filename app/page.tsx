@@ -19,6 +19,8 @@ import { handleProcessBulkDelivery } from "@/lib/actions";
 import { Progress } from "@/components/ui/progress";
 import type { ProcessBulkDeliveryOutput } from "@/ai/flows/process-bulk-delivery";
 import { useJobs } from "@/context/jobs-context";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 30 },
