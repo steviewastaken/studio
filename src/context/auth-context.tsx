@@ -48,18 +48,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<UserProfile[]>(initialUsers);
+  const [users, setUsers] = useState<UserProfile[]>([]);
 
   useEffect(() => {
     // This effect runs once on component mount on the client side.
     // It's responsible for hydrating the state from localStorage.
     try {
       const storedUsers = window.localStorage.getItem('dunlivrer-users');
-      if (storedUsers) {
-        setUsers(JSON.parse(storedUsers));
-      }
+      // Load from storage, or fall back to initialUsers if nothing is in storage.
+      setUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
     } catch (error) {
       console.error("Failed to load users from localStorage", error);
+      // Fallback to initial data on any error.
+      setUsers(initialUsers);
     } finally {
         setLoading(false);
     }
