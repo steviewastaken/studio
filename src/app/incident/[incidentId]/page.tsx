@@ -8,6 +8,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 const DetailRow = ({ label, children }: { label: string, children: React.ReactNode }) => (
     <div className="flex flex-col md:flex-row justify-between py-3 border-b border-white/10 text-sm">
@@ -43,11 +44,15 @@ const mockIncidentData = {
         trackingId: 'DNLVR-789',
     },
     courier: 'Alexandre Dubois',
-    timestamp: new Date().toUTCString(),
 }
 
 export default function IncidentDetailsPage({ params }: { params: { incidentId: string } }) {
     const { incidentId } = params;
+    const [timestamp, setTimestamp] = useState<string | null>(null);
+
+    useEffect(() => {
+      setTimestamp(new Date().toUTCString());
+    }, []);
     
     return (
         <div className="w-full max-w-4xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
@@ -117,7 +122,7 @@ export default function IncidentDetailsPage({ params }: { params: { incidentId: 
                                     <Badge variant="secondary">INCIDENT_REPORT_MINTED</Badge>
                                 </DetailRow>
                                 <DetailRow label="Timestamp">
-                                    <span className="flex items-center gap-2"><Clock className="w-4 h-4" /> {mockIncidentData.timestamp}</span>
+                                    <span className="flex items-center gap-2"><Clock className="w-4 h-4" /> {timestamp}</span>
                                 </DetailRow>
                                  <DetailRow label="Reporting Courier">
                                     <span className="flex items-center gap-2"><User className="w-4 h-4" /> {mockIncidentData.courier}</span>

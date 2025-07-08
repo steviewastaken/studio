@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle, FileText, Layers, Clock, ArrowRight, User, Pack
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
 
 const DetailRow = ({ label, children }: { label: string, children: React.ReactNode }) => (
     <div className="flex flex-col md:flex-row justify-between py-3 border-b border-white/10 text-sm">
@@ -66,8 +67,15 @@ const NftCard = () => (
 
 export default function TransactionPage({ params }: { params: { txHash: string } }) {
     const { txHash } = params;
+    const [now, setNow] = useState<Date | null>(null);
+
+    useEffect(() => {
+        setNow(new Date());
+    }, []);
     
-    const now = new Date();
+    if (!now) {
+        return null; // Or a loading skeleton
+    }
 
     return (
         <div className="w-full max-w-4xl mx-auto p-4 md:p-8 pt-24 md:pt-32">

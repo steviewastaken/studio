@@ -83,12 +83,11 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   // This effect runs once on component mount on the client side.
   // It's responsible for hydrating the state from localStorage.
   useEffect(() => {
+    setLoading(true);
     try {
       const item = window.localStorage.getItem('dunlivrer-jobs');
-      // If there's an item in storage, use it. Otherwise, initialize with default jobs.
       setJobs(item ? JSON.parse(item) : initialJobs);
     } catch (error) {
-      // If parsing fails, fall back to initial data.
       console.error("Failed to load jobs from localStorage, using initial data.", error);
       setJobs(initialJobs);
     } finally {
