@@ -77,29 +77,35 @@ type JobsContextType = {
 const JobsContext = createContext<JobsContextType | undefined>(undefined);
 
 export function JobsProvider({ children }: { children: ReactNode }) {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [loading, setLoading] = useState(true);
 
   // This effect runs once on component mount on the client side.
   // It's responsible for hydrating the state from localStorage.
   useEffect(() => {
-    try {
-      const item = window.localStorage.getItem('dunlivrer-jobs');
-      // If there's an item in storage, use it. Otherwise, initialize with default jobs.
-      setJobs(item ? JSON.parse(item) : initialJobs);
-    } catch (error) {
-      // If parsing fails, fall back to initial data.
-      console.error("Failed to load jobs from localStorage, using initial data.", error);
-      setJobs(initialJobs);
-    } finally {
-        setLoading(false);
+    // This check ensures localStorage is only accessed on the client
+    if (typeof window !== 'undefined') {
+        setLoading(true);
+        try {
+            const item = window.localStorage.getItem('dunlivrer-jobs');
+            // If there's an item in storage, use it. Otherwise, the state is already initialized.
+            if (item) {
+                setJobs(JSON.parse(item));
+            }
+        } catch (error) {
+            console.error("Failed to load jobs from localStorage, using initial data.", error);
+            // State is already set to initialJobs, so no need to set it again
+        } finally {
+            setLoading(false);
+        }
     }
   }, []);
 
-  // This effect runs whenever the `jobs` state changes (and not during initial load).
+  // This effect runs whenever the `jobs` state changes.
   // It's responsible for persisting the state back to localStorage.
   useEffect(() => {
-    if (!loading) {
+    // Only run on client and after initial load
+    if (typeof window !== 'undefined' && !loading) {
         try {
             window.localStorage.setItem('dunlivrer-jobs', JSON.stringify(jobs));
         } catch (error) {
