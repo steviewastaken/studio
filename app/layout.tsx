@@ -5,6 +5,7 @@ import { JobsProvider } from "@/context/jobs-context";
 import { LanguageProvider } from "@/context/language-context";
 import MainLayout from "@/components/dunlivrer/main-layout";
 import { ChatProvider } from "@/context/chat-context";
+import { SupabaseProvider } from "@/context/supabase-context";
 import './globals.css';
 
 export const metadata = {
@@ -20,18 +21,20 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
       <body>
-        <AuthProvider>
-          <LanguageProvider>
-            <JobsProvider>
-              <ChatProvider>
-                <MainLayout>
-                  {children}
-                </MainLayout>
-                <Toaster />
-              </ChatProvider>
-            </JobsProvider>
-          </LanguageProvider>
-        </AuthProvider>
+        <SupabaseProvider>
+          <AuthProvider>
+            <LanguageProvider>
+              <JobsProvider>
+                <ChatProvider>
+                  <MainLayout>
+                    {children}
+                  </MainLayout>
+                  <Toaster />
+                </ChatProvider>
+              </JobsProvider>
+            </LanguageProvider>
+          </AuthProvider>
+        </SupabaseProvider>
       </body>
     </html>
   );
