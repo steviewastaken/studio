@@ -1,19 +1,30 @@
+
 # Specifies the version of the App Hosting schema.
 specVersion: v1alpha1
 
 # Defines the build configuration.
 build:
-  # Use Docker to build the app.
   builder: docker
   dockerfile: Dockerfile
+  # This makes secrets available as environment variables during the build process.
+  # This is the correct, secure way to handle build-time secrets.
   env:
-    - NEXT_PUBLIC_SUPABASE_URL="https://ftxlasqgnvvdnedwplgn.supabase.co"
-    - NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0eGxhc3FnbnZ2ZG5lZHdwbGduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NzE4OTAsImV4cCI6MjA2NzE0Nzg5MH0.dBb7RMgIK3PCzQGHPPwglQD8ntB89AeqGwCuc3t0YpU"
-    - NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY="AIzaSyBjbd25PsMgE3airzSJRWhe9I9G1_IeOP0"
-    - GOOGLE_SERVER_API_KEY="AIzaSyDirKm7OeYmSxcmcHELb-z4U1SjJm8S4SI"
+    - variable: NEXT_PUBLIC_SUPABASE_URL
+      secret: NEXT_PUBLIC_SUPABASE_URL
+    - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+      secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - variable: NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
+      secret: NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
+    - variable: GOOGLE_SERVER_API_KEY
+      secret: GOOGLE_SERVER_API_KEY
 
 # Defines the runtime configuration.
 run:
   # Number of instances to run.
   instanceCount: 1
-
+  # This makes secrets available to the running application at runtime.
+  secrets:
+    - secret: GOOGLE_SERVER_API_KEY
+    - secret: NEXT_PUBLIC_SUPABASE_URL
+    - secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - secret: NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
