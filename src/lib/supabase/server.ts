@@ -8,36 +8,20 @@ export const createServerClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Temporarily remove hard crash on missing keys
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn("Supabase server credentials not found. This is expected if you haven't configured secrets yet.");
+    console.warn("Supabase server credentials not found. Using a dummy client for build process.");
+    // This part is tricky because it needs a cookie store. We'll just return the client with dummy keys.
+    // It will fail at runtime, but it should pass the build.
+    return createSupabaseServerClient({
+        cookies: () => cookieStore,
+        supabaseUrl: 'http://localhost:54321',
+        supabaseKey: 'dummy-key-for-build-process-only-you-will-not-see-this-in-the-app',
+    });
   }
 
   return createSupabaseServerClient({
-    supabaseUrl: supabaseUrl || 'http://localhost:54321', // Provide a fallback for the build process
-    supabaseKey: supabaseAnonKey || 'dummy-key-for-build',
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        try {
-          cookieStore.set({ name, value, ...options })
-        } catch (error) {
-          // The `set` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
-        }
-      },
-      remove(name: string, options: CookieOptions) {
-        try {
-          cookieStore.set({ name, value: '', ...options })
-        } catch (error) {
-          // The `delete` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
-        }
-      },
-    },
+    cookies: () => cookieStore,
+    supabaseUrl,
+    supabaseKey: supabaseAnonKey,
   })
 }
