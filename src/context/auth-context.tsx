@@ -45,51 +45,64 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const USERS_STORAGE_KEY = 'dunlivrer-users';
+const SESSION_STORAGE_KEY = 'dunlivrer-session-userId';
+
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserProfile[]>([]);
 
+  // This effect runs once on mount to initialize state from localStorage
   useEffect(() => {
     try {
-      const storedUsers = window.localStorage.getItem('dunlivrer-users');
-      setUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
+      const storedUsers = window.localStorage.getItem(USERS_STORAGE_KEY);
+      const allUsers = storedUsers ? JSON.parse(storedUsers) : initialUsers;
+      setUsers(allUsers);
+
+      const sessionUserId = window.localStorage.getItem(SESSION_STORAGE_KEY);
+      if (sessionUserId) {
+        const loggedInUser = allUsers.find((u: UserProfile) => u.id === sessionUserId);
+        if (loggedInUser) {
+          setUser(loggedInUser);
+        }
+      }
     } catch (error) {
-      console.error("Failed to load users from localStorage", error);
+      console.error("Failed to initialize auth state from localStorage", error);
       setUsers(initialUsers);
+      setUser(null);
     } finally {
         setLoading(false);
     }
   }, []);
 
+  // This effect saves the user "database" back to localStorage whenever it changes
   useEffect(() => {
+    // We don't save during the initial load to avoid overwriting with empty data
     if (!loading) {
         try {
-            window.localStorage.setItem('dunlivrer-users', JSON.stringify(users));
+            window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
         } catch (error) {
             console.error("Failed to save users to localStorage", error);
         }
     }
   }, [users, loading]);
   
+  // This effect handles cross-tab synchronization for login/logout
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'dunlivrer-users' && event.newValue) {
-        try {
-          const newUsers: UserProfile[] = JSON.parse(event.newValue);
-          setUsers(newUsers);
-          setUser(currentUser => {
-            if (!currentUser) return null;
-            const updatedCurrentUser = newUsers.find(u => u.id === currentUser.id);
-            if (!updatedCurrentUser) return null; 
-            if (JSON.stringify(updatedCurrentUser) !== JSON.stringify(currentUser)) {
-                return updatedCurrentUser;
-            }
-            return currentUser;
-          });
-        } catch (error) {
-          console.error("Failed to parse users from storage event", error);
+      if (event.key === SESSION_STORAGE_KEY) {
+        if (event.newValue) {
+          const newUsers = JSON.parse(window.localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+          const loggedInUser = newUsers.find((u: UserProfile) => u.id === event.newValue);
+          setUser(loggedInUser || null);
+        } else {
+          setUser(null); // Logged out in another tab
         }
+      }
+      if (event.key === USERS_STORAGE_KEY && event.newValue) {
+        setUsers(JSON.parse(event.newValue));
       }
     };
 
@@ -104,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
     if (foundUser) {
       setUser(foundUser);
+      window.localStorage.setItem(SESSION_STORAGE_KEY, foundUser.id);
       return foundUser;
     }
     return null;
@@ -129,15 +143,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return [...prevUsers, newUser];
     });
 
-    if (userExists) return null;
+    if (userExists || !newUser) return null;
 
     setUser(newUser);
+    window.localStorage.setItem(SESSION_STORAGE_KEY, newUser.id);
     return newUser;
   };
 
 
   const logout = () => {
     setUser(null);
+    window.localStorage.removeItem(SESSION_STORAGE_KEY);
   };
 
   const updateUserKycStatus = (userId: string, status: UserProfile['kycStatus']) => {
