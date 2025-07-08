@@ -3,14 +3,12 @@
 
 import { useState, useCallback, useRef } from 'react';
 import type { DeliveryDetails } from '@/components/dunlivrer/types';
-import DeliveryForm from '@/components/dunlivrer/delivery-form';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal, Layers, Upload, Download, Route, Lightbulb, Package2, AlertTriangle, Package, Truck } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion, AnimatePresence } from 'framer-motion';
-import LiveTrackingPreview from '@/components/dunlivrer/live-tracking-preview';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SupportChat from '@/components/dunlivrer/support-chat';
 import { useLanguage } from '@/context/language-context';
@@ -26,6 +24,8 @@ import { useToast } from '@/hooks/use-toast';
 import { handleProcessBulkDelivery } from '@/lib/actions';
 import type { ProcessBulkDeliveryOutput } from '@/ai/flows/process-bulk-delivery';
 import { useJobs, type Job } from '@/context/jobs-context';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const sectionVariants = {
@@ -61,6 +61,17 @@ const staggeredContainer = {
     },
   },
 };
+
+const DeliveryForm = dynamic(
+    () => import('@/components/dunlivrer/delivery-form'),
+    { ssr: false, loading: () => <Skeleton className="h-[500px] w-full" /> }
+);
+
+const LiveTrackingPreview = dynamic(
+    () => import('@/components/dunlivrer/live-tracking-preview'),
+    { ssr: false, loading: () => <Skeleton className="h-[400px] w-full" /> }
+);
+
 
 const EstimatorBox = ({ quote, insuranceQuote, isGettingQuote }: { quote: GetQuoteOutput | null; insuranceQuote: GetInsuranceQuoteOutput | null; isGettingQuote: boolean }) => {
     const cardBaseClass = "w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg";
