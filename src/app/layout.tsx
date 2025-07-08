@@ -1,12 +1,7 @@
 
 import type { Metadata } from "next";
-import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from "@/context/auth-context";
-import { JobsProvider } from "@/context/jobs-context";
-import { ChatProvider } from "@/context/chat-context";
-import { LanguageProvider } from "@/context/language-context";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
-
 
 export const metadata: Metadata = {
   title: "Dunlivrer",
@@ -27,16 +22,8 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <LanguageProvider>
-          <AuthProvider>
-            <JobsProvider>
-              <ChatProvider>
-                {children}
-                <Toaster />
-              </ChatProvider>
-            </JobsProvider>
-          </AuthProvider>
-        </LanguageProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   );
