@@ -3,13 +3,14 @@
 build:
   builder: docker
   dockerfile: Dockerfile
+  secrets:
+    - secret: NEXT_PUBLIC_SUPABASE_URL
+    - secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - secret: NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
 runConfig:
   maxInstances: 1
-# Define the secrets that the application needs at build and run time.
-# You must add the values for these secrets in the Firebase Console
-# in your App Hosting backend's "Settings" tab.
-secrets:
-  - secret: GOOGLE_SERVER_API_KEY
-  - secret: NEXT_PUBLIC_SUPABASE_URL
-  - secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
-  - secret: NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
+  secrets:
+    - secret: GOOGLE_SERVER_API_KEY
+    - secret: NEXT_PUBLIC_SUPABASE_URL
+    - secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - secret: NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY
