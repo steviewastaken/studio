@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { FileUp, Loader2, Send } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Component to handle file input and preview
 const DocumentUploader = ({ id, label, onFileSelect, preview }: { id: string, label: string, onFileSelect: (file: File) => void, preview: string | null }) => {
@@ -45,7 +46,7 @@ const DocumentUploader = ({ id, label, onFileSelect, preview }: { id: string, la
 
 
 export default function KycPage() {
-    const { user, updateUserKycStatus } = useAuth();
+    const { user, updateUserKycStatus, loading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -58,6 +59,17 @@ export default function KycPage() {
     const [registrationPreview, setRegistrationPreview] = useState<string | null>(null);
 
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (loading) return; // Wait for auth state to be resolved
+
+        if (!user || user.role !== 'driver') {
+            router.push('/signin?redirect=/driver/kyc');
+        } else if (user.kycStatus === 'verified' || user.kycStatus === 'pending') {
+            router.push('/driver');
+        }
+    }, [user, loading, router]);
+
 
     const handleFileSelect = (file: File, setter: (f: File | null) => void, previewSetter: (s: string | null) => void) => {
         setter(file);
@@ -87,15 +99,28 @@ export default function KycPage() {
         router.push('/driver');
     };
 
-    if (!user || user.role !== 'driver') {
-        router.push('/signin');
-        return null;
+    // Render a loading state or nothing while redirecting or loading auth state
+    if (loading || !user || user.role !== 'driver' || user.kycStatus === 'verified' || user.kycStatus === 'pending') {
+        return (
+          <div className="w-full max-w-2xl mx-auto p-4 md:p-8 pt-24 md:pt-32">
+             <Skeleton className="h-12 w-1/2 mx-auto" />
+             <Skeleton className="h-6 w-3/4 mx-auto mt-4" />
+             <Card className="mt-8 bg-card/80 border-white/10">
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/3" />
+                    <Skeleton className="h-4 w-2/3" />
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6">
+                    <Skeleton className="h-32 w-full" />
+                    <Skeleton className="h-32 w-full" />
+                    <Skeleton className="h-32 w-full" />
+                    <Skeleton className="h-12 w-full mt-4" />
+                </CardContent>
+             </Card>
+          </div>
+        );
     }
     
-    if (user.kycStatus === 'verified' || user.kycStatus === 'pending') {
-        router.push('/driver');
-        return null;
-    }
 
     return (
         <div className="w-full max-w-2xl mx-auto p-4 md:p-8 pt-24 md:pt-32">

@@ -495,6 +495,13 @@ export default function DriverPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
 
+    useEffect(() => {
+        if (!loading && user?.role === 'driver' && (user.kycStatus === 'rejected' || user.kycStatus === 'none')) {
+            router.push('/driver/kyc');
+        }
+    }, [user, loading, router]);
+
+
     if (loading) {
         return <LoadingSkeleton />;
     }
@@ -507,11 +514,10 @@ export default function DriverPage() {
 
     switch (user.kycStatus) {
         case 'pending':
-            // Since auto-approval is now in place, this state is less likely to be seen by the user.
             return <KycPending />;
         case 'rejected':
         case 'none':
-            router.push('/driver/kyc'); // Redirect to re-submit
+            // The useEffect will handle the redirect, show a loader in the meantime.
             return <LoadingSkeleton />;
         case 'verified':
             return <DriverDashboard />;
