@@ -5,12 +5,10 @@ import { useState, useCallback, useRef } from 'react';
 import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal, Layers, Upload, Download, Route, Lightbulb, Package2, AlertTriangle, Package, Truck } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Layers, Upload, Route, Lightbulb, Package, Truck } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import SupportChat from '@/components/dunlivrer/support-chat';
 import { useLanguage } from '@/context/language-context';
 import type { GetQuoteOutput } from '@/ai/flows/get-quote';
 import type { GetInsuranceQuoteOutput } from '@/ai/flows/get-insurance-quote';
@@ -20,12 +18,13 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Papa from 'papaparse';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
 import { handleProcessBulkDelivery } from "@/lib/bulk-actions";
 import type { ProcessBulkDeliveryOutput } from '@/ai/flows/process-bulk-delivery';
 import { useJobs, type Job } from '@/context/jobs-context';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 
 const sectionVariants = {
@@ -332,7 +331,7 @@ const BulkResultsDisplay = ({ result, onDispatch }: { result: ProcessBulkDeliver
 };
 
 
-export default function DunlivrerPage() {
+export default function HomePage() {
   const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
   const [quote, setQuote] = useState<GetQuoteOutput | null>(null);
   const [insuranceQuote, setInsuranceQuote] = useState<GetInsuranceQuoteOutput | null>(null);
@@ -529,49 +528,52 @@ export default function DunlivrerPage() {
                 </p>
               </div>
               
-                <Tabs defaultValue="single-delivery" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 max-w-lg">
-                        <TabsTrigger value="single-delivery"><Package className="mr-2"/>Single Delivery</TabsTrigger>
-                        <TabsTrigger value="bulk-upload"><Layers className="mr-2"/>Bulk Upload</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="single-delivery" className="mt-6">
-                        <DeliveryForm 
-                          onAddressChange={handleAddressChange}
-                          onQuoteChange={handleQuoteChange}
-                          onInsuranceChange={setInsuranceQuote}
-                          quote={quote}
-                          insuranceQuote={insuranceQuote}
-                          isReviewed={isReviewed}
-                          isGettingQuote={isGettingQuote}
-                          setIsGettingQuote={setIsGettingQuote}
-                        />
-                    </TabsContent>
-                    <TabsContent value="bulk-upload" className="mt-6">
-                         <BulkUploader onProcess={handleProcessCSV} />
-                    </TabsContent>
-                </Tabs>
-
-                <AnimatePresence>
-                    {isBulkLoading && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-12 space-y-4">
-                            <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary" />
-                            <h3 className="font-semibold text-xl">AI Engine is processing your manifest...</h3>
-                            <p className="text-muted-foreground">Consolidating routes, calculating smart pricing, and forecasting demand.</p>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                {bulkError && (
-                    <Card className="mt-8 bg-destructive/10 border-destructive/30 p-8 text-center text-destructive">
-                         <AlertTriangle className="w-12 h-12 mx-auto" />
-                         <h2 className="mt-4 text-2xl font-bold">Analysis Failed</h2>
-                         <p>{bulkError}</p>
-                    </Card>
-                 )}
-                {bulkAnalysisResult && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <AnimatePresence mode="wait">
+                {isBulkLoading ? (
+                    <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-12 space-y-4">
+                        <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary" />
+                        <h3 className="font-semibold text-xl">AI Engine is processing your manifest...</h3>
+                        <p className="text-muted-foreground">Consolidating routes, calculating smart pricing, and forecasting demand.</p>
+                    </motion.div>
+                ) : bulkError ? (
+                    <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <Card className="bg-destructive/10 border-destructive/30 p-8 text-center text-destructive">
+                             <AlertTriangle className="w-12 h-12 mx-auto" />
+                             <h2 className="mt-4 text-2xl font-bold">Analysis Failed</h2>
+                             <p>{bulkError}</p>
+                             <Button variant="outline" onClick={() => setBulkError(null)} className="mt-4">Try Again</Button>
+                        </Card>
+                    </motion.div>
+                ) : bulkAnalysisResult ? (
+                     <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <BulkResultsDisplay result={bulkAnalysisResult} onDispatch={handleDispatchBulk} />
                     </motion.div>
+                ) : (
+                    <motion.div key="tabs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <Tabs defaultValue="single-delivery" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 max-w-lg">
+                                <TabsTrigger value="single-delivery"><Package className="mr-2"/>Single Delivery</TabsTrigger>
+                                <TabsTrigger value="bulk-upload"><Layers className="mr-2"/>Bulk Upload</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="single-delivery" className="mt-6">
+                                <DeliveryForm 
+                                  onAddressChange={handleAddressChange}
+                                  onQuoteChange={handleQuoteChange}
+                                  onInsuranceChange={setInsuranceQuote}
+                                  quote={quote}
+                                  insuranceQuote={insuranceQuote}
+                                  isReviewed={isReviewed}
+                                  isGettingQuote={isGettingQuote}
+                                  setIsGettingQuote={setIsGettingQuote}
+                                />
+                            </TabsContent>
+                            <TabsContent value="bulk-upload" className="mt-6">
+                                 <BulkUploader onProcess={handleProcessCSV} />
+                            </TabsContent>
+                        </Tabs>
+                    </motion.div>
                 )}
+              </AnimatePresence>
             </div>
             <div className="lg:col-span-2 flex flex-col gap-8">
                 <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
@@ -585,7 +587,7 @@ export default function DunlivrerPage() {
         </div>
       </motion.section>
 
-       {/* Services Section */}
+      {/* Services Section */}
       <motion.section 
         className="py-16"
         initial="hidden"
@@ -618,7 +620,7 @@ export default function DunlivrerPage() {
 
       {/* AI Fraud Detection Section */}
       <motion.section
-        className="py-16 bg-background/20"
+        className="py-16"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
@@ -689,10 +691,10 @@ export default function DunlivrerPage() {
           </motion.div>
         </div>
       </motion.section>
-
+      
       {/* Blockchain Section */}
       <motion.section
-        className="py-24"
+        className="py-24 bg-background/20"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
@@ -768,3 +770,4 @@ export default function DunlivrerPage() {
     </div>
   );
 }
+
