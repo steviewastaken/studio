@@ -15,7 +15,7 @@ import type { GetInsuranceQuoteOutput } from "@/ai/flows/get-insurance-quote";
 import { useLanguage } from "@/context/language-context";
 import Papa from 'papaparse';
 import { useToast } from "@/hooks/use-toast";
-import { handleProcessBulkDelivery } from "@/lib/actions";
+import { handleProcessBulkDelivery } from "@/lib/bulk-actions";
 import { Progress } from "@/components/ui/progress";
 import type { ProcessBulkDeliveryOutput } from "@/ai/flows/process-bulk-delivery";
 import { useJobs } from "@/context/jobs-context";

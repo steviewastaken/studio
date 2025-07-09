@@ -71,11 +71,6 @@ import {
   type GetInsuranceQuoteInput,
   type GetInsuranceQuoteOutput,
 } from '@/ai/flows/get-insurance-quote';
-import {
-    processBulkDelivery as processBulkDeliveryFlow,
-    type ProcessBulkDeliveryInput,
-    type ProcessBulkDeliveryOutput,
-} from '@/ai/flows/process-bulk-delivery';
 
 async function handleFlow<I, O>(
   flow: (input: I) => Promise<O>,
@@ -83,13 +78,11 @@ async function handleFlow<I, O>(
   flowName: string,
   errorMessage: string
 ): Promise<{ success: true; data: O } | { success: false; error: string }> {
-  console.log(`>>> [actions.ts] Calling flow: ${flowName} with input:`, JSON.stringify(input, null, 2));
   try {
     const result = await flow(input);
-    console.log(`>>> [actions.ts] Flow ${flowName} succeeded.`);
     return { success: true, data: result };
   } catch (error: any) {
-    console.error(`>>> [actions.ts] Error in ${flowName}:`, error.message);
+    console.error(`Error in ${flowName}:`, error.message);
     return { success: false, error: error.message || errorMessage };
   }
 }
@@ -148,8 +141,4 @@ export async function handleGetInvestorReport(data: GetInvestorReportInput) {
 
 export async function handleGetInsuranceQuote(data: GetInsuranceQuoteInput) {
   return handleFlow(getInsuranceQuoteFlow, data, 'handleGetInsuranceQuote', 'Failed to generate insurance quote.');
-}
-
-export async function handleProcessBulkDelivery(data: ProcessBulkDeliveryInput) {
-    return handleFlow(processBulkDeliveryFlow, data, 'handleProcessBulkDelivery', 'Failed to process bulk delivery file.');
 }
