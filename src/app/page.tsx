@@ -1,26 +1,32 @@
 
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, ShieldCheck, Users, TrendingUp, Bot, Ship, Briefcase, BrainCircuit, BarChart, Package, FileText, Check, AlertTriangle, Loader2, Repeat, Shuffle } from "lucide-react";
+import { useState, useCallback, useRef } from 'react';
+import type { DeliveryDetails } from '@/components/dunlivrer/types';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import DeliveryForm from "@/components/dunlivrer/delivery-form";
-import LiveTrackingPreview from "@/components/dunlivrer/live-tracking-preview";
-import { useState } from "react";
-import FloatingSupportButton from "@/components/dunlivrer/floating-support-button";
-import type { GetQuoteOutput } from "@/ai/flows/get-quote";
-import type { GetInsuranceQuoteOutput } from "@/ai/flows/get-insurance-quote";
-import { useLanguage } from "@/context/language-context";
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Equal, Layers, Upload, Download, Route, Lightbulb, Package2, AlertTriangle, Package, Truck } from 'lucide-react';
+import Image from 'next/image';
+import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import SupportChat from '@/components/dunlivrer/support-chat';
+import { useLanguage } from '@/context/language-context';
+import type { GetQuoteOutput } from '@/ai/flows/get-quote';
+import type { GetInsuranceQuoteOutput } from '@/ai/flows/get-insurance-quote';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Papa from 'papaparse';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 import { handleProcessBulkDelivery } from "@/lib/bulk-actions";
-import { Progress } from "@/components/ui/progress";
-import type { ProcessBulkDeliveryOutput } from "@/ai/flows/process-bulk-delivery";
-import { useJobs } from "@/context/jobs-context";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import type { ProcessBulkDeliveryOutput } from '@/ai/flows/process-bulk-delivery';
+import { useJobs, type Job } from '@/context/jobs-context';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -29,15 +35,21 @@ const sectionVariants = {
     y: 0,
     transition: {
       duration: 0.5,
-      ease: "easeOut",
-      staggerChildren: 0.2
+      ease: "easeOut"
     } 
   },
 };
 
 const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' }}
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  },
 };
 
 const staggeredContainer = {
@@ -50,405 +62,709 @@ const staggeredContainer = {
   },
 };
 
-
-const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-    <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-card/50 border border-white/10 shadow-lg flex flex-col items-start gap-4">
-        <div className="p-3 bg-primary/20 rounded-lg text-primary">{icon}</div>
-        <h3 className="text-xl font-bold font-headline text-white">{title}</h3>
-        <p className="text-muted-foreground">{description}</p>
-    </motion.div>
+const DeliveryForm = dynamic(
+    () => import('@/components/dunlivrer/delivery-form'),
+    { ssr: false, loading: () => <Skeleton className="h-[500px] w-full" /> }
 );
 
-const BulkUploadResults = ({ results, onReset }: { results: ProcessBulkDeliveryOutput, onReset: () => void }) => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <Card className="bg-card/80 border-white/10">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Check /> Upload Processed</CardTitle>
-                <CardDescription>Your bulk delivery file has been analyzed.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div className="p-3 bg-muted rounded-md">
-                        <p className="text-xs text-muted-foreground">Total</p>
-                        <p className="text-lg font-bold">{results.uploadSummary.totalPackages}</p>
-                    </div>
-                    <div className="p-3 bg-muted rounded-md">
-                        <p className="text-xs text-muted-foreground">Valid</p>
-                        <p className="text-lg font-bold text-green-400">{results.uploadSummary.validPackages}</p>
-                    </div>
-                    <div className="p-3 bg-muted rounded-md">
-                        <p className="text-xs text-muted-foreground">Invalid</p>
-                        <p className="text-lg font-bold text-red-400">{results.uploadSummary.invalidPackages}</p>
-                    </div>
-                     <div className="p-3 bg-muted rounded-md">
-                        <p className="text-xs text-muted-foreground">Total Quote</p>
-                        <p className="text-lg font-bold">€{results.uploadSummary.totalQuote.toFixed(2)}</p>
-                    </div>
-                </div>
-                 <div>
-                    <h4 className="font-semibold text-white mb-2">Smart Pricing Suggestion</h4>
-                    <Alert className="bg-primary/10 border-primary/20">
-                        <AlertTriangle className="h-4 w-4 text-primary" />
-                        <AlertTitle>Optimal Window: {results.smartPricingSuggestion.window}</AlertTitle>
-                        <AlertDescription>
-                            Dispatch during this time for ~{results.smartPricingSuggestion.savingsPercentage}% savings due to {results.smartPricingSuggestion.reason}.
-                        </AlertDescription>
-                    </Alert>
-                </div>
-                <div>
-                     <Button onClick={onReset} className="w-full">Upload Another File</Button>
-                </div>
-            </CardContent>
-        </Card>
-    </motion.div>
+const LiveTrackingPreview = dynamic(
+    () => import('@/components/dunlivrer/live-tracking-preview'),
+    { ssr: false, loading: () => <Skeleton className="h-[400px] w-full" /> }
 );
 
 
-const BulkUpload = () => {
-    const { toast } = useToast();
-    const { addJobs } = useJobs();
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [results, setResults] = useState<ProcessBulkDeliveryOutput | null>(null);
+const EstimatorBox = ({ quote, insuranceQuote, isGettingQuote }: { quote: GetQuoteOutput | null; insuranceQuote: GetInsuranceQuoteOutput | null; isGettingQuote: boolean }) => {
+    const cardBaseClass = "w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg";
+    
+    if (isGettingQuote) {
+        return (
+            <Card className={cn(cardBaseClass, "min-h-[295px]")}>
+                <CardContent className="p-8 text-center flex flex-col items-center justify-center h-full">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                    <p className="mt-4 font-semibold text-white">Calculating Estimate...</p>
+                    <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                        Our AI is analyzing the route, traffic, and real-time conditions.
+                    </p>
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    if (!quote) {
+        return (
+            <Card className={cn(cardBaseClass, "min-h-[295px]")}>
+                <CardContent className="p-8 text-center flex flex-col items-center justify-center h-full">
+                    <span className="text-4xl">⚡️</span>
+                    <p className="mt-4 font-semibold text-white">Powered by AI</p>
+                    <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                        Estimated delivery time & cost appear here in real-time after route input.
+                    </p>
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    const totalCost = quote.price + (insuranceQuote?.premium || 0);
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full"
+        >
+            <Card className={cardBaseClass}>
+                <CardHeader>
+                    <CardTitle className="font-headline text-3xl flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                           <BrainCircuit className="w-7 h-7 text-primary" /> AI Estimate
+                        </span>
+                        <Badge variant="outline" className="text-base">
+                            {quote.etaConfidencePercentage}% Conf.
+                        </Badge>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="p-4 bg-muted rounded-lg text-center">
+                        <p className="text-sm text-muted-foreground">Estimated Arrival</p>
+                        <p className="text-4xl font-bold text-primary">{quote.etaConfidenceRange}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                        <div className="p-3 bg-muted rounded-lg">
+                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"><Milestone className="w-3 h-3"/> Distance</p>
+                            <p className="font-bold text-lg">{quote.distance}</p>
+                        </div>
+                        <div className="p-3 bg-muted rounded-lg">
+                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"><Leaf className="w-3 h-3"/> CO₂ Impact</p>
+                            <p className="font-bold text-lg">{quote.co2Emission}</p>
+                        </div>
+                    </div>
+                    
+                    <Separator className="my-4"/>
 
-        setIsUploading(true);
-        setUploadProgress(0);
-        setResults(null);
-        
-        // Simulate reading progress
-        const reader = new FileReader();
-        reader.onprogress = (event) => {
-            if (event.lengthComputable) {
-                const percentLoaded = Math.round((event.loaded / event.total) * 50); // Reading is first 50%
-                setUploadProgress(percentLoaded);
-            }
-        };
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Delivery Cost</span>
+                            <span className="font-medium">€{quote.price.toFixed(2)}</span>
+                        </div>
+                        {insuranceQuote && (
+                            <div className="flex justify-between items-center text-primary">
+                                <span className="flex items-center gap-1.5"><Plus className="w-3 h-3"/> Insurance Premium</span>
+                                <span className="font-medium">€{insuranceQuote.premium.toFixed(2)}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-center font-bold text-lg pt-2 border-t border-dashed">
+                            <span>Total</span>
+                            <span>€{totalCost.toFixed(2)}</span>
+                        </div>
+                    </div>
 
-        reader.onload = async (e) => {
-            const csvData = e.target?.result as string;
+                </CardContent>
+            </Card>
+        </motion.div>
+    );
+};
 
-            // Simulate processing progress
-            setUploadProgress(75);
 
-            const result = await handleProcessBulkDelivery({ csvData });
+const sampleCsvData = `destination_address,package_weight_kg,notes
+"Eiffel Tower, Paris, France",4.5,"VIP delivery"
+"Louvre Museum, Paris, France",1.2,"Fragile item"
+"5 Rue de Rivoli, 75004 Paris",0.8,""
+"Arc de Triomphe, Paris",8.0,"Requires 2 people"
+"221B Baker Street, London",3.0,"Address outside primary zone"
+"Montmartre, Paris, France",15.5,"Weekly restock for cafe"
+"La Défense, Puteaux",2.0,"Office documents"
+"Montmartre, Paris, France",6.7,"Second package for cafe"`;
 
-            if (result.success && result.data) {
-                setResults(result.data);
-                const newJobs = result.data.consolidatedRoutes.flatMap(route => 
-                    route.addresses.map(address => ({
-                        id: `bulk-${Math.random().toString(36).substring(7)}`,
-                        pickup: 'Bulk Dispatch Center',
-                        dropoff: address,
-                        distance: 'N/A',
-                        payout: 'N/A',
-                        time: 'N/A',
-                        suggestion: 'Part of a consolidated bulk delivery.',
-                        suggestionType: 'neutral' as const
-                    }))
-                );
-                addJobs(newJobs);
-                toast({ title: "Bulk Upload Processed!", description: "AI analysis complete. Check driver app for jobs." });
-            } else {
-                toast({ variant: "destructive", title: "Processing Failed", description: result.error });
-                setIsUploading(false);
-            }
-            setUploadProgress(100);
-        };
-        
-        reader.onerror = () => {
-             toast({ variant: "destructive", title: "File Read Error", description: "Could not read the selected file." });
-             setIsUploading(false);
+const BulkUploader = ({ onProcess }: { onProcess: (csv: string) => void }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
         }
+    };
 
+    const handleProcess = () => {
+        if (!file) return;
+        setIsProcessing(true);
         Papa.parse(file, {
-            header: true,
-            complete: async (results) => {
+            complete: (results) => {
                 const csvString = Papa.unparse(results.data);
-                const result = await handleProcessBulkDelivery({ csvData: csvString });
-                 if (result.success && result.data) {
-                    setResults(result.data);
-                    toast({ title: "Bulk Upload Processed!", description: "AI analysis complete." });
-                } else {
-                    toast({ variant: "destructive", title: "Processing Failed", description: result.error });
-                }
-                setIsUploading(false);
+                onProcess(csvString);
+                setIsProcessing(false);
             },
-            error: (error: any) => {
-                toast({ variant: "destructive", title: "Parsing Error", description: error.message });
-                setIsUploading(false);
+            error: (err) => {
+                console.error("CSV parsing error:", err);
+                setIsProcessing(false);
             }
         });
     };
 
-    if (results) {
-        return <BulkUploadResults results={results} onReset={() => setResults(null)} />;
-    }
+    const handleDownloadTemplate = () => {
+        const blob = new Blob([sampleCsvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "dunlivrer_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleUseSampleData = () => {
+        onProcess(sampleCsvData);
+    };
 
     return (
-        <Card className="bg-card/80 border-white/10">
+        <Card className="w-full shadow-2xl shadow-primary/10 rounded-2xl border-white/10 bg-card/80 backdrop-blur-lg">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Package/> Bulk Delivery Upload</CardTitle>
-                <CardDescription>Upload a CSV file of deliveries for AI-powered processing and optimization.</CardDescription>
+                <CardTitle className="font-headline text-3xl flex items-center gap-3"><Layers className="text-primary"/>Book Multiple Deliveries</CardTitle>
+                <CardDescription>Upload a CSV file with your deliveries to get an optimized dispatch plan.</CardDescription>
             </CardHeader>
-            <CardContent>
-                {isUploading ? (
-                    <div className="space-y-2">
-                        <Progress value={uploadProgress} />
-                        <p className="text-sm text-center text-muted-foreground">Processing your file...</p>
-                    </div>
-                ) : (
-                    <div className="relative border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center">
-                        <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".csv" onChange={handleFileUpload} />
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <CardContent className="space-y-4">
+                <div 
+                    className="relative w-full h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center text-center p-4 cursor-pointer hover:border-primary transition-colors bg-muted/20"
+                    onClick={() => inputRef.current?.click()}
+                >
+                    <input type="file" ref={inputRef} className="hidden" accept=".csv" onChange={handleFileChange} />
+                    {file ? (
+                        <div className="flex flex-col items-center gap-2 text-primary">
                             <FileText className="w-8 h-8"/>
-                            <p className="font-semibold text-white">Click or drag to upload a CSV file</p>
-                            <p className="text-xs">Required columns: `destination_address`, `package_weight_kg`, `notes`</p>
+                            <p className="text-sm font-semibold">{file.name}</p>
                         </div>
+                    ) : (
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Upload className="w-8 h-8"/>
+                            <p className="text-sm">Click or drag to upload a CSV file</p>
+                        </div>
+                    )}
+                </div>
+                <div className="space-y-3">
+                     <Button onClick={handleProcess} disabled={!file || isProcessing} className="w-full" size="lg">
+                        {isProcessing ? <Loader2 className="animate-spin mr-2"/> : <BrainCircuit className="mr-2"/>}
+                        {isProcessing ? "Parsing..." : "Generate AI Dispatch Plan"}
+                    </Button>
+                    <div className="text-center text-sm text-muted-foreground">
+                        Don't have a file?{' '}
+                        <Button variant="link" className="p-0 h-auto" onClick={handleUseSampleData}>Use sample data</Button>
+                        {' '}or{' '}
+                        <Button variant="link" className="p-0 h-auto" onClick={handleDownloadTemplate}>download the template</Button>.
                     </div>
-                )}
+                </div>
             </CardContent>
         </Card>
+    );
+};
+
+const BulkResultsDisplay = ({ result, onDispatch }: { result: ProcessBulkDeliveryOutput, onDispatch: () => void }) => {
+    return (
+        <div className="mt-8 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <Card className="bg-green-500/10 border-green-500/20">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-3"><Euro className="text-green-400"/>Total Quote</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-4xl font-bold text-white">
+                            €{result.uploadSummary.totalQuote.toFixed(2)}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                            For {result.uploadSummary.validPackages} valid deliveries. {result.uploadSummary.invalidPackages > 0 && `(${result.uploadSummary.invalidPackages} excluded).`}
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-primary/10 border-primary/20">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-3"><Lightbulb className="text-primary"/>AI Smart Pricing</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">{result.smartPricingSuggestion.reason}</p>
+                        <div className="mt-4 p-4 rounded-lg bg-primary/20 text-center">
+                            <p>Suggested Window: <span className="font-bold">{result.smartPricingSuggestion.window}</span></p>
+                            <p className="text-2xl font-bold text-primary">Save ~{result.smartPricingSuggestion.savingsPercentage}%</p>
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card className="bg-accent/10 border-accent/20">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-3"><Zap className="text-accent"/>AI Demand Forecast</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">{result.demandForecast.prediction}</p>
+                        <div className="mt-4 text-center">
+                             <Badge variant="outline" className="border-accent/50 text-accent bg-accent/20">
+                                Confidence: {result.demandForecast.confidence}
+                            </Badge>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card className="bg-card/80 border-white/10">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Route/> AI Route Consolidation</CardTitle>
+                    <CardDescription>
+                        {result.uploadSummary.totalPackages} packages grouped into {result.uploadSummary.uniqueZones} optimized zones.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {result.consolidatedRoutes.map((route, index) => (
+                        <div key={index} className="p-4 border rounded-lg bg-muted">
+                            <h3 className="font-semibold text-white">Zone: {route.zone} ({route.addresses.length} packages)</h3>
+                            <p className="text-sm text-muted-foreground italic mt-1">"{route.routeSuggestion}"</p>
+                            <ul className="mt-3 list-disc list-inside text-xs space-y-1">
+                                {route.addresses.map((addr, i) => <li key={i}>{addr}</li>)}
+                            </ul>
+                        </div>
+                    ))}
+                </CardContent>
+                <CardFooter>
+                    <Button size="lg" className="w-full" onClick={onDispatch}>
+                        <Truck className="mr-2"/> Dispatch All Now
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
     )
-}
+};
 
 
-
-export default function HomePage() {
-  const { content } = useLanguage();
-  const [addresses, setAddresses] = useState<{ pickup: string | null; destinations: string[] }>({ pickup: null, destinations: [] });
+export default function DunlivrerPage() {
+  const [previewAddresses, setPreviewAddresses] = useState<{pickup: string | null; destinations: string[]}>({ pickup: null, destinations: [] });
   const [quote, setQuote] = useState<GetQuoteOutput | null>(null);
   const [insuranceQuote, setInsuranceQuote] = useState<GetInsuranceQuoteOutput | null>(null);
+  const [isReviewed, setIsReviewed] = useState(false);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
-  const isReviewed = !!quote;
   
-  const totalCost = (quote?.price || 0) + (insuranceQuote?.premium || 0);
+  // State for bulk uploader
+  const [bulkAnalysisResult, setBulkAnalysisResult] = useState<ProcessBulkDeliveryOutput | null>(null);
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { addJobs } = useJobs();
+
+  const { content } = useLanguage();
+
+  const handleAddressChange = useCallback((addresses: { pickup: string | null; destinations: string[] }) => {
+    setPreviewAddresses(addresses);
+    setQuote(null);
+    setInsuranceQuote(null);
+    setIsReviewed(false);
+  }, []);
+
+  const handleQuoteChange = (newQuote: GetQuoteOutput | null) => {
+    setQuote(newQuote);
+    setIsReviewed(!!newQuote);
+    setInsuranceQuote(null); // Reset insurance when base quote changes
+  };
+
+  const handleProcessCSV = useCallback(async (csvData: string) => {
+    setIsBulkLoading(true);
+    setBulkError(null);
+    setBulkAnalysisResult(null);
+
+    const result = await handleProcessBulkDelivery({ csvData });
+    if (result.success && result.data) {
+        setBulkAnalysisResult(result.data);
+        toast({ title: "Dispatch Plan Generated!", description: "Review the AI-powered suggestions below."});
+    } else {
+        setBulkError(result.error || "Failed to process the CSV file.");
+    }
+    setIsBulkLoading(false);
+  }, [toast]);
+
+  const handleDispatchBulk = () => {
+    if (!bulkAnalysisResult) return;
+
+    const newJobs: Job[] = bulkAnalysisResult.consolidatedRoutes.map((route, index) => {
+        const payout = (10 + route.addresses.length * 2.5 + Math.random() * 5).toFixed(2);
+        const time = (15 + route.addresses.length * 5 + Math.random() * 10).toFixed(0);
+
+        return {
+            id: `job-bulk-${Date.now()}-${index}`,
+            pickup: `Multiple pickups in ${route.zone}`,
+            dropoff: `Multiple dropoffs in ${route.zone}`,
+            distance: `${(5 + route.addresses.length * 1.5).toFixed(1)} km`,
+            payout: payout,
+            time: `${time} min`,
+            suggestion: `Consolidated route with ${route.addresses.length} stops. Good for zone efficiency.`,
+            suggestionType: 'accept'
+        };
+    });
+
+    addJobs(newJobs);
+
+    toast({
+        title: "Plan Dispatched!",
+        description: `${newJobs.length} consolidated delivery jobs have been posted to nearby DunGuys.`
+    });
+    
+    // Reset the UI
+    setBulkAnalysisResult(null);
+  };
+  
+  const investorFeatures = [
+    {
+      icon: <BrainCircuit className="w-8 h-8 text-primary" />,
+      title: content.investorFeature1Title,
+      description: content.investorFeature1Desc,
+      color: 'primary'
+    },
+    {
+      icon: <TrendingUp className="w-8 h-8 text-accent" />,
+      title: content.investorFeature2Title,
+      description: content.investorFeature2Desc,
+      color: 'accent'
+    },
+    {
+      icon: <ShieldCheck className="w-8 h-8 text-green-500" />,
+      title: content.investorFeature3Title,
+      description: content.investorFeature3Desc,
+      color: 'green'
+    }
+  ];
+
+  const services = [
+    {
+      icon: <Ship className="w-10 h-10 text-primary" />,
+      title: content.service1Title,
+      description: content.service1Desc,
+    },
+    {
+      icon: <Briefcase className="w-10 h-10 text-primary" />,
+      title: content.service2Title,
+      description: content.service2Desc,
+    },
+    {
+      icon: <BrainCircuit className="w-10 h-10 text-primary" />,
+      title: content.service3Title,
+      description: content.service3Desc,
+    }
+  ];
 
   return (
-    <>
-      <div className="w-full overflow-hidden">
-          <motion.section 
-              className="w-full pt-32 pb-16 md:pt-48 md:pb-24 text-center relative"
-              initial="hidden"
-              animate="visible"
-              variants={sectionVariants}
-          >
-              <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background via-transparent to-transparent"></div>
-              <div className="max-w-4xl mx-auto px-4">
-                  <motion.h1 
-                    variants={itemVariants} 
-                    className="text-4xl md:text-6xl font-bold font-headline text-white whitespace-pre-line"
-                  >
-                    {content.heroTitle}
-                  </motion.h1>
-                  <motion.p 
-                    variants={itemVariants} 
-                    className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground"
-                  >
-                    {content.heroSubtitle}
-                  </motion.p>
-                  <motion.div 
-                    variants={itemVariants}
-                    className="mt-8 flex justify-center gap-4"
-                  >
-                      <Button size="lg" asChild>
-                          <Link href="#get-started">{content.scheduleButton}</Link>
-                      </Button>
-                      <Button size="lg" variant="outline" asChild>
-                          <Link href="/contact">{content.contactButton}</Link>
-                      </Button>
-                  </motion.div>
-              </div>
-          </motion.section>
+    <div className="w-full">
+      {/* Hero Section */}
+      <motion.section 
+        className="relative text-center pt-32 pb-16 w-full max-w-7xl mx-auto px-4 md:px-8"
+        initial="hidden"
+        animate="visible"
+        variants={staggeredContainer}
+      >
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
+          <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold font-headline bg-clip-text text-transparent bg-gradient-to-br from-white to-gray-400 pb-4" style={{ whiteSpace: 'pre-line' }}>
+            {content.heroTitle}
+          </motion.h1>
+          <motion.p variants={itemVariants} className="max-w-3xl mx-auto text-lg text-muted-foreground">
+            {content.heroSubtitle}
+          </motion.p>
+          <motion.div variants={itemVariants} className="mt-8 flex justify-center gap-4">
+              <Button size="lg" asChild>
+                <Link href="#get-started">{content.scheduleButton}</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/contact">{content.contactButton}</Link>
+              </Button>
+          </motion.div>
+      </motion.section>
 
-          <section id="get-started" className="py-16 scroll-mt-24">
-              <div className="max-w-7xl w-full mx-auto px-4 md:px-8 grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-                  <div className="lg:col-span-2">
-                      <DeliveryForm 
-                          onAddressChange={setAddresses} 
-                          onQuoteChange={setQuote}
+      {/* Investor-Focused "Why Us" Section */}
+      <motion.section 
+        className="py-16 bg-background/20"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={sectionVariants}
+      >
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8">
+            <div className="text-center">
+              <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">{content.advantageTitle}</h2>
+              <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">{content.advantageHeadline}</p>
+              <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+                {content.advantageSubtitle}
+              </p>
+            </div>
+            <motion.div 
+              className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8"
+              variants={staggeredContainer}
+            >
+              {investorFeatures.map((feature) => (
+                 <motion.div 
+                    key={feature.title}
+                    variants={itemVariants}
+                    whileHover={{ y: -5, scale: 1.02, transition: { duration: 0.2 } }}
+                    className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-2xl shadow-primary/10 backdrop-blur-lg flex flex-col items-start gap-4 h-full"
+                  >
+                  {feature.icon}
+                  <h3 className="text-xl font-bold font-headline text-white">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                 </motion.div>
+              ))}
+            </motion.div>
+        </div>
+      </motion.section>
+      
+      {/* Delivery Form Section */}
+      <motion.section 
+        id="get-started" 
+        className="py-24 relative overflow-hidden"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={sectionVariants}
+      >
+        <div className="absolute inset-0 -z-10">
+            <Image src="https://placehold.co/1920x1080.png" fill alt="Abstract background" className="opacity-10 object-cover" data-ai-hint="abstract network" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background"></div>
+        </div>
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 grid lg:grid-cols-5 gap-16 items-start">
+            <div className="lg:col-span-3 flex flex-col gap-8">
+              <div className="space-y-4">
+                <h2 className="text-3xl md:text-4xl font-bold font-headline text-white">{content.getStartedTitle}</h2>
+                <p className="mt-4 text-lg text-muted-foreground">
+                  {content.getStartedSubtitle}
+                </p>
+              </div>
+              
+                <Tabs defaultValue="single-delivery" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 max-w-lg">
+                        <TabsTrigger value="single-delivery"><Package className="mr-2"/>Single Delivery</TabsTrigger>
+                        <TabsTrigger value="bulk-upload"><Layers className="mr-2"/>Bulk Upload</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="single-delivery" className="mt-6">
+                        <DeliveryForm 
+                          onAddressChange={handleAddressChange}
+                          onQuoteChange={handleQuoteChange}
                           onInsuranceChange={setInsuranceQuote}
                           quote={quote}
                           insuranceQuote={insuranceQuote}
                           isReviewed={isReviewed}
                           isGettingQuote={isGettingQuote}
                           setIsGettingQuote={setIsGettingQuote}
-                      />
-                  </div>
-                  <div className="lg:col-span-3">
-                      <div className="sticky top-24">
-                          <LiveTrackingPreview 
-                              pickupAddress={addresses.pickup}
-                              destinationAddresses={addresses.destinations}
-                          />
-                           {isReviewed && quote && (
-                              <motion.div 
-                                  className="mt-4"
-                                  initial={{ opacity: 0, y: 10 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: 0.2 }}
-                              >
-                                  <Card className="bg-card/80 border-white/10 shadow-lg">
-                                      <CardHeader>
-                                          <CardTitle className="flex items-center justify-between">
-                                              AI Generated Quote
-                                              <div className="flex items-center gap-2">
-                                                <Badge variant="secondary" className="gap-1.5"><Check className="text-green-400"/> {quote.etaConfidencePercentage}%</Badge>
-                                                <Badge variant="destructive">{quote.etaConfidenceRange}</Badge>
-                                              </div>
-                                          </CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="grid grid-cols-3 gap-4 text-center">
-                                          <div className="p-3 bg-muted rounded-md">
-                                              <p className="text-xs text-muted-foreground">Distance</p>
-                                              <p className="text-lg font-bold">{quote.distance}</p>
-                                          </div>
-                                          <div className="p-3 bg-muted rounded-md">
-                                              <p className="text-xs text-muted-foreground">Est. Time</p>
-                                              <p className="text-lg font-bold">{quote.eta}</p>
-                                          </div>
-                                          <div className="p-3 bg-muted rounded-md">
-                                              <p className="text-xs text-muted-foreground">CO2 Emission</p>
-                                              <p className="text-lg font-bold">{quote.co2Emission}</p>
-                                          </div>
-                                      </CardContent>
-                                      <CardContent>
-                                        <Card className="bg-muted border-none">
-                                            <CardContent className="p-4 flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-bold text-white text-lg">Total Cost</p>
-                                                    {insuranceQuote && (
-                                                        <p className="text-xs text-muted-foreground">
-                                                            €{quote.price.toFixed(2)} (Delivery) + €{insuranceQuote.premium.toFixed(2)} (Insurance)
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <p className="text-4xl font-bold font-headline text-primary">€{totalCost.toFixed(2)}</p>
-                                            </CardContent>
-                                        </Card>
-                                      </CardContent>
-                                  </Card>
-                              </motion.div>
-                          )}
-                      </div>
-                  </div>
-              </div>
-          </section>
-          
-          <section id="bulk-upload" className="py-16 scroll-mt-24">
-              <div className="max-w-2xl w-full mx-auto px-4 md:px-8">
-                <BulkUpload />
-              </div>
-          </section>
+                        />
+                    </TabsContent>
+                    <TabsContent value="bulk-upload" className="mt-6">
+                         <BulkUploader onProcess={handleProcessCSV} />
+                    </TabsContent>
+                </Tabs>
 
-           <motion.section 
-              className="py-16"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={sectionVariants}
-            >
-              <div className="max-w-5xl mx-auto px-4 md:px-8 text-center">
-                  <h2 className="text-sm font-bold uppercase tracking-widest text-primary">{content.solutionsTitle}</h2>
-                  <p className="mt-4 text-3xl md:text-4xl font-bold font-headline text-white">{content.solutionsHeadline}</p>
-              </div>
-              <div className="max-w-7xl mx-auto mt-12 px-4 md:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  <FeatureCard 
-                    icon={<Ship className="w-8 h-8"/>} 
-                    title={content.service1Title} 
-                    description={content.service1Desc} 
-                  />
-                  <FeatureCard 
-                    icon={<Briefcase className="w-8 h-8"/>} 
-                    title={content.service2Title} 
-                    description={content.service2Desc} 
-                  />
-                  <FeatureCard 
-                    icon={<BrainCircuit className="w-8 h-8"/>} 
-                    title={content.service3Title} 
-                    description={content.service3Desc} 
-                  />
-              </div>
-          </motion.section>
-          
-          <motion.section
-            className="py-16 bg-background/20"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            variants={sectionVariants}
-          >
-            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
-              <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">
-                {content.fraudTitle}
-              </h2>
-              <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
-                {content.fraudHeadline}
-              </p>
-              <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-                {content.fraudSubtitle}
-              </p>
-              <motion.div
-                className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
-                variants={staggeredContainer}
-              >
-                <motion.div
-                  variants={itemVariants}
-                  className="flex items-start gap-4"
-                >
-                  <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
-                    <ShieldCheck className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-white">
-                      {content.fraudFeature1Title}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {content.fraudFeature1Desc}
-                    </p>
-                  </div>
-                </motion.div>
-                <motion.div
-                  variants={itemVariants}
-                  className="flex items-start gap-4"
-                >
-                  <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
-                    <Repeat className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-white">
-                      {content.fraudFeature2Title}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {content.fraudFeature2Desc}
-                    </p>
-                  </div>
-                </motion.div>
-                <motion.div
-                  variants={itemVariants}
-                  className="flex items-start gap-4"
-                >
-                  <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
-                    <Shuffle className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-white">
-                      {content.fraudFeature3Title}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {content.fraudFeature3Desc}
-                    </p>
-                  </div>
-                </motion.div>
-              </motion.div>
+                <AnimatePresence>
+                    {isBulkLoading && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-12 space-y-4">
+                            <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary" />
+                            <h3 className="font-semibold text-xl">AI Engine is processing your manifest...</h3>
+                            <p className="text-muted-foreground">Consolidating routes, calculating smart pricing, and forecasting demand.</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                {bulkError && (
+                    <Card className="mt-8 bg-destructive/10 border-destructive/30 p-8 text-center text-destructive">
+                         <AlertTriangle className="w-12 h-12 mx-auto" />
+                         <h2 className="mt-4 text-2xl font-bold">Analysis Failed</h2>
+                         <p>{bulkError}</p>
+                    </Card>
+                 )}
+                {bulkAnalysisResult && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                        <BulkResultsDisplay result={bulkAnalysisResult} onDispatch={handleDispatchBulk} />
+                    </motion.div>
+                )}
             </div>
-          </motion.section>
+            <div className="lg:col-span-2 flex flex-col gap-8">
+                <motion.div whileHover={{ y: -5, scale: 1.01, transition: { duration: 0.2 } }}>
+                    <LiveTrackingPreview 
+                        pickupAddress={previewAddresses.pickup} 
+                        destinationAddresses={previewAddresses.destinations} 
+                    />
+                </motion.div>
+                 <EstimatorBox quote={quote} insuranceQuote={insuranceQuote} isGettingQuote={isGettingQuote} />
+            </div>
+        </div>
+      </motion.section>
 
-      </div>
+       {/* Services Section */}
+      <motion.section 
+        className="py-16"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={sectionVariants}
+      >
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
+            <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">{content.solutionsTitle}</h2>
+            <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">{content.solutionsHeadline}</p>
+            <motion.div 
+              className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
+              variants={staggeredContainer}
+            >
+              {services.map((service) => (
+                 <motion.div 
+                    key={service.title} 
+                    variants={itemVariants}
+                    whileHover={{ y: -5, scale: 1.02, transition: { duration: 0.2 } }}
+                    className="p-8 rounded-2xl bg-card/80 border border-white/10 shadow-lg flex flex-col items-start gap-4 h-full"
+                  >
+                  {service.icon}
+                  <h3 className="text-xl font-bold font-headline text-white">{service.title}</h3>
+                  <p className="text-muted-foreground">{service.description}</p>
+                 </motion.div>
+              ))}
+            </motion.div>
+        </div>
+      </motion.section>
+
+      {/* AI Fraud Detection Section */}
+      <motion.section
+        className="py-16 bg-background/20"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={sectionVariants}
+      >
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
+          <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">
+            {content.fraudTitle}
+          </h2>
+          <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
+            {content.fraudHeadline}
+          </p>
+          <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
+            {content.fraudSubtitle}
+          </p>
+          <motion.div
+            className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
+            variants={staggeredContainer}
+          >
+            <motion.div
+              variants={itemVariants}
+              className="flex items-start gap-4"
+            >
+              <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  {content.fraudFeature1Title}
+                </h3>
+                <p className="text-muted-foreground">
+                  {content.fraudFeature1Desc}
+                </p>
+              </div>
+            </motion.div>
+            <motion.div
+              variants={itemVariants}
+              className="flex items-start gap-4"
+            >
+              <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                <Repeat className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  {content.fraudFeature2Title}
+                </h3>
+                <p className="text-muted-foreground">
+                  {content.fraudFeature2Desc}
+                </p>
+              </div>
+            </motion.div>
+            <motion.div
+              variants={itemVariants}
+              className="flex items-start gap-4"
+            >
+              <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                <Shuffle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  {content.fraudFeature3Title}
+                </h3>
+                <p className="text-muted-foreground">
+                  {content.fraudFeature3Desc}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Blockchain Section */}
+      <motion.section
+        className="py-24"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={sectionVariants}
+      >
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
+          <h2 className="text-base font-semibold uppercase text-primary tracking-widest">
+            {content.blockchainTitle}
+          </h2>
+          <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
+            {content.blockchainHeadline}
+          </p>
+          <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
+            {content.blockchainSubtitle}
+          </p>
+          <motion.div
+            className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
+            variants={staggeredContainer}
+          >
+            <motion.div
+              variants={itemVariants}
+              className="flex items-start gap-4"
+            >
+              <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  {content.blockchainFeature1Title}
+                </h3>
+                <p className="text-muted-foreground">
+                  {content.blockchainFeature1Desc}
+                </p>
+              </div>
+            </motion.div>
+            <motion.div
+              variants={itemVariants}
+              className="flex items-start gap-4"
+            >
+              <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                <Layers className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  {content.blockchainFeature2Title}
+                </h3>
+                <p className="text-muted-foreground">
+                  {content.blockchainFeature2Desc}
+                </p>
+              </div>
+            </motion.div>
+            <motion.div
+              variants={itemVariants}
+              className="flex items-start gap-4"
+            >
+              <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                <FileText className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  {content.blockchainFeature3Title}
+                </h3>
+                <p className="text-muted-foreground">
+                  {content.blockchainFeature3Desc}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </motion.section>
+
       <FloatingSupportButton />
-    </>
+    </div>
   );
 }
