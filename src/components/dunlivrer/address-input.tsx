@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, forwardRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -24,72 +24,91 @@ const parisBounds = {
     west: 2.2241,
 };
 
+const AddressInput = forwardRef<HTMLInputElement, AddressInputProps>(
+    ({ value, onChange, placeholder, className }, ref) => {
+        const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+        // This local ref is used to ensure we can initialize and clean up the Google Maps listener correctly
+        const inputRef = useRef<HTMLInputElement | null>(null);
+        const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('loading');
+        const [errorMessage, setErrorMessage] = useState<string | null>(null);
+        
+        // This callback ref will be passed to the <Input> component.
+        // It updates our local ref and also forwards the ref to the parent component.
+        const handleRef = useCallback((node: HTMLInputElement | null) => {
+            inputRef.current = node;
+            if (typeof ref === 'function') {
+                ref(node);
+            } else if (ref) {
+                ref.current = node;
+            }
+        }, [ref]);
 
-export default function AddressInput({ value, onChange, placeholder, className }: AddressInputProps) {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-    const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('loading');
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+        useEffect(() => {
+            loadGoogleMapsApi()
+                .then(() => {
+                    setStatus('ready');
+                })
+                .catch(() => {
+                    setErrorMessage(googleApiError);
+                    setStatus('error');
+                });
+        }, []);
+        
 
-    useEffect(() => {
-        loadGoogleMapsApi()
-            .then(() => {
-                setStatus('ready');
-            })
-            .catch(() => {
-                setErrorMessage(googleApiError);
-                setStatus('error');
+        useEffect(() => {
+            if (status !== 'ready' || !inputRef.current) return;
+
+            if (!autocompleteRef.current) {
+                autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+                    componentRestrictions: { country: 'fr' },
+                    bounds: parisBounds,
+                    strictBounds: false, // Bias search to Paris but allow results outside
+                    fields: ['formatted_address'],
+                });
+            }
+
+            const listener = autocompleteRef.current.addListener('place_changed', () => {
+                const place = autocompleteRef.current?.getPlace();
+                if (place && place.formatted_address) {
+                    onChange(place.formatted_address);
+                }
             });
-    }, []);
-    
 
-    useEffect(() => {
-        if (status !== 'ready' || !inputRef.current) return;
+            return () => {
+                if (window.google?.maps?.event) {
+                    window.google.maps.event.removeListener(listener);
+                }
+            };
+        }, [status, onChange]);
 
-        if (!autocompleteRef.current) {
-            autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-                componentRestrictions: { country: 'fr' },
-                bounds: parisBounds,
-                strictBounds: false, // Bias search to Paris but allow results outside
-                fields: ['formatted_address'],
-            });
+        
+        if (status === 'error') {
+            return (
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Map Error</AlertTitle>
+                    <AlertDescription>
+                        {errorMessage || 'Address search is unavailable.'}
+                    </AlertDescription>
+                </Alert>
+            )
         }
 
-        const listener = autocompleteRef.current.addListener('place_changed', () => {
-            const place = autocompleteRef.current?.getPlace();
-            if (place && place.formatted_address) {
-                onChange(place.formatted_address);
-            }
-        });
-
-        return () => {
-            window.google.maps.event.removeListener(listener);
-        };
-    }, [status, onChange]);
-
-    
-    if (status === 'error') {
         return (
-            <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Map Error</AlertTitle>
-                <AlertDescription>
-                    {errorMessage || 'Address search is unavailable.'}
-                </AlertDescription>
-            </Alert>
-        )
+            <div className="relative w-full">
+                <Input
+                    ref={handleRef}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={status === 'loading' ? 'Loading Address Search...' : placeholder}
+                    disabled={status !== 'ready'}
+                    className={cn(className)}
+                />
+            </div>
+        );
     }
+);
 
-    return (
-        <div className="relative w-full">
-            <Input
-                ref={inputRef}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={status === 'loading' ? 'Loading Address Search...' : placeholder}
-                disabled={status !== 'ready'}
-                className={cn(className)}
-            />
-        </div>
-    );
-}
+AddressInput.displayName = "AddressInput";
+
+export default AddressInput;
