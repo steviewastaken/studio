@@ -21,7 +21,7 @@ import Papa from 'papaparse';
 import { useToast } from "@/hooks/use-toast";
 import { handleProcessBulkDelivery } from "@/lib/bulk-actions";
 import type { ProcessBulkDeliveryOutput } from '@/ai/flows/process-bulk-delivery';
-import { useJobs, type Job } from '@/context/jobs-context';
+import { useJobs, type Job } from "@/context/jobs-context";
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -617,7 +617,7 @@ export default function HomePage() {
             </motion.div>
         </div>
       </motion.section>
-
+      
       {/* AI Fraud Detection Section */}
       <motion.section
         className="py-16"
