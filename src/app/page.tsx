@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, ShieldCheck, Users, TrendingUp, Bot, Ship, Briefcase, BrainCircuit, BarChart, Package, FileText, Check, AlertTriangle, Loader2 } from "lucide-react";
+import { CheckCircle, ShieldCheck, Users, TrendingUp, Bot, Ship, Briefcase, BrainCircuit, BarChart, Package, FileText, Check, AlertTriangle, Loader2, Repeat, Shuffle } from "lucide-react";
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import DeliveryForm from "@/components/dunlivrer/delivery-form";
@@ -38,6 +38,16 @@ const sectionVariants = {
 const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' }}
+};
+
+const staggeredContainer = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+    },
+  },
 };
 
 
@@ -364,35 +374,77 @@ export default function HomePage() {
               </div>
           </motion.section>
           
-          <motion.section 
+          <motion.section
             className="py-16 bg-background/20"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={sectionVariants}
           >
-              <div className="max-w-5xl mx-auto px-4 md:px-8 text-center">
-                  <h2 className="text-sm font-bold uppercase tracking-widest text-primary">{content.fraudTitle}</h2>
-                  <p className="mt-4 text-3xl md:text-4xl font-bold font-headline text-white">{content.fraudHeadline}</p>
-                  <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">{content.fraudSubtitle}</p>
-              </div>
-              <div className="max-w-7xl mx-auto mt-12 px-4 md:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  <FeatureCard 
-                      icon={<ShieldCheck className="w-8 h-8"/>} 
-                      title={content.fraudFeature1Title} 
-                      description={content.fraudFeature1Desc} 
-                  />
-                  <FeatureCard 
-                      icon={<ShieldCheck className="w-8 h-8"/>} 
-                      title={content.fraudFeature2Title} 
-                      description={content.fraudFeature2Desc} 
-                  />
-                  <FeatureCard 
-                      icon={<ShieldCheck className="w-8 h-8"/>} 
-                      title={content.fraudFeature3Title} 
-                      description={content.fraudFeature3Desc} 
-                  />
-              </div>
+            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 text-center">
+              <h2 className="text-sm font-semibold uppercase text-primary tracking-widest">
+                {content.fraudTitle}
+              </h2>
+              <p className="mt-2 text-3xl md:text-4xl font-bold font-headline text-white">
+                {content.fraudHeadline}
+              </p>
+              <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
+                {content.fraudSubtitle}
+              </p>
+              <motion.div
+                className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
+                variants={staggeredContainer}
+              >
+                <motion.div
+                  variants={itemVariants}
+                  className="flex items-start gap-4"
+                >
+                  <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-white">
+                      {content.fraudFeature1Title}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {content.fraudFeature1Desc}
+                    </p>
+                  </div>
+                </motion.div>
+                <motion.div
+                  variants={itemVariants}
+                  className="flex items-start gap-4"
+                >
+                  <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                    <Repeat className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-white">
+                      {content.fraudFeature2Title}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {content.fraudFeature2Desc}
+                    </p>
+                  </div>
+                </motion.div>
+                <motion.div
+                  variants={itemVariants}
+                  className="flex items-start gap-4"
+                >
+                  <div className="p-3 bg-primary/20 rounded-lg text-primary shrink-0">
+                    <Shuffle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-white">
+                      {content.fraudFeature3Title}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {content.fraudFeature3Desc}
+                    </p>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
           </motion.section>
 
       </div>
