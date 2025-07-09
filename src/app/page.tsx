@@ -5,7 +5,7 @@ import { useState, useCallback, useRef } from 'react';
 import type { DeliveryDetails } from '@/components/dunlivrer/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Layers, Upload, Route, Lightbulb, Package, Truck } from 'lucide-react';
+import { Zap, BrainCircuit, ShieldCheck, TrendingUp, Ship, Briefcase, Bot, FileText, Repeat, Shuffle, Leaf, Euro, Loader2, Milestone, Plus, Layers, Upload, Route, Lightbulb, Package, Truck, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import FloatingSupportButton from '@/components/dunlivrer/floating-support-button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -618,7 +618,7 @@ export default function HomePage() {
         </div>
       </motion.section>
 
-      {/* AI Fraud Detection Section */}
+       {/* AI Fraud Detection Section */}
       <motion.section
         className="py-16"
         initial="hidden"
@@ -770,4 +770,3 @@ export default function HomePage() {
     </div>
   );
 }
-
