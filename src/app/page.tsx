@@ -537,12 +537,12 @@ export default function HomePage() {
                     </motion.div>
                 ) : bulkError ? (
                     <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <Card className="bg-destructive/10 border-destructive/30 p-8 text-center text-destructive">
+                        <Alert variant="destructive" className="bg-destructive/10 border-destructive/30 p-8 text-center">
                              <AlertTriangle className="w-12 h-12 mx-auto" />
-                             <h2 className="mt-4 text-2xl font-bold">Analysis Failed</h2>
-                             <p>{bulkError}</p>
+                             <AlertTitle className="mt-4 text-2xl font-bold">Analysis Failed</AlertTitle>
+                             <AlertDescription>{bulkError}</AlertDescription>
                              <Button variant="outline" onClick={() => setBulkError(null)} className="mt-4">Try Again</Button>
-                        </Card>
+                        </Alert>
                     </motion.div>
                 ) : bulkAnalysisResult ? (
                      <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -770,3 +770,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
