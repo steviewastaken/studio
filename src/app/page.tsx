@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useRef } from 'react';
@@ -587,7 +586,7 @@ export default function HomePage() {
         </div>
       </motion.section>
 
-      {/* Services Section */}
+       {/* Services Section */}
       <motion.section 
         className="py-16"
         initial="hidden"
